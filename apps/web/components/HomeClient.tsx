@@ -12,6 +12,7 @@ import {
 } from "@/lib/jobs";
 import JobCard from "./JobCard";
 import JobTable from "./JobTable";
+import HeroBackground from "./HeroBackground";
 
 export type HomeStats = {
   total: number;
@@ -174,6 +175,7 @@ export default function HomeClient({
     <div className="wrap">
       {/* ===== Hero ===== */}
       <div className="hero">
+        <HeroBackground />
         <span className="label">2026 秋招季 · 信息聚合</span>
         <h1 className="h-display">
           秋招信息
