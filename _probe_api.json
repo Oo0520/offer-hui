@@ -1,0 +1,28 @@
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>系统提示</title>
+<style type="text/css">
+.errorBox {
+    width: 700px;
+    height: 400px;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 11;
+    margin: -200px 0 0 -350px;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="errorBox">
+    <img class="errorimg" alt="" src="/zhxy-xszyfzpt/resources/common/image/error1.png">
+    <h2>页面未找到！</h2>
+</div>
+
+</body>
+</html>

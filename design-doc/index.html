@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer汇 · 应届生求职信息聚合</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Nunito:wght@400;600;700;800;900&family=ZCOOL+KuaiLe&display=swap">
+<style>
+/* ============================================================
+   Offer汇 · Sophisticated Playful · 7页完整版
+   配色 Charcoal / Gray-Green / Vibrant Red / Off-White / White
+   字体 Nunito (400-900) + 站酷快乐体(中文标题)
+   ============================================================ */
+:root{
+  --charcoal:#171e19; --charcoal-2:#1f2823; --charcoal-3:#26312b;
+  --graygreen:#b7c6c2; --red:#ca0013; --red-2:#ef4444;
+  --offwhite:#eeebe3; --white:#ffffff;
+  --violet:#8b5cf6; --cyan:#06b6d4;
+  --radius-card:40px; --radius-inner:24px; --radius-pill:9999px;
+  --border:1px solid rgba(183,198,194,.26);
+  --shadow:0 20px 50px -12px rgba(0,0,0,.35);
+  --font-title:"Nunito","ZCOOL KuaiLe","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-body:"Nunito","PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-body);background:var(--charcoal);color:var(--offwhite);font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+svg{display:block}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+.label{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--graygreen)}
+.h-display{font-family:var(--font-title);font-weight:900;font-size:32px;line-height:1.2}
+.h-sub{font-family:var(--font-title);font-weight:900;font-size:20px}
+
+/* ===== 导航 ===== */
+.nav{position:sticky;top:0;z-index:90;background:rgba(23,30,25,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(183,198,194,.14)}
+.nav-in{max-width:1140px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:14px;height:62px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;font-size:19px;color:var(--white);letter-spacing:.3px}
+.brand .logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#ca0013,#ef4444);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-family:var(--font-title)}
+.nav-links{display:flex;gap:2px}
+.nav-links a{padding:8px 12px;border-radius:12px;font-weight:800;color:rgba(238,235,227,.6);font-size:13px;transition:color .2s,background .2s;white-space:nowrap}
+.nav-links a:hover{color:var(--white);background:rgba(183,198,194,.1)}
+.nav-links a.on{color:var(--white);background:rgba(202,0,19,.16);box-shadow:inset 0 0 0 1px rgba(202,0,19,.35)}
+.nav-search{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.045);border:1px solid rgba(183,198,194,.2);border-radius:14px;padding:9px 13px;width:190px;color:rgba(183,198,194,.7)}
+.nav-search input{border:none;outline:none;background:transparent;flex:1;font-size:12.5px;color:var(--offwhite);font-family:inherit;min-width:0}
+.nav-search input::placeholder{color:rgba(183,198,194,.55)}
+.hamburger{display:none;width:40px;height:40px;border-radius:12px;align-items:center;justify-content:center;border:1px solid rgba(183,198,194,.3);background:rgba(255,255,255,.04)}
+
+/* ===== 组件1 光环按钮 ===== */
+.orbital{position:relative;border-radius:9999px;padding:1px;overflow:hidden;isolation:isolate;display:inline-block;line-height:0}
+.orbital::before{content:"";position:absolute;left:50%;top:50%;width:200%;height:200%;transform:translate(-50%,-50%);background:conic-gradient(from 0deg,transparent 0%,#8b5cf6 40%,#06b6d4 50%,transparent 60%);animation:orb-spin 4s linear infinite;z-index:0}
+@keyframes orb-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.orbital .inner{position:relative;z-index:1;background:#0a0a0a;padding:13px 32px;border-radius:9999px;display:flex;align-items:center;gap:8px;font-family:var(--font-body);font-weight:800;font-size:13.5px;color:var(--white);line-height:1;transition:background .2s}
+.orbital:hover .inner{background:#161616}
+.orbital .inner.sm{padding:9px 20px;font-size:12px}
+.orbital .inner.lg{padding:16px 40px;font-size:15px}
+
+/* ===== 组件2 玻璃卡 ===== */
+.glass{border-radius:var(--radius-card);border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);box-shadow:var(--shadow)}
+.glass .gicon{transition:transform .25s ease}
+.glass:hover{box-shadow:0 0 20px -10px rgba(139,92,246,.4),var(--shadow)}
+.glass:hover .gicon{transform:scale(1.1) rotate(6deg)}
+.anim{opacity:0;transform:translateY(30px);transition:opacity .5s ease,transform .5s ease}
+.anim.in{opacity:1;transform:translateY(0)}
+
+/* ===== Hero ===== */
+.hero{background:radial-gradient(1200px 500px at 80% -10%,rgba(139,92,246,.14),transparent 60%),radial-gradient(900px 420px at 10% 110%,rgba(6,182,212,.1),transparent 60%);border:1px solid rgba(183,198,194,.16);border-radius:var(--radius-card);padding:44px 42px;margin-top:24px;position:relative;overflow:hidden}
+.hero .label{display:inline-flex;align-items:center;gap:8px}
+.hero .label::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(202,0,19,.25)}
+.hero h1{margin-top:14px;font-size:38px}
+.hero .sub{margin-top:10px;font-size:14px;color:rgba(238,235,227,.66);max-width:560px}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.hero-tags span{font-size:11px;font-weight:700;padding:5px 14px;border-radius:9999px;border:1px solid rgba(183,198,194,.3);color:rgba(238,235,227,.75)}
+.hero-search{margin-top:26px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(183,198,194,.22);border-radius:9999px;padding:6px 6px 6px 22px;max-width:620px}
+.hero-search input{border:none;outline:none;background:transparent;flex:1;font-size:14.5px;color:var(--offwhite);font-family:inherit;min-width:0}
+.hero-search input::placeholder{color:rgba(183,198,194,.55)}
+.hero-search .orbital{flex:none}
+.hero-stats{display:flex;gap:14px;margin-top:26px;flex-wrap:wrap}
+.hero-stats .st{border-radius:var(--radius-inner);padding:16px 26px;min-width:130px}
+.hero-stats .st b{display:block;font-family:var(--font-title);font-size:26px;font-weight:900;color:var(--white)}
+.hero-stats .st span{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--graygreen)}
+
+/* ===== 工具栏 ===== */
+.toolbar{display:flex;align-items:center;gap:12px;margin-top:22px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-ms-overflow-style:none;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;font-size:12.5px;font-weight:800;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);border-radius:9999px;padding:8px 18px;color:rgba(238,235,227,.7);transition:all .2s}
+.chips button:hover{border-color:rgba(183,198,194,.55);color:var(--white)}
+.chips button.on{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 8px 20px -8px rgba(202,0,19,.6)}
+.filter-group{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.filter-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);border-radius:9999px;padding:8px 15px;font-size:12px;font-weight:800;color:rgba(238,235,227,.75);transition:all .2s}
+.filter-btn:hover,.filter-btn.open{border-color:rgba(183,198,194,.55);color:var(--white)}
+.filter-btn .arr{font-size:9px;color:var(--graygreen);transition:transform .2s}
+.filter-btn.open .arr{transform:rotate(180deg)}
+.filter-panel{position:absolute;top:calc(100% + 8px);left:0;width:210px;background:var(--charcoal-2);border:1px solid rgba(183,198,194,.3);border-radius:var(--radius-inner);padding:14px;box-shadow:0 20px 50px -12px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
+.filter-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.f-opt{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px;cursor:pointer;font-size:12.5px;color:rgba(238,235,227,.8)}
+.f-opt:hover{background:rgba(183,198,194,.08)}
+.f-opt .cb{width:17px;height:17px;border-radius:6px;border:1.5px solid rgba(183,198,194,.5);flex:none;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.f-opt.on .cb{background:var(--red);border-color:var(--red)}
+.f-opt .cb svg{opacity:0;transition:opacity .15s}
+.f-opt.on .cb svg{opacity:1}
+.f-opt .n{margin-left:auto;font-size:10.5px;color:rgba(183,198,194,.6);font-weight:700}
+.f-clear{width:100%;margin-top:10px;padding:8px;border-radius:10px;font-size:11.5px;font-weight:800;color:rgba(238,235,227,.6);border:1px dashed rgba(183,198,194,.35)}
+.f-clear:hover{color:var(--white);border-color:rgba(183,198,194,.6)}
+
+/* ===== 主体两栏 ===== */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;margin-top:22px;align-items:start}
+.col{min-width:0}
+.side{min-width:0;display:flex;flex-direction:column;gap:16px;position:sticky;top:78px}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin:6px 0 14px;flex-wrap:wrap}
+.sec-head h2{font-family:var(--font-title);font-weight:900;font-size:20px}
+.sec-head .cnt{font-size:11px;color:rgba(183,198,194,.65);font-weight:700}
+.view-toggle{display:flex;margin-left:auto;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);border-radius:9999px;padding:3px;gap:2px}
+.view-toggle button{padding:6px 16px;border-radius:9999px;font-size:11.5px;font-weight:800;color:rgba(238,235,227,.6)}
+.view-toggle button.on{background:var(--red);color:#fff}
+
+/* ===== 今日截止 ===== */
+.today-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:6px}
+.today-card{background:linear-gradient(135deg,rgba(202,0,19,.9),rgba(239,68,68,.75));border:1px solid rgba(255,255,255,.08);border-radius:var(--radius-inner);padding:18px 20px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 18px 40px -14px rgba(202,0,19,.45)}
+.today-card::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.1)}
+.today-card:hover{transform:translateY(-3px);box-shadow:0 24px 48px -14px rgba(202,0,19,.55)}
+.today-card .lg{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;font-size:18px;color:#fff;flex:none}
+.today-card .bd{flex:1;min-width:0;position:relative;z-index:1}
+.today-card .bd h4{font-family:var(--font-title);font-size:14.5px;font-weight:900;color:#fff;line-height:1.35}
+.today-card .bd p{font-size:11px;color:rgba(255,255,255,.85);margin-top:2px}
+.today-card .lg-t{position:relative;z-index:1;flex:none;background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.3);border-radius:9999px;padding:6px 14px;font-size:10.5px;font-weight:900;letter-spacing:.06em;color:#fff}
+
+/* ===== 岗位卡 ===== */
+.job-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.job-card{display:flex;align-items:flex-start;gap:15px;padding:20px 22px;border-radius:var(--radius-card);position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.job-card:hover{transform:translateY(-3px)}
+.logo-badge{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;font-size:18px;color:#fff;flex:none}
+.job-main{flex:1;min-width:0}
+.job-title{font-family:var(--font-title);font-weight:900;font-size:15px;color:var(--white);display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-right:44px}
+.job-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.jtag{font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:7px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.3);color:#c4b5fd}
+.jtag.cy{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.32);color:#67e8f9}
+.jtag.gn{background:rgba(183,198,194,.12);border-color:rgba(183,198,194,.28);color:var(--graygreen)}
+.jtag.rd{background:rgba(202,0,19,.14);border-color:rgba(202,0,19,.35);color:#fda4af}
+.job-meta{font-size:11.5px;color:rgba(183,198,194,.75);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.job-meta .sep{opacity:.4}
+.job-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(183,198,194,.14)}
+.job-foot .src{font-size:10px;color:rgba(183,198,194,.55);font-weight:700}
+.job-foot .ops{display:flex;align-items:center;gap:10px;flex:none}
+.job-foot .go{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#c4b5fd}
+.job-foot .go svg{transition:transform .2s}
+.job-card:hover .job-foot .go svg{transform:translate(2px,-2px)}
+.dday{display:inline-block;font-size:10.5px;font-weight:900;padding:4px 12px;border-radius:9999px;background:rgba(183,198,194,.12);border:1px solid rgba(183,198,194,.3);color:var(--graygreen);white-space:nowrap}
+.dday.hot{background:linear-gradient(135deg,#ca0013,#ef4444);border-color:rgba(255,255,255,.18);color:#fff;box-shadow:0 6px 16px -6px rgba(202,0,19,.55)}
+.fav-btn{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.22);display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:2}
+.fav-btn:hover{border-color:rgba(202,0,19,.6)}
+.fav-btn.on{background:rgba(202,0,19,.18);border-color:rgba(202,0,19,.5)}
+.fav-btn.on svg{fill:var(--red);stroke:var(--red)}
+.more{margin-top:18px;text-align:center}
+.more button{background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.3);border-radius:9999px;padding:12px 34px;font-size:13px;font-weight:800;color:var(--offwhite);transition:all .2s}
+.more button:hover{border-color:var(--red);color:var(--red)}
+.more .end{font-size:11.5px;color:rgba(183,198,194,.5);font-weight:700;letter-spacing:.1em}
+.progress-dot{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;padding:3px 10px;border-radius:9999px}
+.progress-dot::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ===== 岗位表格视图 ===== */
+.table-wrap{display:none;border-radius:var(--radius-card);border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);overflow:auto;box-shadow:var(--shadow)}
+.table-wrap.on{display:block}
+.job-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1080px}
+.job-table th{position:sticky;top:0;background:var(--charcoal-2);color:rgba(183,198,194,.75);font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:12px 10px;border-bottom:1px solid rgba(183,198,194,.2);white-space:nowrap}
+.job-table td{padding:11px 10px;border-bottom:1px solid rgba(183,198,194,.1);color:rgba(238,235,227,.8);vertical-align:middle}
+.job-table tr:hover td{background:rgba(139,92,246,.06)}
+.job-table .t-co{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--white);white-space:nowrap}
+.job-table .t-co i{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;font-size:11px;color:#fff;font-style:normal;flex:none}
+.job-table .t-link{color:#c4b5fd;font-weight:800;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.remark-tag{font-size:10px;font-weight:800;color:#fda4af;background:rgba(202,0,19,.12);border:1px solid rgba(202,0,19,.3);border-radius:6px;padding:1px 7px;white-space:nowrap}
+
+/* ===== 空态 ===== */
+.empty{border-radius:var(--radius-card);padding:52px 24px;text-align:center}
+.empty .e-ic{width:64px;height:64px;border-radius:20px;margin:0 auto 16px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center}
+.empty h3{font-family:var(--font-title);font-weight:900;font-size:17px;color:var(--white)}
+.empty p{margin-top:6px;font-size:12.5px;color:rgba(183,198,194,.7)}
+.empty button{margin-top:16px;background:var(--red);color:#fff;border-radius:9999px;padding:10px 26px;font-size:12.5px;font-weight:800}
+
+/* ===== 侧栏 ===== */
+.panel{padding:22px}
+.panel h4{font-family:var(--font-title);font-weight:900;font-size:15px;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:9px}
+.panel h4 .dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#06b6d4)}
+.opt{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:12.5px;color:rgba(238,235,227,.78);cursor:pointer;border-radius:10px}
+.opt:hover{background:rgba(183,198,194,.06)}
+.opt .box{width:17px;height:17px;border-radius:6px;border:1.5px solid rgba(183,198,194,.5);flex:none;display:flex;align-items:center;justify-content:center}
+.opt .box svg{opacity:0}
+.opt.on .box{background:var(--red);border-color:var(--red)}
+.opt.on .box svg{opacity:1}
+.opt .cnt{margin-left:auto;font-size:10.5px;color:rgba(183,198,194,.6);font-weight:800}
+.cal-mini .cw{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:9.5px;color:rgba(183,198,194,.5);font-weight:800;margin-bottom:4px}
+.cal-mini .cd{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-mini .cd span{font-size:11px;padding:5px 0;border-radius:8px;color:rgba(238,235,227,.65);cursor:pointer}
+.cal-mini .cd span:hover{background:rgba(183,198,194,.1)}
+.cal-mini .cd span.hot{background:rgba(202,0,19,.2);color:#fda4af;font-weight:800}
+.cal-mini .cd span.hot::after{content:"";display:block;width:4px;height:4px;border-radius:50%;background:var(--red);margin:2px auto 0}
+.src p{font-size:12px;color:rgba(183,198,194,.75);line-height:1.75}
+.src .badge{display:inline-block;font-size:10.5px;font-weight:800;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.32);color:#c4b5fd;border-radius:8px;padding:3px 10px;margin:0 4px 6px 0}
+
+/* ===== 页脚 ===== */
+.footer{border-top:1px solid rgba(183,198,194,.14);margin-top:44px;padding:28px 22px;text-align:center;font-size:12px;color:rgba(183,198,194,.6)}
+.footer .brand-line{font-family:var(--font-title);font-weight:900;color:var(--offwhite);font-size:14px;margin-bottom:8px}
+.footer .wrap p{line-height:1.8}
+
+/* ===== 子页面通用 ===== */
+.page-hero{border-radius:var(--radius-card);padding:34px 38px;margin-top:24px;background:radial-gradient(900px 400px at 15% -20%,rgba(6,182,212,.12),transparent 60%),radial-gradient(700px 380px at 90% 120%,rgba(139,92,246,.12),transparent 60%);border:1px solid rgba(183,198,194,.16);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.page-hero h1{font-size:30px}
+.page-hero p{margin-top:8px;font-size:13px;color:rgba(238,235,227,.65)}
+.page-hero .tags-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.page-hero .tags-row span{font-size:10.5px;font-weight:800;padding:4px 12px;border-radius:9999px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.25);color:rgba(238,235,227,.7)}
+
+/* ===== 校招日历 ===== */
+.cal-main{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px;margin-top:22px;align-items:start}
+.cal-card{padding:26px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cal-head .ym{font-family:var(--font-title);font-weight:900;font-size:18px;color:var(--white)}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);display:flex;align-items:center;justify-content:center;color:var(--graygreen)}
+.cal-nav button:hover{border-color:var(--red);color:var(--red)}
+.cal-grid-big .cw{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:10px;color:rgba(183,198,194,.5);font-weight:800;text-transform:uppercase;margin-bottom:6px}
+.cal-grid-big .cd{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-grid-big .cd .day{min-height:62px;border-radius:14px;border:1px solid rgba(183,198,194,.1);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 4px 6px;font-size:12.5px;font-weight:700;color:rgba(238,235,227,.6);cursor:pointer;transition:all .18s}
+.cal-grid-big .cd .day:hover{border-color:rgba(139,92,246,.5);background:rgba(139,92,246,.08)}
+.cal-grid-big .cd .day.sel{border-color:var(--red);background:rgba(202,0,19,.16);color:#fff}
+.cal-grid-big .cd .day.empty{opacity:.25;pointer-events:none}
+.cal-grid-big .cd .day .ct{font-size:9px;font-weight:800;color:#fda4af;margin-top:4px;text-align:center;line-height:1.2}
+.cal-grid-big .cd .day.sel .ct{color:#fecaca}
+.daylist .dl-item{display:flex;align-items:center;gap:12px;padding:13px 6px;border-bottom:1px solid rgba(183,198,194,.1);cursor:pointer;border-radius:12px}
+.daylist .dl-item:last-child{border-bottom:none}
+.daylist .dl-item:hover{background:rgba(183,198,194,.06)}
+.daylist .dl-item .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;color:#fff;font-size:14px;flex:none}
+.daylist .dl-item .tt{font-weight:800;font-size:13px;color:var(--white)}
+.daylist .dl-item .cp{font-size:10.5px;color:rgba(183,198,194,.65)}
+.daylist .dl-item .go{margin-left:auto;font-size:10.5px;font-weight:800;color:#c4b5fd;white-space:nowrap}
+
+/* ===== 求职看板 ===== */
+.board-stats{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.board-stats .st{border-radius:var(--radius-inner);padding:14px 24px;min-width:110px}
+.board-stats .st b{font-family:var(--font-title);font-weight:900;font-size:22px;color:var(--white);display:block}
+.board-stats .st span{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--graygreen)}
+.board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:18px}
+.board-col{border-radius:var(--radius-card);padding:16px 14px;min-height:340px}
+.board-col h5{font-size:12px;font-weight:900;color:var(--white);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.board-col h5 .cnt{width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--graygreen)}
+.board-col.drop{border-color:rgba(139,92,246,.55);box-shadow:0 0 20px -10px rgba(139,92,246,.4)}
+.bd-card{background:rgba(255,255,255,.04);border:1px solid rgba(183,198,194,.18);border-radius:16px;padding:12px;margin-bottom:10px;cursor:grab;transition:all .18s}
+.bd-card:hover{border-color:rgba(139,92,246,.5)}
+.bd-card.dragging{opacity:.4}
+.bd-card .bt{font-family:var(--font-title);font-weight:900;font-size:12.5px;color:var(--white);line-height:1.35}
+.bd-card .bc{font-size:10.5px;color:rgba(183,198,194,.65);margin-top:4px}
+.bd-card .bd-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:10px;color:rgba(183,198,194,.55)}
+.bd-card .bd-row .chg{font-weight:800;color:#c4b5fd;cursor:pointer}
+.stage-pill{display:inline-block;font-size:9px;font-weight:900;padding:2px 8px;border-radius:6px}
+.sp-0{background:rgba(183,198,194,.15);color:var(--graygreen)}
+.sp-1{background:rgba(6,182,212,.14);color:#67e8f9}
+.sp-2{background:rgba(139,92,246,.16);color:#c4b5fd}
+.sp-3{background:rgba(202,0,19,.16);color:#fda4af}
+.sp-4{background:rgba(16,185,129,.16);color:#6ee7b7}
+.board-empty{font-size:11px;color:rgba(183,198,194,.4);text-align:center;padding:18px 0}
+
+/* ===== 阶段选择弹层 ===== */
+.stage-mask{display:none;position:fixed;inset:0;background:rgba(10,14,12,.6);z-index:110}
+.stage-mask.open{display:block}
+.stage-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%) translateY(120%);width:min(440px,94vw);background:var(--charcoal-2);border:1px solid rgba(183,198,194,.25);border-top-left-radius:28px;border-top-right-radius:28px;z-index:111;padding:18px 18px 26px;visibility:hidden;transition:transform .28s cubic-bezier(.32,.72,.24,1),visibility .28s}
+.stage-sheet.open{transform:translateX(-50%) translateY(0);visibility:visible}
+.stage-sheet h5{font-family:var(--font-title);font-weight:900;font-size:15px;color:var(--white);margin-bottom:12px}
+.stage-sheet button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 14px;border-radius:14px;font-size:13px;font-weight:800;color:rgba(238,235,227,.8);margin-bottom:6px}
+.stage-sheet button:hover{background:rgba(183,198,194,.08)}
+.stage-sheet button.on{background:rgba(202,0,19,.18);color:#fff}
+
+/* ===== AI匹配 ===== */
+.match-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;margin-top:22px;align-items:start}
+.upload-zone{border:1.5px dashed rgba(183,198,194,.35);border-radius:var(--radius-inner);padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--violet);background:rgba(139,92,246,.06)}
+.upload-zone .u-ic{width:60px;height:60px;border-radius:18px;margin:0 auto 14px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.32);display:flex;align-items:center;justify-content:center}
+.upload-zone h4{font-family:var(--font-title);font-weight:900;font-size:15px;color:var(--white)}
+.upload-zone p{font-size:11.5px;color:rgba(183,198,194,.6);margin-top:6px}
+.upload-zone .formats{margin-top:12px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.upload-zone .formats span{font-size:9.5px;font-weight:800;padding:3px 10px;border-radius:9999px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.2);color:rgba(183,198,194,.6)}
+.upload-done{border:1.5px solid rgba(16,185,129,.4);background:rgba(16,185,129,.06);border-radius:var(--radius-inner);padding:20px 24px;display:flex;align-items:center;gap:14px}
+.upload-done .u-ic{width:46px;height:46px;border-radius:14px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.35);display:flex;align-items:center;justify-content:center;flex:none}
+.upload-done h4{font-family:var(--font-title);font-weight:900;font-size:14.5px;color:var(--white)}
+.upload-done p{font-size:11px;color:rgba(183,198,194,.65);margin-top:2px}
+.upload-done button{flex:none;font-size:11px;font-weight:800;color:#fda4af}
+.cost-note{border-radius:var(--radius-inner);padding:20px 22px;margin-top:14px}
+.cost-note h5{font-family:var(--font-title);font-weight:900;font-size:13.5px;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.cost-note .step{display:flex;gap:10px;padding:8px 0;font-size:11.5px;color:rgba(183,198,194,.75);align-items:baseline}
+.cost-note .step .n{width:20px;height:20px;border-radius:7px;background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.35);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#c4b5fd;flex:none}
+.match-list{margin-top:16px;display:flex;flex-direction:column;gap:12px}
+.match-card{display:flex;align-items:center;gap:16px;padding:18px 22px;border-radius:var(--radius-card);position:relative}
+.score-ring{width:64px;height:64px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;position:relative}
+.score-ring b{font-family:var(--font-title);font-weight:900;font-size:16px;color:var(--white)}
+.score-ring span{display:block;font-size:7.5px;color:var(--graygreen);letter-spacing:.1em}
+.match-main{flex:1;min-width:0}
+.match-main .mt{font-family:var(--font-title);font-weight:900;font-size:14.5px;color:var(--white)}
+.match-main .mc{font-size:11px;color:rgba(183,198,194,.65);margin-top:3px}
+.match-reason{margin-top:8px;font-size:11.5px;color:rgba(183,198,194,.8);line-height:1.6;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.18);border-radius:12px;padding:9px 12px}
+.match-reason b{color:#c4b5fd}
+.match-side .panel{position:sticky;top:78px}
+
+/* ===== 社区 ===== */
+.comm-main{margin-top:22px}
+.comm-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.comm-tabs button{font-size:12.5px;font-weight:800;padding:8px 18px;border-radius:9999px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);color:rgba(238,235,227,.7)}
+.comm-tabs button.on{background:var(--red);border-color:var(--red);color:#fff}
+.post-card{display:flex;gap:14px;padding:18px 22px;border-radius:var(--radius-inner);margin-bottom:12px;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.post-card:hover{transform:translateY(-2px)}
+.post-card .p-av{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;font-size:14px;color:#fff;flex:none}
+.post-card .p-main{flex:1;min-width:0}
+.post-card .p-title{font-family:var(--font-title);font-weight:900;font-size:13.5px;color:var(--white)}
+.post-card .p-meta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.id-badge{font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:7px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);color:#67e8f9}
+.id-badge.gd{background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.32);color:#c4b5fd}
+.id-badge.rd{background:rgba(202,0,19,.12);border-color:rgba(202,0,19,.3);color:#fda4af}
+.p-tag{font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:7px;background:rgba(255,255,255,.06);border:1px solid rgba(183,198,194,.22);color:var(--graygreen)}
+.post-card .p-sum{margin-top:8px;font-size:12px;color:rgba(183,198,194,.75);line-height:1.6}
+.post-card .p-foot{display:flex;gap:16px;margin-top:10px;font-size:11px;color:rgba(183,198,194,.55);font-weight:700}
+.post-card .p-foot span{display:flex;align-items:center;gap:5px}
+.comm-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.comm-toolbar .notice{font-size:11px;color:rgba(183,198,194,.6)}
+.comm-toolbar .notice b{color:#fda4af}
+.promo-banner{display:flex;align-items:center;gap:16px;border-radius:var(--radius-inner);padding:20px 24px;margin-bottom:18px;background:radial-gradient(600px 200px at 90% -30%,rgba(139,92,246,.25),transparent 70%),rgba(255,255,255,.03);border:1px solid rgba(139,92,246,.3)}
+.promo-banner .p-ic{width:52px;height:52px;border-radius:16px;background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;flex:none}
+.promo-banner h4{font-family:var(--font-title);font-weight:900;font-size:15px;color:var(--white)}
+.promo-banner p{font-size:11.5px;color:rgba(183,198,194,.7);margin-top:3px}
+.promo-banner .go{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:900;color:#c4b5fd;flex:none}
+
+/* ===== 收藏 / 我的 ===== */
+.fav-main{margin-top:22px}
+.fav-stats{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.fav-stats .st{border-radius:var(--radius-inner);padding:12px 22px}
+.fav-stats .st b{font-family:var(--font-title);font-weight:900;font-size:20px;color:var(--white);display:block}
+.fav-stats .st span{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--graygreen)}
+.profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px}
+.profile-card{padding:24px}
+.profile-card h4{font-family:var(--font-title);font-weight:900;font-size:16px;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.profile-card h4 .gicon{width:38px;height:38px;border-radius:12px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.32);display:flex;align-items:center;justify-content:center;flex:none}
+.switch-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(183,198,194,.1)}
+.switch-row:last-child{border-bottom:none}
+.switch-row .t{font-size:13px;font-weight:800;color:var(--offwhite)}
+.switch-row .s{font-size:11px;color:rgba(183,198,194,.6)}
+.sw{width:44px;height:25px;border-radius:9999px;background:rgba(183,198,194,.25);position:relative;transition:background .2s}
+.sw.on{background:var(--red)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s}
+.sw.on::after{left:22px}
+.sub-status{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);font-size:12px;color:#67e8f9;font-weight:700;margin-top:6px}
+.email-row{display:flex;gap:10px;margin-top:14px}
+.email-row input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.25);border-radius:12px;padding:11px 14px;color:var(--offwhite);font-size:13px;font-family:inherit;outline:none}
+.email-row input:focus{border-color:var(--red)}
+.email-row button{background:rgba(255,255,255,.06);border:1px solid rgba(183,198,194,.3);border-radius:12px;padding:0 20px;font-weight:800;font-size:12.5px;color:var(--offwhite)}
+.tool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tool-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--radius-inner);cursor:pointer;transition:all .2s}
+.tool-item:hover{border-color:rgba(139,92,246,.5)}
+.tool-item .t-ic{width:38px;height:38px;border-radius:12px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;flex:none}
+.tool-item .tt{font-family:var(--font-title);font-weight:900;font-size:13px;color:var(--white)}
+.tool-item .ts{font-size:10px;color:rgba(183,198,194,.55);margin-top:2px}
+
+/* ===== 视图切换 ===== */
+.view{display:none}
+.view.active{display:block;animation:viewin .3s ease}
+@keyframes viewin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== 移动抽屉 ===== */
+.mask{display:none;position:fixed;inset:0;background:rgba(10,14,12,.6);z-index:95;backdrop-filter:blur(2px)}
+.mask.open{display:block}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:280px;background:var(--charcoal-2);z-index:96;padding:22px;transform:translateX(-100%);transition:transform .28s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column;gap:2px;border-right:1px solid rgba(183,198,194,.16);overflow-y:auto}
+.drawer.open{transform:translateX(0)}
+.drawer .d-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;font-size:18px;color:var(--white);margin-bottom:18px}
+.drawer .d-brand .logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#ca0013,#ef4444);display:flex;align-items:center;justify-content:center}
+.drawer a{padding:13px 16px;border-radius:14px;font-weight:800;color:rgba(238,235,227,.65);font-size:14px}
+.drawer a.on{background:rgba(202,0,19,.16);color:#fff}
+.drawer a:hover{background:rgba(183,198,194,.08);color:var(--white)}
+
+/* ===== Toast ===== */
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:var(--charcoal-3);border:1px solid rgba(183,198,194,.3);color:var(--offwhite);padding:12px 22px;border-radius:9999px;font-size:12.5px;font-weight:800;z-index:120;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 16px 40px -10px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast b{color:#fda4af}
+
+/* ===== 设计规范抽屉 ===== */
+.spec-btn{position:fixed;right:18px;bottom:18px;z-index:80;background:rgba(255,255,255,.06);border:1px solid rgba(183,198,194,.32);color:var(--offwhite);border-radius:9999px;padding:11px 20px;font-size:11.5px;font-weight:800;letter-spacing:.06em;backdrop-filter:blur(10px);transition:all .2s}
+.spec-btn:hover{border-color:var(--red);color:var(--red)}
+.spec-mask{display:none;position:fixed;inset:0;background:rgba(10,14,12,.55);z-index:97;backdrop-filter:blur(3px)}
+.spec-mask.open{display:block}
+.spec-drawer{position:fixed;right:0;top:0;bottom:0;width:min(430px,92vw);background:var(--charcoal-2);z-index:98;padding:28px 24px;overflow-y:auto;transform:translateX(100%);transition:transform .28s cubic-bezier(.22,1,.36,1);border-left:1px solid rgba(183,198,194,.16)}
+.spec-drawer.open{transform:translateX(0)}
+.spec-drawer .close{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid rgba(183,198,194,.24);display:flex;align-items:center;justify-content:center}
+.spec-drawer h3{font-family:var(--font-title);font-weight:900;font-size:18px;color:var(--white);margin-bottom:4px}
+.spec-drawer .desc{font-size:11px;color:rgba(183,198,194,.6);margin-bottom:14px;letter-spacing:.04em}
+.spec-sec{font-family:var(--font-title);font-weight:900;font-size:13px;color:var(--offwhite);margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(183,198,194,.14)}
+.spec-sec:first-of-type{border-top:none;margin-top:0;padding-top:0}
+.swatches{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.sw{display:flex;align-items:center;gap:9px;border:1px solid rgba(183,198,194,.2);border-radius:12px;padding:8px 10px;font-size:10px;color:rgba(183,198,194,.7)}
+.sw i{width:30px;height:30px;border-radius:9px;flex:none;border:1px solid rgba(255,255,255,.08)}
+.sw b{display:block;font-family:Consolas,Menlo,monospace;font-size:9.5px;color:var(--offwhite);font-weight:700}
+.spec-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.spec-table th{text-align:left;font-size:9.5px;color:rgba(183,198,194,.55);font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-bottom:1px solid rgba(183,198,194,.2)}
+.spec-table td{padding:7px 8px;border-bottom:1px solid rgba(183,198,194,.1);color:rgba(238,235,227,.75);vertical-align:top}
+.spec-table td code{font-family:Consolas,Menlo,monospace;font-size:10px;background:rgba(255,255,255,.06);border-radius:5px;padding:1px 6px;color:#c4b5fd}
+
+/* ===== 响应式 ===== */
+@media (max-width:1100px){
+  .nav-links a{padding:8px 9px;font-size:12px}
+}
+@media (max-width:991px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .hero h1{font-size:30px}
+  .cal-main{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
+  .match-grid{grid-template-columns:1fr}
+  .match-side{display:none}
+  .board{grid-template-columns:repeat(5,minmax(240px,1fr));overflow-x:auto}
+  .board-col{min-height:260px}
+}
+@media (max-width:767px){
+  .nav-links{display:none}
+  .nav-search{display:none}
+  .hamburger{display:flex}
+  .wrap{padding:0 16px}
+  .hero{padding:26px 22px;border-radius:28px}
+  .hero h1{font-size:26px}
+  .hero .sub{font-size:12.5px}
+  .hero-search{flex-wrap:wrap;border-radius:24px;padding:12px}
+  .hero-search input{width:100%;font-size:14px}
+  .hero-search .orbital{width:100%;flex:none}
+  .hero-search .orbital .inner{justify-content:center;padding:13px;width:100%}
+  .hero-stats{gap:10px}
+  .hero-stats .st{min-width:0;flex:1;padding:14px 12px;border-radius:18px}
+  .hero-stats .st b{font-size:20px}
+  .filter-group{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .filter-btn{justify-content:center;padding:10px 0}
+  .filter-panel{left:0;right:0;width:auto}
+  .chips{padding-bottom:6px}
+  .today-grid{grid-template-columns:1fr}
+  .job-grid{grid-template-columns:1fr}
+  .job-card{border-radius:28px;padding:18px}
+  .main{margin-top:16px}
+  .page-hero{padding:26px 22px;border-radius:28px;flex-direction:column;align-items:flex-start}
+  .page-hero h1{font-size:24px}
+  .page-hero .orbital{width:100%;flex:none}
+  .page-hero .orbital .inner{justify-content:center;width:100%}
+  .cal-card{padding:18px;border-radius:28px}
+  .cal-grid-big .cd .day{min-height:48px}
+  .cal-grid-big .cd .day .ct{display:none}
+  .tool-grid{grid-template-columns:1fr}
+  .post-card{padding:14px 16px;border-radius:20px}
+  .board-stats .st{min-width:0;flex:1;padding:12px 14px}
+  .profile-card{border-radius:28px}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 顶部导航 ================= -->
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#/home"><span class="logo">汇</span>Offer汇</a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#/home" data-view="home">首页</a>
+      <a href="#/calendar" data-view="calendar">校招日历</a>
+      <a href="#/board" data-view="board">求职看板</a>
+      <a href="#/match" data-view="match">AI 匹配</a>
+      <a href="#/community" data-view="community">社区</a>
+      <a href="#/favorites" data-view="favorites">收藏</a>
+      <a href="#/profile" data-view="profile">我的</a>
+    </nav>
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#b7c6c2" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="#b7c6c2" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="navSearch" placeholder="搜索公司 / 岗位">
+    </div>
+    <button class="hamburger" id="hamburger">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="#eeebe3" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer">
+  <div class="d-brand"><span class="logo">汇</span>Offer汇</div>
+  <a href="#/home" data-view="home">首页</a>
+  <a href="#/calendar" data-view="calendar">校招日历</a>
+  <a href="#/board" data-view="board">求职看板</a>
+  <a href="#/match" data-view="match">AI 匹配</a>
+  <a href="#/community" data-view="community">社区</a>
+  <a href="#/favorites" data-view="favorites">收藏</a>
+  <a href="#/profile" data-view="profile">我的</a>
+</aside>
+
+<div class="wrap">
+
+<!-- ============ 首页 ============ -->
+<section class="view" id="view-home">
+  <div class="hero anim">
+    <span class="label">2026 秋招季 · 信息聚合</span>
+    <h1>秋招信息<br>一站汇聚</h1>
+    <p class="sub">聚合国家 24365 平台与高校就业网的校招 / 实习信息，全部跳转官方投递入口，不截留简历。</p>
+    <div class="hero-tags">
+      <span>2026 秋招季</span><span>2027届</span><span>实习</span><span>名企直投</span><span>截止提醒</span>
+    </div>
+    <div class="hero-search">
+      <input id="heroSearch" placeholder="搜索公司 / 岗位 / 专业">
+      <div class="orbital"><button class="inner sm" id="heroSearchBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        搜索
+      </button></div>
+    </div>
+    <div class="hero-stats">
+      <div class="st glass"><b>137</b><span>聚合岗位</span></div>
+      <div class="st glass"><b>135</b><span>招聘企业</span></div>
+      <div class="st glass"><b>12</b><span>今日截止</span></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="chips" id="chips">
+      <button class="on" data-chip="all">全部</button>
+      <button data-chip="秋招">秋招</button>
+      <button data-chip="提前批">提前批</button>
+      <button data-chip="实习">实习</button>
+      <button data-chip="补录">补录</button>
+    </div>
+    <div class="filter-group" id="filterGroup">
+      <button class="filter-btn" data-f="city">城市<span class="arr">⌄</span></button>
+      <button class="filter-btn" data-f="companyType">公司类型<span class="arr">⌄</span></button>
+      <button class="filter-btn" data-f="hireType">招聘类型<span class="arr">⌄</span></button>
+      <button class="filter-btn" data-f="major">专业<span class="arr">⌄</span></button>
+      <button class="filter-btn" data-f="batch">届别<span class="arr">⌄</span></button>
+      <button class="filter-btn" data-f="jobField">岗位方向<span class="arr">⌄</span></button>
+      <div class="filter-panel" id="fPanel"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="col">
+      <div class="sec-head"><h2>今日截止</h2><span class="cnt">2 个岗位</span></div>
+      <div class="today-grid" id="todayGrid"></div>
+
+      <div class="sec-head" style="margin-top:24px">
+        <h2>岗位列表</h2><span class="cnt" id="jobCount"></span>
+        <div class="view-toggle" id="viewToggle">
+          <button class="on" data-vt="card">卡片</button>
+          <button data-vt="table">表格</button>
+        </div>
+      </div>
+      <div class="job-grid" id="jobGrid"></div>
+      <div class="table-wrap" id="tableWrap"></div>
+      <div class="more" id="moreWrap"><button id="moreBtn">加载更多岗位</button></div>
+    </div>
+
+    <aside class="side">
+      <div class="panel glass anim">
+        <h4><span class="dot"></span>快捷筛选</h4>
+        <div id="sideOpts"></div>
+      </div>
+      <div class="panel glass anim">
+        <h4><span class="dot"></span>9 月校招日历</h4>
+        <div class="cal-mini" id="calMini"></div>
+      </div>
+      <div class="panel glass src anim">
+        <h4><span class="dot"></span>数据来源</h4>
+        <p><span class="badge">国家 24365 平台</span><span class="badge">高校就业信息网</span><span class="badge">企业官网校招页</span></p>
+        <p style="margin-top:10px">所有岗位均标注来源并跳转官方投递入口，本站不截留简历。</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 校招日历 ============ -->
+<section class="view" id="view-calendar">
+  <div class="page-hero anim">
+    <div>
+      <h1 class="h-display">校招日历</h1>
+      <p>按月查看岗位截止日期，点击日期查看当日截止岗位。不登录也可订阅。</p>
+    </div>
+    <div class="orbital"><button class="inner" id="calSubBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 2v4M16 2v4M3 8h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="#fff" stroke-width="2"/><path d="m9 16 2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      订阅日历 ICS
+    </button></div>
+  </div>
+  <div class="cal-main">
+    <div class="cal-card glass anim">
+      <div class="cal-head">
+        <div class="ym" id="calYM">2026 年 9 月</div>
+        <div class="cal-nav"><button id="calPrev">‹</button><button id="calNext">›</button></div>
+      </div>
+      <div class="cal-grid-big" id="calBig"></div>
+    </div>
+    <div class="cal-card glass anim">
+      <h4 class="h-sub" style="margin-bottom:14px">当日截止 <span style="font-size:12px;color:rgba(183,198,194,.6);font-weight:700" id="calSelLabel"></span></h4>
+      <div class="daylist" id="calDayList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 求职看板 ============ -->
+<section class="view" id="view-board">
+  <div class="page-hero anim">
+    <div>
+      <h1 class="h-display">求职看板</h1>
+      <p>已投 / 待投 / 笔试 / 面试 / Offer 全流程进度管理，桌面拖拽、移动端点选改状态。</p>
+      <div class="tags-row">
+        <span>拖拽卡片到目标阶段</span><span>移动端点击卡片改状态</span><span>自动统计</span>
+      </div>
+    </div>
+    <div class="orbital"><button class="inner" id="boardAddBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+      添加岗位
+    </button></div>
+  </div>
+  <div class="board-stats" id="boardStats"></div>
+  <div class="board" id="board"></div>
+</section>
+
+<!-- 阶段选择弹层（移动端改状态） -->
+<div class="stage-mask" id="stageMask"></div>
+<div class="stage-sheet" id="stageSheet">
+  <h5 id="stageTitle">修改阶段</h5>
+  <div id="stageOpts"></div>
+</div>
+
+<!-- ============ AI 匹配 ============ -->
+<section class="view" id="view-match">
+  <div class="page-hero anim">
+    <div>
+      <h1 class="h-display">AI 岗位匹配</h1>
+      <p>上传简历，AI 从聚合岗位中为你筛选高匹配机会，只对 top-10 生成匹配理由（控制成本）。</p>
+      <div class="tags-row">
+        <span>三级解析：规则 → spaCy → LLM 兜底</span><span>岗位结构化向量化</span><span>LLM 仅 top-10 出理由</span>
+      </div>
+    </div>
+  </div>
+  <div class="match-grid">
+    <div>
+      <div id="uploadZone" class="upload-zone glass anim">
+        <div class="u-ic">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h4>上传简历（PDF / Word）</h4>
+        <p>点击选择文件，或拖拽到此处 · 简历仅用于本次匹配，不存入数据库</p>
+        <div class="formats"><span>PDF</span><span>DOC</span><span>DOCX</span><span>≤ 5MB</span></div>
+        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none">
+      </div>
+      <div id="uploadDone" class="upload-done" style="display:none">
+        <div class="u-ic">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div><h4 id="resumeName">简历.pdf</h4><p>已解析 12 个字段 · 可以开始匹配</p></div>
+        <button id="reUpload">重新上传</button>
+      </div>
+      <div style="margin-top:16px" class="orbital" id="matchBtnWrap"><button class="inner" id="matchBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2m-8.4 8.4-2.2 2.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        开始匹配
+      </button></div>
+      <div class="cost-note glass anim">
+        <h5><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8b5cf6" stroke-width="2"/><path d="M12 8v5M12 16.5v.5" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg>成本控制设计</h5>
+        <div class="step"><span class="n">1</span>规则解析 90% 字段（公司/城市/届别/类型）——零成本</div>
+        <div class="step"><span class="n">2</span>spaCy NER 抽取剩余字段——本地轻量模型</div>
+        <div class="step"><span class="n">3</span>LLM 仅对疑难字段兜底纠错——按次计费</div>
+        <div class="step"><span class="n">4</span>简历与岗位均向量化，pgvector 检索——毫秒级</div>
+        <div class="step"><span class="n">5</span>LLM 只对 top-10 生成匹配理由——一次约 2K tokens</div>
+      </div>
+      <div class="match-list" id="matchList"></div>
+    </div>
+    <div class="match-side">
+      <div class="panel glass anim">
+        <h4><span class="dot"></span>匹配说明</h4>
+        <p style="font-size:12px;color:rgba(183,198,194,.75);line-height:1.8">匹配基于 <b style="color:#c4b5fd">专业、技能、届别、城市、岗位方向</b> 多维向量检索。结果按匹配度排序，<b style="color:#c4b5fd">top-10</b> 附带 AI 生成的匹配理由。</p>
+      </div>
+      <div class="panel glass anim">
+        <h4><span class="dot"></span>示例简历</h4>
+        <p style="font-size:12px;color:rgba(183,198,194,.75);line-height:1.8">没有简历？用一份示例简历体验完整匹配流程。</p>
+        <button style="margin-top:12px;background:rgba(255,255,255,.06);border:1px solid rgba(183,198,194,.3);border-radius:9999px;padding:9px 20px;font-size:12px;font-weight:800;color:var(--offwhite)" id="useDemo">使用示例简历</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 社区 ============ -->
+<section class="view" id="view-community">
+  <div class="page-hero anim">
+    <div>
+      <h1 class="h-display">求职社区</h1>
+      <p>薪资爆料 · 面经分享 · 内推码互助，身份标签实名认证（大学/专业/届别），严格审核。</p>
+    </div>
+    <div class="orbital"><button class="inner" id="postBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+      发布帖子
+    </button></div>
+  </div>
+  <div class="comm-main">
+    <div class="promo-banner glass anim">
+      <div class="p-ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <h4>内推广场 · 悬赏招募</h4>
+        <p>发内推码 / 面经被采纳，最高可得 ¥50 悬赏 · 发布需通过身份审核</p>
+      </div>
+      <span class="go">查看规则 ↗</span>
+    </div>
+    <div class="comm-toolbar">
+      <div class="comm-tabs" id="commTabs">
+        <button class="on" data-tab="all">全部</button>
+        <button data-tab="salary">薪资爆料</button>
+        <button data-tab="interview">面经</button>
+        <button data-tab="referral">内推码</button>
+      </div>
+      <div class="notice"><b>悬赏中 3</b> 条 · 今日新增 <b>12</b> 条</div>
+    </div>
+    <div id="postList"></div>
+  </div>
+</section>
+
+<!-- ============ 收藏 ============ -->
+<section class="view" id="view-favorites">
+  <div class="page-hero anim" style="margin-top:24px">
+    <div>
+      <h1 class="h-display">我的收藏</h1>
+      <p>收藏心仪岗位，统一管理投递节奏。</p>
+    </div>
+  </div>
+  <div class="fav-main">
+    <div class="fav-stats">
+      <div class="st glass anim"><b id="favCount">0</b><span>已收藏</span></div>
+      <div class="st glass anim"><b id="favUrgent">0</b><span>7 天内截止</span></div>
+    </div>
+    <div class="job-grid" id="favGrid"></div>
+    <div class="empty glass anim" id="favEmpty" style="display:none">
+      <div class="e-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6.1-7-11a4.5 4.5 0 0 1 8.5-2 4.5 4.5 0 0 1 5.5 2c0 4.9-7 11-7 11Z" stroke="#8b5cf6" stroke-width="2"/></svg></div>
+      <h3>还没有收藏岗位</h3>
+      <p>在首页岗位卡右上角点击 ♥ 即可收藏</p>
+      <button onclick="location.hash='#/home'">去逛逛</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 我的 ============ -->
+<section class="view" id="view-profile">
+  <div class="page-hero anim" style="margin-top:24px">
+    <div>
+      <h1 class="h-display">我的</h1>
+      <p>求职工具 · 截止提醒与订阅设置。</p>
+    </div>
+  </div>
+  <div class="profile-grid">
+    <div class="profile-card glass anim" style="grid-column:1/-1">
+      <h4><span class="gicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/></svg></span>求职工具</h4>
+      <div class="tool-grid">
+        <a class="tool-item glass" href="#/board">
+          <span class="t-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 5h18M3 12h18M3 19h18" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <div><div class="tt">求职看板</div><div class="ts">已投 / 笔试 / 面试 / Offer</div></div>
+        </a>
+        <a class="tool-item glass" href="#/match">
+          <span class="t-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2m-8.4 8.4-2.2 2.2" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <div><div class="tt">AI 匹配</div><div class="ts">简历 → 高匹配岗位</div></div>
+        </a>
+        <a class="tool-item glass" href="#/community">
+          <span class="t-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" stroke="#ef4444" stroke-width="2" stroke-linejoin="round"/></svg></span>
+          <div><div class="tt">内推广场</div><div class="ts">悬赏内推码 · 面经</div></div>
+        </a>
+      </div>
+    </div>
+    <div class="profile-card glass anim">
+      <h4><span class="gicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" stroke="#8b5cf6" stroke-width="2" stroke-linejoin="round"/></svg></span>截止提醒</h4>
+      <div class="switch-row"><div><div class="t">邮件提醒</div><div class="s">截止前 3 天发送邮件</div></div><div class="sw on" data-sw="email"></div></div>
+      <div class="switch-row"><div><div class="t">Web 推送</div><div class="s">浏览器通知提醒</div></div><div class="sw" data-sw="push"></div></div>
+      <div class="switch-row"><div><div class="t">日历订阅</div><div class="s">ICS 同步到手机日历</div></div><div class="sw on" data-sw="ics"></div></div>
+      <div class="sub-status" id="icsStatus">✓ 日历订阅已启用 · 自动同步截止日期</div>
+      <div class="email-row">
+        <input id="emailInput" placeholder="输入接收提醒的邮箱">
+        <button id="saveEmail">保存</button>
+      </div>
+    </div>
+    <div class="profile-card glass anim">
+      <h4><span class="gicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#06b6d4" stroke-width="2"/><path d="M12 7v5l3 3" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/></svg></span>数据来源</h4>
+      <p class="src" style="font-size:12.5px;line-height:1.8;color:rgba(183,198,194,.75)">
+        <span class="badge">国家 24365 平台</span><span class="badge">高校就业信息网</span><span class="badge">企业官网校招页</span>
+      </p>
+      <p style="font-size:12px;color:rgba(183,198,194,.6);margin-top:10px">所有岗位均标注来源并跳转官方投递入口，本站不截留简历、不做招聘闭环。</p>
+    </div>
+    <div class="profile-card glass anim">
+      <h4><span class="gicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2 3 7v6c0 5 3.8 8.2 9 9 5.2-.8 9-4 9-9V7l-9-5Z" stroke="#ef4444" stroke-width="2" stroke-linejoin="round"/></svg></span>关于</h4>
+      <p style="font-size:12.5px;line-height:1.8;color:rgba(183,198,194,.75)">Offer汇 —— 应届生求职信息聚合中台。聚合校招 / 实习信息，提供校招日历、DDL 提醒、求职看板、AI 匹配与轻社区。聚焦材料 / 计算机 / 软件 / 电子等专业。</p>
+    </div>
+    <div class="profile-card glass anim">
+      <h4><span class="gicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8b5cf6" stroke-width="2"/><path d="M12 8v5M12 16.5v.5" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg></span>帮助</h4>
+      <p style="font-size:12.5px;line-height:1.8;color:rgba(183,198,194,.75)">有任何问题或建议，欢迎反馈。右上角「设计规范」可查看本页的设计 Tokens 与交互规范。</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ================= 页脚 ================= -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="brand-line">Offer汇 · 应届生求职信息聚合</div>
+    <p>数据来源：国家 24365 平台 · 高校就业信息网 · 企业官网</p>
+    <p>所有岗位跳转官方投递入口 · 不截留简历</p>
+  </div>
+</footer>
+
+<!-- ================= 设计规范抽屉 ================= -->
+<button class="spec-btn" id="specBtn">设计规范</button>
+<div class="spec-mask" id="specMask"></div>
+<aside class="spec-drawer" id="specDrawer">
+  <button class="close" id="specClose">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#b7c6c2" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <h3>设计规范</h3>
+  <p class="desc">Sophisticated Playful · Design Tokens · 7 页完整版</p>
+  <div class="spec-sec">色板 Color</div>
+  <div class="swatches">
+    <div class="sw"><i style="background:#171e19"></i><div>Charcoal<b>#171e19</b></div></div>
+    <div class="sw"><i style="background:#ca0013"></i><div>Vibrant Red<b>#ca0013</b></div></div>
+    <div class="sw"><i style="background:#b7c6c2"></i><div>Gray-Green<b>#b7c6c2</b></div></div>
+    <div class="sw"><i style="background:#eeebe3"></i><div>Off-White<b>#eeebe3</b></div></div>
+    <div class="sw"><i style="background:#ffffff;border-color:rgba(0,0,0,.2)"></i><div>White<b>#ffffff</b></div></div>
+    <div class="sw"><i style="background:linear-gradient(135deg,#8b5cf6,#06b6d4)"></i><div>光环紫青<b>#8b5cf6→#06b6d4</b></div></div>
+  </div>
+  <div class="spec-sec">字体 Type</div>
+  <table class="spec-table">
+    <tr><th>角色</th><th>字体</th><th>字号</th></tr>
+    <tr><td>Display</td><td>Nunito + 快乐体</td><td>32px / 900</td></tr>
+    <tr><td>Subheading</td><td>Nunito + 快乐体</td><td>20px / 900</td></tr>
+    <tr><td>Label</td><td>Nunito</td><td>10px / 800 UPPER</td></tr>
+    <tr><td>正文</td><td>Nunito</td><td>12–14px</td></tr>
+  </table>
+  <div class="spec-sec">组件</div>
+  <table class="spec-table">
+    <tr><th>组件</th><th>要点</th></tr>
+    <tr><td>旋转光环按钮</td><td>conic 渐变 4s 旋转 · 内芯 #0a0a0a</td></tr>
+    <tr><td>玻璃卡片</td><td>rgba(255,255,255,.02) · hover 紫光</td></tr>
+    <tr><td>滚动入场</td><td>Y 30px → 0 · 0.5s</td></tr>
+    <tr><td>圆角</td><td>主卡 40px / 嵌套 24px / 胶囊 9999</td></tr>
+    <tr><td>过渡</td><td>view-transition 0.25s fade</td></tr>
+    <tr><td>阶段色</td><td>待投灰 / 已投青 / 笔试紫 / 面试红 / Offer 绿</td></tr>
+  </table>
+  <div class="spec-sec">断点</div>
+  <table class="spec-table">
+    <tr><th>断点</th><th>布局</th></tr>
+    <tr><td>≥992px 桌面</td><td>主列 + 侧栏 · 岗位 2 列 · 表格视图可用</td></tr>
+    <tr><td>&lt;768px 移动</td><td>汉堡导航 · 单列 · 筛选两格 · 看板横滑</td></tr>
+  </table>
+</aside>
+
+<div class="toast" id="toast"></div>
+<script>
+/* ==================== 数据 ==================== */
+var STAGES=["待投","已投","笔试","面试","Offer"];
+var JOBS=[
+{id:1,lg:"特",bg:"linear-gradient(135deg,#8b5cf6,#6366f1)",title:"2027 届校园招聘 · 研发设计",company:"特能集团",city:"西安",major:"兵器",batch:"2027届",hireType:"秋招",deadline:"2026-10-20",days:46,famous:true,guoqi:true,companyType:"央国企",industry:"军工",hireTarget:"2027届",jobField:"研发设计",writtenTest:"有笔试",scale:"1000人以上",updateTime:"09-02",progress:"待投",remark:"招满即止"},
+{id:2,lg:"交",bg:"linear-gradient(135deg,#06b6d4,#22d3ee)",title:"2027 届校园招聘 · 土木港航",company:"中交第三航务工程局",city:"上海",major:"土木",batch:"2027届",hireType:"秋招",deadline:"2026-10-15",days:41,famous:true,guoqi:true,companyType:"央国企",industry:"工程建设",hireTarget:"2027届",jobField:"土木港航",writtenTest:"无笔试",scale:"10000人以上",updateTime:"09-02",progress:"待投",remark:"招满即止"},
+{id:3,lg:"科",bg:"linear-gradient(135deg,#ec4899,#8b5cf6)",title:"2027 届校园招聘 · 总体设计",company:"中科宇航",city:"北京",major:"航天",batch:"2027届",hireType:"秋招",deadline:"2026-10-10",days:36,famous:false,guoqi:true,companyType:"央国企",industry:"航天",hireTarget:"硕士及以上",jobField:"研发设计",writtenTest:"有笔试",scale:"100-999",updateTime:"09-03",progress:"待投",remark:"硕士优先"},
+{id:4,lg:"核",bg:"linear-gradient(135deg,#10b981,#34d399)",title:"2027 届校园招聘 · 技能工艺岗",company:"中核四〇四有限公司",city:"兰州",major:"核工程",batch:"2027届",hireType:"秋招",deadline:"2026-10-08",days:34,famous:false,guoqi:true,companyType:"央国企",industry:"核工业",hireTarget:"2027届",jobField:"技能工艺",writtenTest:"无笔试",scale:"1000人以上",updateTime:"09-01",progress:"待投",remark:"招满即止"},
+{id:5,lg:"燃",bg:"linear-gradient(135deg,#f97316,#fb923c)",title:"2027 届校园招聘 · 燃机研发",company:"中国航发燃气轮机",city:"沈阳",major:"动力工程",batch:"2027届",hireType:"秋招",deadline:"2026-09-30",days:26,famous:false,guoqi:true,companyType:"央国企",industry:"航天航空",hireTarget:"2027届",jobField:"研发设计",writtenTest:"有笔试",scale:"1000人以上",updateTime:"09-02",progress:"待投",remark:"招满即止"},
+{id:6,lg:"船",bg:"linear-gradient(135deg,#0ea5e9,#22d3ee)",title:"2027 届校园招聘 · 船舶设计",company:"中国船舶七〇八研究所",city:"上海",major:"船舶",batch:"2027届",hireType:"秋招",deadline:"2026-09-26",days:22,famous:false,guoqi:true,companyType:"央国企",industry:"船舶",hireTarget:"硕士及以上",jobField:"研发设计",writtenTest:"有笔试",scale:"100-999",updateTime:"09-04",progress:"已投",remark:"硕士及以上"},
+{id:7,lg:"科",bg:"linear-gradient(135deg,#6366f1,#8b5cf6)",title:"2027 届校园招聘 · 航天科研",company:"航天科工十院",city:"贵阳",major:"航天",batch:"2027届",hireType:"秋招",deadline:"2026-12-31",days:118,famous:false,guoqi:true,companyType:"央国企",industry:"航天",hireTarget:"2027届",jobField:"研发设计",writtenTest:"部分笔试",scale:"1000人以上",updateTime:"09-03",progress:"待投",remark:"截止 12-31"},
+{id:8,lg:"工",bg:"linear-gradient(135deg,#e11d48,#f43f5e)",title:"2027 年度秋季校园招聘",company:"中国工商银行",city:"全国",major:"金融",batch:"2027届",hireType:"秋招",deadline:"2026-10-08",days:34,famous:true,guoqi:false,companyType:"银行",industry:"银行",hireTarget:"2027届",jobField:"金融管培",writtenTest:"有笔试",scale:"10000人以上",updateTime:"09-01",progress:"已投",remark:"截止 10-08"},
+{id:9,lg:"广",bg:"linear-gradient(135deg,#14b8a6,#10b981)",title:"2027 届校园招聘 · 管理培训生",company:"广州银行",city:"广州",major:"金融",batch:"2027届",hireType:"秋招",deadline:"2026-10-28",days:54,famous:false,guoqi:false,companyType:"银行",industry:"银行",hireTarget:"2027届",jobField:"金融管培",writtenTest:"有笔试",scale:"1000人以上",updateTime:"09-04",progress:"待投",remark:"截止 10-28"},
+{id:10,lg:"信",bg:"linear-gradient(135deg,#8b5cf6,#d946ef)",title:"2027 届校园招聘 · 科研岗",company:"工信部电子第五研究所",city:"广州",major:"电子",batch:"2027届",hireType:"秋招",deadline:"2026-10-12",days:38,famous:false,guoqi:true,companyType:"事业单位",industry:"电子",hireTarget:"硕士及以上",jobField:"研发设计",writtenTest:"部分笔试",scale:"1000人以上",updateTime:"09-02",progress:"待投",remark:"硕士及以上"},
+{id:11,lg:"航",bg:"linear-gradient(135deg,#3b82f6,#06b6d4)",title:"2027 届校园招聘 · 工艺研发",company:"中国航空制造技术研究院",city:"北京",major:"航空制造",batch:"2027届",hireType:"秋招",deadline:"2026-09-24",days:20,famous:false,guoqi:true,companyType:"事业单位",industry:"航空制造",hireTarget:"2027届",jobField:"研发设计",writtenTest:"有笔试",scale:"1000人以上",updateTime:"09-03",progress:"待投",remark:"招满即止"},
+{id:12,lg:"广",bg:"linear-gradient(135deg,#f97316,#fbbf24)",title:"2027 届校园招聘 · 研发工程师",company:"广联达科技",city:"北京",major:"软件",batch:"2027届",hireType:"秋招",deadline:"2026-10-15",days:41,famous:true,guoqi:false,companyType:"民企",industry:"工业软件",hireTarget:"2027届",jobField:"研发设计",writtenTest:"无笔试",scale:"1000人以上",updateTime:"09-04",progress:"笔试",remark:"招满即止"},
+{id:13,lg:"芯",bg:"linear-gradient(135deg,#ca0013,#f43f5e)",title:"2027 届校园招聘 · IC 设计",company:"芯驰科技",city:"南京",major:"微电子",batch:"2027届",hireType:"秋招",deadline:"2026-10-10",days:36,famous:false,guoqi:false,companyType:"民企",industry:"芯片",hireTarget:"2027届",jobField:"IC",writtenTest:"有笔试",scale:"100-999",updateTime:"09-02",progress:"笔试",remark:"招满即止"},
+{id:14,lg:"睿",bg:"linear-gradient(135deg,#8b5cf6,#6366f1)",title:"2027 届校园招聘 · 算法工程师",company:"华睿科技",city:"杭州",major:"计算机",batch:"2027届",hireType:"秋招",deadline:"2026-10-06",days:32,famous:false,guoqi:false,companyType:"民企",industry:"AI",hireTarget:"2027届",jobField:"算法",writtenTest:"有笔试",scale:"100-999",updateTime:"09-04",progress:"待投",remark:"招满即止"},
+{id:15,lg:"天",bg:"linear-gradient(135deg,#06b6d4,#22d3ee)",title:"2027 届校园招聘 · 嵌入式开发",company:"天准科技",city:"苏州",major:"软件",batch:"2027届",hireType:"秋招",deadline:"2026-09-30",days:26,famous:false,guoqi:false,companyType:"民企",industry:"消费电子",hireTarget:"2027届",jobField:"嵌入式",writtenTest:"无笔试",scale:"100-999",updateTime:"09-01",progress:"待投",remark:"招满即止"},
+{id:16,lg:"松",bg:"linear-gradient(135deg,#14b8a6,#10b981)",title:"2027 届校园招聘 · 算法研究",company:"松果智能研究院",city:"上海",major:"AI",batch:"2027届",hireType:"秋招",deadline:"2026-10-18",days:44,famous:false,guoqi:false,companyType:"外企合资",industry:"AI",hireTarget:"硕士及以上",jobField:"算法",writtenTest:"有笔试",scale:"10-99",updateTime:"09-02",progress:"面试",remark:"硕士及以上"},
+{id:17,lg:"星",bg:"linear-gradient(135deg,#0ea5e9,#38bdf8)",title:"日常实习 · 市场运营",company:"星德科",city:"上海",major:"经管",batch:"2026届",hireType:"实习",deadline:"长期有效",days:60,famous:false,guoqi:false,companyType:"外企合资",industry:"专业服务",hireTarget:"2026届",jobField:"运营",writtenTest:"无笔试",scale:"10-99",updateTime:"09-03",progress:"待投",remark:"长期有效"},
+{id:18,lg:"信",bg:"linear-gradient(135deg,#6366f1,#8b5cf6)",title:"2027 届校园招聘 · 审计助理",company:"大信会计师事务所",city:"武汉",major:"会计",batch:"2027届",hireType:"秋招",deadline:"2027-01-31",days:149,famous:false,guoqi:false,companyType:"民企",industry:"审计",hireTarget:"2027届",jobField:"审计",writtenTest:"部分笔试",scale:"1000人以上",updateTime:"09-01",progress:"待投",remark:"截止 01-31"},
+{id:19,lg:"腾",bg:"linear-gradient(135deg,#3b82f6,#6366f1)",title:"2027 校园招聘 · 后台开发",company:"腾讯科技",city:"深圳",major:"计算机",batch:"2027届",hireType:"秋招",deadline:"2026-10-20",days:46,famous:true,guoqi:false,companyType:"民企",industry:"互联网",hireTarget:"2027届",jobField:"研发设计",writtenTest:"有笔试",scale:"10000人以上",updateTime:"09-04",progress:"Offer",remark:"招满即止"},
+{id:20,lg:"移",bg:"linear-gradient(135deg,#10b981,#34d399)",title:"2026 年秋招补录 · 网络研发",company:"中国移动",city:"北京",major:"通信",batch:"2026届",hireType:"补录",deadline:"2026-09-18",days:14,famous:true,guoqi:true,companyType:"央国企",industry:"通信",hireTarget:"2026届",jobField:"研发设计",writtenTest:"部分笔试",scale:"10000人以上",updateTime:"09-02",progress:"面试",remark:"补录 · 招满即止"},
+{id:21,lg:"米",bg:"linear-gradient(135deg,#f97316,#fb923c)",title:"2027 届提前批 · 嵌入式软件",company:"小米集团",city:"北京",major:"软件",batch:"2027届",hireType:"提前批",deadline:"2026-09-25",days:21,famous:true,guoqi:false,companyType:"民企",industry:"消费电子",hireTarget:"2027届",jobField:"嵌入式",writtenTest:"有笔试",scale:"10000人以上",updateTime:"09-03",progress:"已投",remark:"提前批"},
+{id:22,lg:"中",bg:"linear-gradient(135deg,#e11d48,#ef4444)",title:"2027 年秋季校园招聘公告",company:"中信银行北京分行",city:"北京",major:"金融",batch:"2027届",hireType:"秋招",deadline:"2026-10-09",days:35,famous:true,guoqi:false,companyType:"银行",industry:"银行",hireTarget:"2027届",jobField:"金融管培",writtenTest:"有笔试",scale:"10000人以上",updateTime:"09-02",progress:"待投",remark:"招满即止"}
+];
+var TODAY=[
+{id:101,lg:"招",bg:"linear-gradient(135deg,#ca0013,#ef4444)",title:"2027 秋季校园招聘",company:"招商银行长沙分行",city:"长沙",major:"金融",batch:"2027届",hireType:"秋招",deadline:"2026-09-04",days:0,famous:true,guoqi:false,companyType:"银行",industry:"银行",hireTarget:"2027届",jobField:"金融管培",writtenTest:"有笔试",scale:"10000人以上",updateTime:"09-04",progress:"待投",remark:"今天截止"},
+{id:102,lg:"移",bg:"linear-gradient(135deg,#ef4444,#f97316)",title:"2027 技术岗提前批 · 今日截止",company:"中国移动北京研究院",city:"北京",major:"计算机",batch:"2027届",hireType:"提前批",deadline:"2026-09-04",days:0,famous:true,guoqi:true,companyType:"央国企",industry:"通信",hireTarget:"2027届",jobField:"研发设计",writtenTest:"有笔试",scale:"10000人以上",updateTime:"09-04",progress:"已投",remark:"今天截止"}
+];
+var CAL={4:TODAY,18:[JOBS[19]],24:[JOBS[10]],25:[JOBS[20]],26:[JOBS[5]],30:[JOBS[4],JOBS[14]]};
+var MATCHES=[
+{score:92,title:"华睿科技 · 算法工程师",company:"华睿科技（杭州）· AI",reason:"专业方向与技能高度重合：岗位要求深度学习 / PyTorch，简历项目（CV 检测系统）匹配度 92%。"},
+{score:88,title:"芯驰科技 · IC 设计",company:"芯驰科技（南京）· 芯片",reason:"集成电路设计课程 + 数字电路项目经历，Verilog 技能与岗位要求一致，建议提前准备笔试。",color:"#8b5cf6"},
+{score:85,title:"腾讯 · 后台开发",company:"腾讯科技（深圳）· 互联网",reason:"编程语言（Go/Java）与岗位重合，算法基础扎实；注意腾讯笔试含系统设计题。",color:"#3b82f6"},
+{score:81,title:"广联达 · 研发工程师",company:"广联达（北京）· 工业软件",reason:"软件工程背景匹配，城市偏好一致（北京），建议补充 C++ 项目经历提升竞争力。",color:"#06b6d4"},
+{score:76,title:"天准科技 · 嵌入式开发",company:"天准科技（苏州）· 消费电子",reason:"嵌入式方向与单片机项目部分重合，可加强 RTOS 相关知识后投递。",color:"#10b981"}
+];
+var POSTS=[
+{tab:"salary",av:"C",title:"【薪资爆料】华睿科技算法岗 2027 届总包",badges:[{t:"华中科大·CS",c:"gd"},{t:"2027届",c:""},{t:"杭州",c:""}],tags:["算法","秋招"],sum:"双一流硕士，算法岗总包 32w+，含 2w 签字费，公积金 12%，股票另算。已核实 offer 截图。",like:128,cmt:46,reward:0},
+{tab:"interview",av:"Z",title:"【面经】航天科工十院一面面经（贵阳）",badges:[{t:"北航·航天",c:"gd"},{t:"2027届",c:""},{t:"贵阳",c:""}],tags:["央企","科研"],sum:"一面技术面 40 分钟：项目深挖 + 航天专业基础 + 保密协议说明。二面是 HR 面，整体氛围轻松。",like:96,cmt:31,reward:0},
+{tab:"referral",av:"L",title:"【内推】广联达 2027 内推码 · 免简历筛选",badges:[{t:"北邮·软工",c:"gd"},{t:"2027届",c:""},{t:"北京",c:""}],tags:["内推码"],sum:"内推码 GD2027XXX，简历直达 HR 免筛选，附官方内推链接。投递后评论区留邮箱返内推截图。",like:214,cmt:88,reward:50},
+{tab:"salary",av:"W",title:"【薪资爆料】工行总行管培 base 披露",badges:[{t:"央财·金融",c:"gd"},{t:"2027届",c:""},{t:"北京",c:""}],tags:["银行","管培"],sum:"总行管培 base 约 25w，另加年终与房补。轮岗两年后定岗。信息来源：在职员工。",like:156,cmt:52,reward:0},
+{tab:"interview",av:"M",title:"【面经】中船七〇八所面试流程复盘",badges:[{t:"上交·船舶",c:"gd"},{t:"硕士",c:"rd"},{t:"上海",c:""}],tags:["央企","科研"],sum:"专业面 30 分钟：船舶设计规范 + 项目细节，后 1v1 谈话。整体看重科研经历与稳定性。",like:87,cmt:24,reward:0},
+{tab:"referral",av:"Q",title:"【内推】芯驰科技内推 · 芯片岗优先",badges:[{t:"东南·微电子",c:"gd"},{t:"2027届",c:""},{t:"南京",c:""}],tags:["内推码"],sum:"芯驰内推，IC 岗位优先处理，48h 内反馈。私信联系获取内推码，附岗位清单。",like:173,cmt:64,reward:30}
+];
+var PAGE=6;
+var state={chip:"all",city:[],companyType:[],hireType:[],major:[],batch:[],jobField:[],q:""};
+var viewMode="card";
+var favs=JSON.parse(localStorage.getItem("offer_fav")||"[]");
+var curStageId=null;
+
+/* ==================== 工具 ==================== */
+function $(s,c){return (c||document).querySelector(s)}
+function $$(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))}
+function esc(s){return String(s).replace(/[&<>"]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]})}
+function uniq(a){var o={};return a.filter(function(v){return o[v]?false:(o[v]=1,true)})}
+function toast(html){var t=$("#toast");t.innerHTML=html;t.classList.add("show");clearTimeout(t._tm);t._tm=setTimeout(function(){t.classList.remove("show")},1900)}
+function fmtDate(ds){var p=String(ds).split("-");return p[1]+"-"+p[2]}
+function isFav(id){return favs.indexOf(id)>-1}
+function stageIdx(j){return STAGES.indexOf(j.progress)<0?0:STAGES.indexOf(j.progress)}
+function stageCls(i){return "sp-"+i}
+function ddayHtml(j){
+  var hot=typeof j.days==="number"&&j.days<=3;
+  var txt=j.deadline==="长期有效"?"长期":("剩 "+j.days+" 天");
+  return '<span class="dday '+(hot?"hot":"")+'">'+txt+'</span>';
+}
+function typeTag(j){
+  var map={"秋招":"","提前批":"rd","实习":"cy","补录":"rd"};
+  var cls=map[j.hireType]||"";
+  return '<span class="jtag '+(cls?cls:"gn")+'">'+j.hireType+'</span>';
+}
+function typeBadge(j){
+  var c={"央国企":"rd","银行":"cy","事业单位":"gn","民企":"","外企合资":"cy"}[j.companyType]||"gn";
+  return '<span class="jtag '+c+'">'+j.companyType+'</span>';
+}
+function progressPill(j){
+  var i=stageIdx(j);
+  return '<span class="progress-dot '+stageCls(i)+'">'+STAGES[i]+'</span>';
+}
+function toggleFav(id){
+  var i=favs.indexOf(id);
+  if(i>-1){favs.splice(i,1);toast("已取消收藏")}
+  else{favs.push(id);toast("已收藏 · 可在 <b>收藏</b> 页查看")}
+  localStorage.setItem("offer_fav",JSON.stringify(favs));
+  renderAll();
+}
+function allJobs(){return JOBS.concat(TODAY)}
+
+/* ==================== 过滤逻辑 ==================== */
+function filtered(){
+  return JOBS.filter(function(j){
+    if(state.chip!=="all"&&j.hireType!==state.chip)return false;
+    if(state.city.length&&state.city.indexOf(j.city)===-1)return false;
+    if(state.companyType.length&&state.companyType.indexOf(j.companyType)===-1)return false;
+    if(state.hireType.length&&state.hireType.indexOf(j.hireType)===-1)return false;
+    if(state.major.length&&state.major.indexOf(j.major)===-1)return false;
+    if(state.batch.length&&state.batch.indexOf(j.batch)===-1)return false;
+    if(state.jobField.length&&state.jobField.indexOf(j.jobField)===-1)return false;
+    if(state.q&&(j.title+j.company+j.city+j.major+j.jobField).toLowerCase().indexOf(state.q.toLowerCase())===-1)return false;
+    return true;
+  });
+}
+
+/* ==================== 渲染：今日截止 ==================== */
+function renderToday(){
+  $("#todayGrid").innerHTML=TODAY.map(function(j){
+    return '<a class="today-card" href="javascript:void(0)">'+
+      '<span class="lg gicon">'+j.lg+'</span>'+
+      '<div class="bd"><h4>'+esc(j.title)+'</h4><p>'+esc(j.company)+' · 截止 '+fmtDate(j.deadline)+' · '+j.city+'</p></div>'+
+      '<span class="lg-t">今天截止</span></a>';
+  }).join("");
+}
+
+/* ==================== 渲染：岗位（卡片） ==================== */
+function jobCardHtml(j){
+  return '<a class="job-card glass anim" data-id="'+j.id+'" href="javascript:void(0)">'+
+    '<button class="fav-btn '+(isFav(j.id)?"on":"")+'" data-fav="'+j.id+'" aria-label="收藏">'+
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6.1-7-11a4.5 4.5 0 0 1 8.5-2 4.5 4.5 0 0 1 5.5 2c0 4.9-7 11-7 11Z" stroke="'+(isFav(j.id)?"#ca0013":"#b7c6c2")+'" stroke-width="2" stroke-linejoin="round"/></svg>'+
+    '</button>'+
+    '<span class="logo-badge gicon" style="background:'+j.bg+'">'+j.lg+'</span>'+
+    '<div class="job-main">'+
+      '<div class="job-title"><span class="tt">'+esc(j.title)+'</span></div>'+
+      '<div class="job-tags">'+typeBadge(j)+typeTag(j)+'<span class="jtag gn">'+j.batch+'</span><span class="jtag cy">'+j.industry+'</span></div>'+
+      '<div class="job-meta">'+esc(j.company)+'<span class="sep">·</span>'+j.city+'<span class="sep">·</span>'+j.jobField+'<span class="sep">·</span>'+j.writtenTest+'</div>'+
+      '<div class="job-foot"><span class="src">更新 '+j.updateTime+' · '+progressPill(j)+'</span><span class="ops">'+ddayHtml(j)+'<span class="go">官方投递 <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span></div>'+
+    '</div>'+
+  '</a>';
+}
+
+/* ==================== 渲染：岗位（表格） ==================== */
+function tableHtml(list){
+  var head=['公司名称','公司类型','所属行业','招聘类型','招聘对象','工作地点','岗位','投递进度','更新时间','投递截止','链接','笔试','规模','备注'];
+  var trs=list.map(function(j){
+    return '<tr>'+
+      '<td><span class="t-co"><i style="background:'+j.bg+'">'+j.lg+'</i>'+esc(j.company)+'</span></td>'+
+      '<td>'+j.companyType+'</td>'+
+      '<td>'+j.industry+'</td>'+
+      '<td>'+j.hireType+'</td>'+
+      '<td>'+j.hireTarget+'</td>'+
+      '<td>'+j.city+'</td>'+
+      '<td>'+j.jobField+'</td>'+
+      '<td>'+progressPill(j)+'</td>'+
+      '<td>'+j.updateTime+'</td>'+
+      '<td>'+fmtDate(j.deadline)+'</td>'+
+      '<td><span class="t-link">投递 <svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>'+
+      '<td>'+j.writtenTest+'</td>'+
+      '<td>'+j.scale+'</td>'+
+      '<td>'+(j.remark?'<span class="remark-tag">'+j.remark+'</span>':"—")+'</td>'+
+    '</tr>';
+  }).join("");
+  return '<table class="job-table"><thead><tr>'+head.map(function(h){return "<th>"+h+"</th>"}).join("")+'</tr></thead><tbody>'+trs+'</tbody></table>';
+}
+
+/* ==================== 渲染：岗位列表 ==================== */
+function renderJobs(){
+  var list=filtered(),show=list.slice(0,PAGE);
+  var grid=$("#jobGrid"),tw=$("#tableWrap");
+  if(show.length){
+    grid.innerHTML=show.map(jobCardHtml).join("");
+    tw.innerHTML=tableHtml(show);
+  }else{
+    grid.innerHTML=emptyHtml("试试更换标签或清除筛选条件。");
+    tw.innerHTML="";
+  }
+  grid.style.display=viewMode==="card"?"grid":"none";
+  tw.classList.toggle("on",viewMode==="table");
+  $("#jobCount").textContent="共 "+list.length+" 个岗位";
+  var m=$("#moreWrap");
+  if(list.length>PAGE){m.innerHTML='<button id="moreBtn">加载更多岗位（'+PAGE+' / '+list.length+'）</button>'}
+  else{m.innerHTML='<span class="end">— 已加载全部 '+list.length+' 个岗位 —</span>'}
+  observeAnim(grid);
+}
+function emptyHtml(txt){
+  return '<div class="empty glass">'+
+    '<div class="e-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#8b5cf6" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg></div>'+
+    '<h3>没有匹配的岗位</h3><p>'+txt+'</p><button onclick="clearAllFilters()">清除筛选</button>'+
+  '</div>';
+}
+
+/* ==================== 渲染：收藏 ==================== */
+function renderFavs(){
+  var list=allJobs().filter(function(j){return isFav(j.id)});
+  var urgent=list.filter(function(j){return typeof j.days==="number"&&j.days<=7}).length;
+  $("#favCount").textContent=list.length;
+  $("#favUrgent").textContent=urgent;
+  $("#favGrid").innerHTML=list.map(jobCardHtml).join("");
+  $("#favEmpty").style.display=list.length?"none":"block";
+  observeAnim($("#favGrid"));
+}
+
+/* ==================== 渲染：侧栏快捷筛选 ==================== */
+function renderSide(){
+  var groups=[["公司类型","companyType"],["届别","batch"],["笔试","writtenTest"]];
+  $("#sideOpts").innerHTML=groups.map(function(g){
+    var key=g[1],vals=uniq(JOBS.map(function(j){return j[key]}));
+    return '<div style="margin-bottom:6px" class="label">'+g[0]+'</div>'+
+      vals.map(function(v){
+        var on=state[key]?state[key].indexOf(v)>-1:false;
+        if(key==="writtenTest")on=state._wt&&state._wt.indexOf(v)>-1;
+        var actKey=key==="writtenTest"?"_wt":key;
+        var cur=state[actKey]||[];
+        return '<div class="opt'+(on?" on":"")+'" data-side="'+actKey+'" data-v="'+v+'">'+
+          '<span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+          v+'<span class="cnt">'+JOBS.filter(function(j){return j[key]===v}).length+'</span></div>';
+      }).join("");
+  }).join("");
+}
+
+/* ==================== 渲染：迷你日历 ==================== */
+function renderMiniCal(){
+  var w="一二三四五六日".split(""),d="";
+  for(var i=1;i<=30;i++){
+    var hot=CAL[i];
+    d+='<span class="'+(hot?"hot":"")+'" data-d="'+i+'">'+i+'</span>';
+  }
+  $("#calMini").innerHTML='<div class="cw">'+w.map(function(x){return "<span>"+x+"</span>"}).join("")+'</div><div class="cd">'+d+"</div>";
+  $$(".cal-mini .cd span[data-d]").forEach(function(s){
+    s.onclick=function(){toast("9 月 <b>"+s.dataset.d+" 日</b> · "+(CAL[+s.dataset.d]?CAL[+s.dataset.d].length:"0")+" 个岗位截止")};
+  });
+}
+
+/* ==================== 渲染：求职看板 ==================== */
+function renderBoard(){
+  var cols=STAGES.map(function(st,i){
+    var jobs=JOBS.filter(function(j){return stageIdx(j)===i});
+    var cards=jobs.map(function(j){
+      return '<div class="bd-card" draggable="true" data-id="'+j.id+'">'+
+        '<div class="bt">'+esc(j.title)+'</div>'+
+        '<div class="bc">'+esc(j.company)+' · '+j.city+'</div>'+
+        '<div class="bd-row"><span>'+fmtDate(j.deadline)+'</span><span class="chg" data-stage="'+j.id+'">改状态 ›</span></div>'+
+      '</div>';
+    }).join("");
+    return '<div class="board-col glass anim" data-stage-col="'+STAGES[i]+'">'+
+      '<h5>'+STAGES[i]+'<span class="cnt">'+jobs.length+'</span></h5>'+
+      (cards||'<div class="board-empty">拖入或点添加</div>')+
+    '</div>';
+  }).join("");
+  $("#board").innerHTML=cols;
+  $("#boardStats").innerHTML=STAGES.map(function(st,i){
+    var n=JOBS.filter(function(j){return stageIdx(j)===i}).length;
+    return '<div class="st glass anim"><b>'+n+'</b><span>'+st+'</span></div>';
+  }).join("");
+  bindBoard();
+  observeAnim($("#board"));
+}
+function bindBoard(){
+  $$("#board .bd-card").forEach(function(c){
+    c.addEventListener("dragstart",function(e){c.classList.add("dragging");e.dataTransfer.setData("text/plain",c.dataset.id)});
+    c.addEventListener("dragend",function(){c.classList.remove("dragging")});
+    c.addEventListener("click",function(e){
+      if(e.target.closest("[data-stage]"))return;
+      openStage(+c.dataset.id);
+    });
+  });
+  $$("#board [data-stage]").forEach(function(s){
+    s.onclick=function(e){e.stopPropagation();openStage(+s.dataset.stage)};
+  });
+  $$("#board .board-col").forEach(function(col){
+    col.addEventListener("dragover",function(e){e.preventDefault();col.classList.add("drop")});
+    col.addEventListener("dragleave",function(){col.classList.remove("drop")});
+    col.addEventListener("drop",function(e){
+      e.preventDefault();col.classList.remove("drop");
+      var id=+e.dataTransfer.getData("text/plain");
+      var j=JOBS.filter(function(x){return x.id===id})[0];
+      if(j){j.progress=col.dataset.stageCol;toast("已移至 <b>"+col.dataset.stageCol+"</b>");renderBoard()}
+    });
+  });
+}
+function openStage(id){
+  curStageId=id;
+  var j=JOBS.filter(function(x){return x.id===id})[0];
+  if(!j)return;
+  $("#stageTitle").textContent=esc(j.company)+" · "+esc(j.title);
+  $("#stageOpts").innerHTML=STAGES.map(function(st,i){
+    return '<button class="'+(stageIdx(j)===i?"on":"")+'" data-st="'+st+'">'+st+(stageIdx(j)===i?" · 当前":"")+'</button>';
+  }).join("");
+  $("#stageMask").classList.add("open");
+  $("#stageSheet").classList.add("open");
+  $$("#stageOpts button").forEach(function(b){
+    b.onclick=function(){
+      var jj=JOBS.filter(function(x){return x.id===curStageId})[0];
+      if(jj){jj.progress=b.dataset.st;toast("已更新为 <b>"+b.dataset.st+"</b>")}
+      closeStage();renderBoard();
+    };
+  });
+}
+function closeStage(){$("#stageMask").classList.remove("open");$("#stageSheet").classList.remove("open")}
+
+/* ==================== 渲染：AI 匹配 ==================== */
+function renderMatches(){
+  var ring='<svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(183,198,194,.15)" stroke-width="5"/><circle cx="32" cy="32" r="26" fill="none" stroke="url(#mg)" stroke-width="5" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="'+(163.4*(1-0.92))+'" transform="rotate(-90 32 32)"/><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs></svg>';
+  $("#matchList").innerHTML=MATCHES.map(function(m){
+    var off=163.4*(1-m.score/100);
+    var ring2='<svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(183,198,194,.15)" stroke-width="5"/><circle cx="32" cy="32" r="26" fill="none" stroke="url(#mg)'+m.score+'" stroke-width="5" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="'+off+'" transform="rotate(-90 32 32)"/><defs><linearGradient id="mg'+m.score+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs></svg>';
+    return '<div class="match-card glass anim">'+
+      '<div class="score-ring" style="background:conic-gradient('+m.color+' 0 '+(m.score*3.6)+'deg,rgba(255,255,255,.06) '+(m.score*3.6)+'deg 360deg)"><b>'+m.score+'%</b></div>'+
+      '<div class="match-main"><div class="mt">'+esc(m.title)+'</div><div class="mc">'+esc(m.company)+'</div>'+
+      '<div class="match-reason"><b>匹配理由（LLM 生成 · top-10 内）：</b>'+esc(m.reason)+'</div></div>'+
+      '<span class="job-foot go" style="border:none;margin:0;padding:0;flex:none">投递 <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+    '</div>';
+  }).join("");
+  observeAnim($("#matchList"));
+}
+
+/* ==================== 渲染：社区 ==================== */
+var curTab="all";
+function renderPosts(){
+  var list=curTab==="all"?POSTS:POSTS.filter(function(p){return p.tab===curTab});
+  $("#postList").innerHTML=list.map(function(p){
+    return '<div class="post-card glass anim">'+
+      '<div class="p-av">'+p.av+'</div>'+
+      '<div class="p-main">'+
+        '<div class="p-title">'+esc(p.title)+'</div>'+
+        '<div class="p-meta">'+p.badges.map(function(b){return '<span class="id-badge '+(b.c||"")+'">'+b.t+'</span>'}).join("")+
+          p.tags.map(function(t){return '<span class="p-tag">'+t+'</span>'}).join("")+
+          (p.reward?'<span class="p-tag rd">悬赏 ¥'+p.reward+'</span>':"")+'</div>'+
+        '<div class="p-sum">'+esc(p.sum)+'</div>'+
+        '<div class="p-foot"><span><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6.1-7-11a4.5 4.5 0 0 1 8.5-2 4.5 4.5 0 0 1 5.5 2c0 4.9-7 11-7 11Z" stroke="#b7c6c2" stroke-width="2" stroke-linejoin="round"/></svg>'+p.like+'</span>'+
+        '<span><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M21 12a8 8 0 0 1-8 8H4l2-4a8 8 0 1 1 15-4Z" stroke="#b7c6c2" stroke-width="2" stroke-linejoin="round"/></svg>'+p.cmt+'</span>'+
+        '<span>身份已核验</span></div>'+
+      '</div></div>';
+  }).join("");
+  observeAnim($("#postList"));
+}
+
+/* ==================== 滚动入场 ==================== */
+var io=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}});
+},{threshold:.06});
+function observeAnim(root){
+  $$(".anim",root).forEach(function(el){
+    if(!el.classList.contains("in"))io.observe(el);
+  });
+}
+/* ==================== 筛选面板 ==================== */
+var fGroup,fPanel,fType="";
+function openPanel(type){
+  fType=type;
+  var keyMap={city:"city",companyType:"companyType",hireType:"hireType",major:"major",batch:"batch",jobField:"jobField"};
+  var key=keyMap[type];
+  var vals=uniq(JOBS.map(function(j){return j[key]}));
+  var cur=state[key]||[];
+  fPanel.innerHTML=vals.map(function(v){
+    var on=cur.indexOf(v)>-1;
+    return '<div class="f-opt'+(on?" on":"")+'" data-v="'+v+'">'+
+      '<span class="cb"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+v+
+      '<span class="n">'+JOBS.filter(function(j){return j[key]===v}).length+'</span></div>';
+  }).join("")+
+  '<button class="f-clear" data-clear="'+type+'">清空'+type+'筛选</button>';
+  fPanel.classList.add("open");
+  $$(".filter-btn",fGroup).forEach(function(b){b.classList.toggle("open",b.dataset.f===type)});
+  fGroup.classList.add("open");
+}
+function closePanel(){
+  fPanel.classList.remove("open");
+  $$(".filter-btn",fGroup).forEach(function(b){b.classList.remove("open")});
+  fGroup.classList.remove("open");
+}
+function clearAllFilters(){
+  state.city=[];state.companyType=[];state.hireType=[];state.major=[];state.batch=[];state.jobField=[];state._wt=[];state.chip="all";state.q="";
+  $$("#chips button").forEach(function(x){x.classList.toggle("on",x.dataset.chip==="all")});
+  PAGE=6;
+  renderAll();
+  toast("已清除全部筛选");
+}
+
+/* ==================== 视图路由 ==================== */
+var views=["home","calendar","board","match","community","favorites","profile"];
+function route(){
+  var h=location.hash.replace(/^#\/?/,"")||"home";
+  if(views.indexOf(h)===-1)h="home";
+  views.forEach(function(v){
+    $("#view-"+v).classList.toggle("active",v===h);
+  });
+  $$("[data-view]").forEach(function(a){a.classList.toggle("on",a.dataset.view===h)});
+  var drawer=$("#drawer"),mask=$("#mask");
+  drawer.classList.remove("open");mask.classList.remove("open");
+  if(h==="favorites")renderFavs();
+  if(h==="board")renderBoard();
+  if(h==="calendar")calDays(calY,calM);
+  if(h==="match")observeAnim($("#view-match"));
+  if(h==="community")renderPosts();
+  observeAnim(document);
+  window.scrollTo(0,0);
+}
+
+/* ==================== 校招日历大视图 ==================== */
+var calY=2026,calM=8;
+function calDays(y,m){
+  var first=new Date(y,m,1).getDay();first=(first+6)%7;
+  var dim=new Date(y,m+1,0).getDate();
+  var cells="",wd="一二三四五六日".split("");
+  for(var i=0;i<first;i++)cells+='<div class="day empty"></div>';
+  for(var d=1;d<=dim;d++){
+    var jobs=CAL[d]||[];
+    var dot=jobs.length?'<span class="ct">'+jobs.length+' 岗</span>':"";
+    cells+='<div class="day'+(d===4?" sel":"")+'" data-d="'+d+'">'+d+dot+'</div>';
+  }
+  $("#calBig").innerHTML='<div class="cw">'+wd.map(function(x){return "<span>"+x+"</span>"}).join("")+'</div><div class="cd">'+cells+'</div>';
+  $("#calYM").textContent=y+" 年 "+(m+1)+" 月";
+  bindCalDays();selectDay(4);
+}
+function bindCalDays(){
+  $$("#calBig .day[data-d]").forEach(function(c){
+    c.onclick=function(){
+      $$("#calBig .day").forEach(function(x){x.classList.remove("sel")});
+      c.classList.add("sel");selectDay(+c.dataset.d);
+    };
+  });
+}
+function selectDay(d){
+  var jobs=CAL[d]||[];
+  $("#calSelLabel").textContent=d+" 日";
+  if(jobs.length){
+    $("#calDayList").innerHTML=jobs.map(function(j){
+      return '<div class="dl-item"><span class="ic" style="background:'+j.bg+'">'+j.lg+'</span>'+
+        '<div><div class="tt">'+esc(j.title)+'</div><div class="cp">'+esc(j.company)+' · '+j.city+' · '+j.hireType+'</div></div>'+
+        '<span class="go">官方投递 ↗</span></div>';
+    }).join("");
+  }else{
+    $("#calDayList").innerHTML='<div style="padding:30px 0;text-align:center;color:rgba(183,198,194,.6);font-size:12.5px">该日暂无截止岗位<br><span style="font-size:11px">点击日历其他日期查看</span></div>';
+  }
+}
+
+/* ==================== 事件绑定 ==================== */
+function bind(){
+  fGroup=$("#filterGroup");fPanel=$("#fPanel");
+  window.addEventListener("hashchange",route);
+
+  /* 快捷标签 */
+  $("#chips").addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    $$("#chips button").forEach(function(x){x.classList.remove("on")});
+    b.classList.add("on");
+    state.chip=b.dataset.chip;PAGE=6;renderJobs();
+  });
+
+  /* 筛选下拉 */
+  fGroup.addEventListener("click",function(e){
+    var fb=e.target.closest(".filter-btn");
+    if(fb){
+      var t=fb.dataset.f;
+      if(fGroup.classList.contains("open")&&fType===t){closePanel();return}
+      openPanel(t);return;
+    }
+    var opt=e.target.closest(".f-opt");
+    if(opt){
+      var v=opt.dataset.v,i=state[fType].indexOf(v);
+      if(i>-1)state[fType].splice(i,1);else state[fType].push(v);
+      openPanel(fType);PAGE=6;renderJobs();renderSide();return;
+    }
+    var cl=e.target.closest(".f-clear");
+    if(cl){state[cl.dataset.clear]=[];openPanel(cl.dataset.clear);PAGE=6;renderJobs();renderSide()}
+  });
+  document.addEventListener("click",function(e){
+    if(fGroup&&!fGroup.contains(e.target))closePanel();
+  });
+
+  /* 侧栏复选 */
+  $("#sideOpts").addEventListener("click",function(e){
+    var o=e.target.closest(".opt");if(!o)return;
+    var key=o.dataset.side,v=o.dataset.v;
+    if(!state[key])state[key]=[];
+    var i=state[key].indexOf(v);
+    if(i>-1)state[key].splice(i,1);else state[key].push(v);
+    o.classList.toggle("on");PAGE=6;renderJobs();renderSide();
+  });
+
+  /* 搜索 */
+  function doSearch(input){
+    state.q=input.value.trim();PAGE=6;
+    renderJobs();toast("搜索：<b>"+(state.q||"全部")+"</b>");
+  }
+  $("#heroSearchBtn").onclick=function(){doSearch($("#heroSearch"))};
+  $("#heroSearch").addEventListener("keydown",function(e){if(e.key==="Enter")doSearch(this)});
+  $("#navSearch").addEventListener("keydown",function(e){if(e.key==="Enter"){state.q=this.value.trim();location.hash="#/home";renderJobs()}});
+
+  /* 岗位卡：收藏 */
+  function favHandler(e){
+    var f=e.target.closest("[data-fav]");
+    if(f){e.preventDefault();e.stopPropagation();toggleFav(+f.dataset.fav);return}
+  }
+  $("#jobGrid").addEventListener("click",favHandler);
+  $("#favGrid").addEventListener("click",favHandler);
+
+  /* 视图切换 卡片/表格 */
+  $("#viewToggle").addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    viewMode=b.dataset.vt;
+    $$("#viewToggle button").forEach(function(x){x.classList.toggle("on",x.dataset.vt===viewMode)});
+    renderJobs();
+  });
+
+  /* 加载更多 */
+  $("#moreWrap").addEventListener("click",function(e){
+    if(e.target.id==="moreBtn"){PAGE+=6;renderJobs()}
+  });
+
+  /* 看板 */
+  $("#boardAddBtn").onclick=function(){toast("从首页岗位列表 <b>添加</b> 到看板（正式版）")};
+  $("#stageMask").onclick=closeStage;
+  $$("#stageOpts button").forEach(function(){});
+  document.addEventListener("click",function(e){
+    if(e.target.id==="stageMask")closeStage();
+  });
+
+  /* AI 匹配 */
+  var zone=$("#uploadZone"),fileInput=$("#resumeFile");
+  zone.addEventListener("click",function(){fileInput.click()});
+  zone.addEventListener("dragover",function(e){e.preventDefault();zone.classList.add("drag")});
+  zone.addEventListener("dragleave",function(){zone.classList.remove("drag")});
+  zone.addEventListener("drop",function(e){
+    e.preventDefault();zone.classList.remove("drag");
+    if(e.dataTransfer.files.length){applyResume(e.dataTransfer.files[0].name)}
+  });
+  fileInput.addEventListener("change",function(){
+    if(fileInput.files.length)applyResume(fileInput.files[0].name);
+  });
+  $("#reUpload").onclick=function(){
+    $("#uploadDone").style.display="none";zone.style.display="block";
+  };
+  function applyResume(name){
+    $("#resumeName").textContent=name;
+    zone.style.display="none";
+    $("#uploadDone").style.display="flex";
+    toast("简历已上传 · 开始解析");
+  }
+  $("#matchBtn").onclick=function(){
+    var done=$("#uploadDone").style.display==="flex";
+    if(!done&&!window._demoUsed){toast("请先上传简历，或使用示例简历");return}
+    $("#matchList").innerHTML='<div class="empty glass"><div class="e-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#8b5cf6" stroke-width="2"/><path d="M12 8v5M12 16.5v.5" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg></div><h3>正在解析与匹配…</h3><p>规则解析 → spaCy NER → pgvector 检索 → LLM 生成理由</p></div>';
+    setTimeout(function(){renderMatches();toast("匹配完成 · 返回 <b>top-10</b> 高匹配岗位")},900);
+  };
+  $("#useDemo").onclick=function(){
+    window._demoUsed=true;
+    $("#resumeName").textContent="示例简历.pdf";
+    zone.style.display="none";
+    $("#uploadDone").style.display="flex";
+    toast("已载入示例简历");
+  };
+
+  /* 社区 */
+  $("#commTabs").addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    curTab=b.dataset.tab;
+    $$("#commTabs button").forEach(function(x){x.classList.toggle("on",x.dataset.tab===curTab)});
+    renderPosts();
+  });
+  $("#postBtn").onclick=function(){toast("发布需完成 <b>身份核验</b>（大学/专业/届别）")};
+
+  /* 日历 */
+  $("#calPrev").onclick=function(){calM--;if(calM<0){calM=11;calY--}calDays(calY,calM)};
+  $("#calNext").onclick=function(){calM++;if(calM>11){calM=0;calY++}calDays(calY,calM)};
+  $("#calSubBtn").onclick=function(){toast("ICS 订阅链接已生成 · 复制到手机日历")};
+
+  /* 我的页 */
+  $$("[data-sw]").forEach(function(sw){
+    sw.onclick=function(){
+      sw.classList.toggle("on");
+      var n=sw.dataset.sw;
+      var txt={email:"邮件提醒已"+(sw.classList.contains("on")?"开启":"关闭"),push:"Web 推送已"+(sw.classList.contains("on")?"开启":"关闭"),ics:"日历订阅已"+(sw.classList.contains("on")?"开启":"关闭")}[n];
+      if(sw.dataset.sw==="ics")$("#icsStatus").textContent=sw.classList.contains("on")?"✓ 日历订阅已启用 · 自动同步截止日期":"日历订阅已关闭";
+      toast(txt);
+    };
+  });
+  $("#saveEmail").onclick=function(){
+    var v=$("#emailInput").value.trim();
+    if(!v){toast("请输入邮箱地址");return}
+    toast("已保存邮箱 <b>"+esc(v)+"</b>");
+  };
+
+  /* 汉堡 */
+  var ham=$("#hamburger"),drawer=$("#drawer"),mask=$("#mask");
+  ham.onclick=function(){drawer.classList.add("open");mask.classList.add("open")};
+  mask.onclick=function(){drawer.classList.remove("open");mask.classList.remove("open")};
+  $$(".drawer a").forEach(function(a){a.onclick=function(){drawer.classList.remove("open");mask.classList.remove("open")}});
+
+  /* 设计规范 */
+  var sb=$("#specBtn"),sm=$("#specMask"),sd=$("#specDrawer");
+  function os(){sd.classList.add("open");sm.classList.add("open")}
+  function cs(){sd.classList.remove("open");sm.classList.remove("open")}
+  sb.onclick=os;sm.onclick=cs;$("#specClose").onclick=cs;
+}
+
+/* ==================== 启动 ==================== */
+function renderAll(){
+  renderToday();renderJobs();renderSide();renderMiniCal();renderFavs();renderBoard();
+  observeAnim(document);
+}
+bind();
+renderAll();
+route();
+</script>
+</body>
+</html>

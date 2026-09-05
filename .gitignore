@@ -1,0 +1,52 @@
+# 依赖
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 构建产物
+.next/
+dist/
+build/
+
+# 环境变量（含密钥，绝对不能提交）
+.env
+.env.local
+.env.*.local
+apps/web/.env.local
+apps/worker/.env
+
+# 临时数据文件
+_feishu_jobs.json
+*.log
+_next-start.log
+_next-error.log
+
+# 大文件
+cloudflared.exe
+cloudflared
+
+# 临时截图
+_user_shot*.png
+_user_cal.png
+_u1.png
+_u2.png
+_*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 缓存
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/

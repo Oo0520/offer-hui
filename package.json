@@ -1,0 +1,12 @@
+{
+  "name": "offer-hui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Offer汇 - 应届生求职信息聚合平台 MVP",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:worker": "pnpm --filter worker run dev",
+    "build:web": "pnpm --filter web build",
+    "lint": "pnpm -r lint"
+  }
+}

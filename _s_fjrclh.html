@@ -1,0 +1,2765 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+<title>福建人才联合网</title>
+<meta http-equiv="Content-Type"
+	content="text/html; charset=UTF-8; X-Content-Type-Options=nosniff; X-XSS-Protection: 1;mode=block" />
+<meta name="keywords" content="工作，找工作，招聘，大学生，在校，兼职，实习">
+<meta name="description" content="福州大学学生就业创业指导中心成立于1991年，隶属于于校学生工作部（处）、研究生工作部（处），是全校学生就业创业工作的管理服务机构。中心主要职能：贯彻国家就业方针、政策和学校工作部署，制定就业创业工作实施意见；收集、发布用人单位的招聘需求；联系用人单位，组织校园宣讲、各类招聘活动；引导学生做好职业生涯规划，开展毕业生就业咨询与指导；帮助毕业生充分认识自我、树立正确的择业观；引导推荐优秀毕业生到国家重点领域、基层单位建功立业；开展学生就业创业调查研究；办理就业协议签订和派遣事宜；负责学生创业项目孵化及创业实践基地运营等。">
+<!--<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">-->
+<meta http-equiv="Content-Security-Policy"
+	content="style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-inline' 'unsafe-eval' https://webapi.amap.com https://restapi.amap.com https://vdata.amap.com https://appx/web-view.min.js;worker-src blob:">
+<meta http-equiv="X-XSS-Protection" content="1">
+<!-- Set render engine for 360 browser -->
+<meta name="renderer" content="webkit">
+<!-- No Baidu Siteapp-->
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+<link rel="icon" type="image/png" href="/Public/Home/image/favicon.png">
+
+<link rel="stylesheet" href="/Public/static/layui/css/layui.css" media="all">
+<link rel="stylesheet" href="/Public/static/AmazeUI/css/amazeui.min.css">
+
+<!--[if lt IE 9]>
+<script src="//cdn.bootcss.com/jquery/1.9.0/jquery.min.js"></script>
+<script src="/Public/static/AmazeUI/js/1.11.3-jquery.min.js"></script>
+<script src="/Public/static/js/modernizr.js"></script>
+<script src="/Public/static/AmazeUI/js/amazeui.ie8polyfill.min.js"></script>
+<script src="//cdn.bootcss.com/html5shiv/r29/html5.min.js"></script>
+<script src="//cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+<![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!-->
+<script src="/Public/static/js/jquery.min.js"></script>
+<script type="text/javascript" src="/Public/static/js/jquery.form.js"></script>
+<!--<![endif]-->
+<!--[if (gte IE 8)|!(IE)]><!-->
+<script src="/Public/static/AmazeUI/js/amazeui.min.js"></script>
+<!--<![endif]-->
+<script type="text/javascript">
+	$.ajaxSetup({
+		timeout: 10000,
+		async: true,
+		error: function (xhr, textStatus) {
+			if (textStatus == 'timeout') {
+				alert("网络连接超时，请稍后重试");
+			}
+		}
+	});
+</script>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="stylesheet" href="/Public/Home/css/cms-manager.css">
+	<link rel="stylesheet" href="/Public/Home/css/calendar.css">
+	<link rel="stylesheet" href="/Public/Home/css/cms/index.css" media="all">
+	<script type="text/javascript" src="/Public/static/js/jquery.tmpl.min.js"></script>
+	<script type="text/javascript">
+		$.ajaxSetup({
+			timeout: 10000,
+			async: true,
+			error: function (xhr, textStatus) {
+				if (textStatus == 'timeout') {
+					alert("网络连接超时，请稍后重试!");
+				}
+			}
+		});
+	</script>
+	<style>
+		body {
+			background-color: #F3F5F8;
+			margin: 0 auto;
+			width: 100%;
+			position: relative;
+			-webkit-font-smoothing: antialiased;
+			min-width: 1200px;
+		}
+
+		.cms_container {
+			margin: 0 auto;
+			width: 100%;
+			margin-top: 20px;
+		}
+
+		.layui-nav {
+			padding: 0;
+		}
+
+		.layui-carousel-ind {
+			position: relative;
+			top: -80px;
+			width: 100%;
+			line-height: 0 !important;
+			text-align: center;
+			font-size: 0;
+		}
+
+		#head {
+			text-align: right;
+			margin: 0 auto;
+			height: 70px;
+			background-color: #FFFFFF;
+			font-style: 16px;
+		}
+
+		.layui-tab {
+			margin: 20px 0;
+			text-align: left !important;
+			margin-left: 30px;
+			margin-right: 30px;
+		}
+
+		#head .layui-nav-bar {
+			display: none;
+		}
+
+		.layui-nav .layui-nav-more {
+			content: 'xe61a';
+			width: 0;
+			height: 0;
+			border-style: solid dashed dashed;
+			border-color: #fff transparent transparent;
+			overflow: hidden;
+			cursor: pointer;
+			transition: all .2s;
+			-webkit-transition: all .2s;
+			position: absolute;
+			top: 50%;
+			right: 3px;
+			margin-top: -3px;
+			border-width: 6px;
+			border-top-color: #2B304E;
+			/*opacity: 0.7;*/
+		}
+
+		.layui-nav .layui-nav-mored,
+		.layui-nav-itemed>a .layui-nav-more {
+			margin-top: -9px;
+			border-style: dashed dashed solid;
+			border-color: transparent transparent #377DFF
+		}
+
+		.layui-nav .layui-nav-item a {
+			color: #2B304E;
+			font-style: 16px;
+			cursor: pointer;
+		}
+
+		.layui-nav .layui-nav-item a:hover {
+			color: #377DFF;
+		}
+
+		.layui-nav-child {
+			background: #f9fbfb !important;
+			top: 45px;
+			min-width: 129px;
+			width: auto;
+			text-align: center;
+		}
+
+		.layui-nav-child dd {
+			position: relative;
+			border-bottom: 1px solid #eee;
+		}
+
+		.layui-tab-content {
+			padding: 0px;
+		}
+
+		#banner {
+			height: 340px;
+		}
+
+		.r_date .laydate-theme-grid .layui-laydate-content td {
+			border: 1px solid #FFFFFF;
+		}
+
+		.inner_context .left {
+			max-width: 840px;
+			width: 100%;
+			float: left;
+			background: #fff;
+		}
+
+		.inner_context .right {
+			max-width: 360px;
+			width: 100%;
+			float: right;
+		}
+
+		.ml {
+			margin-left: 20px;
+		}
+
+
+		.inner_context .right .r_active {
+			height: 228px;
+		}
+
+		.mt {
+			margin-top: 20px;
+		}
+
+		.layui-tab-brief>.layui-tab-title .layui-this {
+			color: #333366;
+		}
+
+		.layui-tab-title .layui-this {
+			color: #333366;
+		}
+
+		.layui-tab-title li {
+			color: #8585A3;
+			font-size: 14px;
+			padding: 0;
+			min-width: 0px;
+			margin-right: 50px;
+		}
+
+		.layui-tab-brief>.layui-tab-more li.layui-this:after,
+		.layui-tab-brief>.layui-tab-title .layui-this:after {
+			border: none;
+			border-radius: 0;
+			border-bottom: 4px solid #377DFF;
+		}
+
+		.layui-carousel {
+			position: relative;
+			left: 0;
+			top: 0;
+			/* 居中对齐 */
+			margin: 0 auto;
+			background-color: #f8f8f8;
+		}
+
+
+		.info-li {
+			margin-bottom: 9px;
+			clear: both;
+			height: 30px;
+			position: relative;
+		}
+
+		.downdateimg {
+			color: #333366;
+			width: 100px;
+			height: 30px;
+			margin-bottom: 9px;
+			text-align: center;
+			vertical-align: middle;
+			padding: 7px 0;
+			float: left;
+			border-radius: 3px;
+			font-size: 12px;
+			background: #F3F5F8;
+		}
+
+		.notice-img {
+			color: #FFFFFF;
+		}
+
+		.downdateimg em {
+			display: block;
+			width: 0;
+			height: 0;
+			border-width: 6px 6px;
+			border-style: solid;
+			border-color: transparent transparent transparent #F3F5F8;
+			position: absolute;
+			top: 10px;
+			left: 99px;
+		}
+
+		.more {
+			height: 16px;
+			margin-top: 4px;
+			margin-bottom: 20px;
+			float: right !important;
+			font-size: 14px;
+		}
+
+		/*//主色和辅色 V4.1.6 张丽花2019.2.21*/
+		.font-color,
+		.font-color:focus,
+		.font-hover:hover,
+		.border-color,
+		.datetext:hover,
+		.more,
+		.jobinfo:hover,
+		.zphinfo:hover,
+		.xjhinfo:hover,
+		.xjht:hover,
+		.raul li:hover,
+		.rainfo:hover {
+			color: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.font-color:hover,
+		.more:hover {
+			color: {
+				$color_secondary
+			}
+
+			!important;
+		}
+
+		.font-hover .am-menu-nav>li>a:hover,
+		.am-menu-nav>li>ul>li>a:hover,
+		.emmsg {
+			color: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.layui-tab-brief>.layui-tab-title .layui-this:after {
+			border-bottom-color: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.notice-img,
+		.serachimg,
+		.layui-carousel-ind li.layui-this,
+		.layui-carousel-ind li:hover {
+			background-color: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.serachimg:hover {
+			background-color: {
+				$color_secondary
+			}
+
+			!important;
+		}
+
+		.notice-img em {
+			border-color: transparent transparent transparent {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.rnpt:hover,
+		.rnpt:hover p,
+		.fixedBtn1:hover,
+		.fixedBtn2:hover,
+		.fixedBtn3:hover {
+			background: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.item-curDay {
+			color: {
+				$color_primary
+			}
+
+			!important;
+
+			border-color: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.calendar-date .item .cmsback,
+		.calendar-date .item-curMonth .cmsback,
+		.calendar-date .item .cmsback:hover,
+		.calendar-date .item-curMonth .cmsback:hover {
+			background-color: {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.calendar-date .item .cmsnoback,
+		.calendar-date .item-curMonth .cmsnoback,
+		.calendar-date .item .cmsnoback:hover,
+		.calendar-date .item-curMonth .cmsnoback:hover {
+			border: 1px solid {
+				$color_primary
+			}
+
+			!important;
+		}
+
+		.l_notice_content .datetext:hover,
+		.l_job_content .datetext:hover,
+		.l_down_content .datetext:hover {
+			height: 25px;
+		}
+
+		.l_notice_content .datetext:hover,
+		.jobinfo:hover,
+		.zphinfo:hover,
+		.xjhinfo:hover,
+		.l_job_content .datetext:hover,
+		.l_down_content .datetext:hover,
+		.l_down_content .datetext:hover,
+		.l_carve_content .datetext:hover {
+			border-bottom: 1px solid {
+				$color_primary
+			}
+
+			!important;
+		}
+	</style>
+
+</head>
+
+<body>
+    <!-- 主体 -->
+    
+	<!-- 顶部导航栏 start -->
+	
+<style>
+	.cmstopnav{
+		height: 100px;background: #FFFFFF;width: 100%;margin-bottom: 1px;
+	}
+	.home-top{
+		margin: 0 auto;width:1200px;
+	}
+	.home-logo{ max-width:600px;height:64px;margin-top: 18px; max-width: 600px;max-height: 64px;
+	}
+	.home-login{
+		float: right;line-height: 100px;
+	}
+	.home-login a{
+		margin-left: 14px;
+		font-size:16px;
+		font-family:Microsoft YaHei;
+		font-weight:400;
+		border-radius: 5px;
+		padding: 5px 15px;
+		border: 1px solid #B02111;
+	}
+	
+	.font-color{
+    color: #B02111 !important;
+}
+.font-color:hover{
+    color: #e1c1c1 !important;
+}
+.font-hover .am-menu-nav>li>a:hover {
+    color: #B02111 !important;
+}
+.am-menu-nav>li>ul>li>a:hover {
+    color:#B02111 !important;
+}
+.am-menu-dropdown2 .am-menu-sub{
+	right: 0;left: 0;
+}
+</style>
+<div class="cmstopnav">
+<div class="home-top">
+	<a href="javascript:void(0)">
+		<img src="/Uploads/image/2022-04-07/624e523725c5d.PNG" class="home-logo" style=" ">
+	</a>
+	<div class="home-login">
+					<a href="/index/login.html" target="_blank"  class="font-color">教师登录</a>
+			<a href="/index/login.html" target="_blank"  class="font-color">学生登录</a>
+			<a href="http://jycy.fzu.edu.cn/index/login.html?type=10386" target="_blank"  class="font-color">单位登录</a>	</div>
+	<div style="clear: both;"></div>
+</div>
+</div>
+<!-- 顶部导航栏 -->
+<div style="background: #ffffff">
+		<div class="nav-top am-g am-g-fixed am-cf" style="width: 1200px;">
+			<nav data-am-widget="menu" class="am-menu-dropdown2 font-hover" style="text-align: left;" data-am-menu-collapse>
+				<ul class="am-menu-nav am-avg-sm-4 am-collapse">
+					<li class="  am_company1">
+								<a href="http://fjrclh.fzu.edu.cn" class='company_menu1'>
+																首页								</a>
+															</li>
+							<li class="  am_company2">
+								<a href="http://fjrclh.fzu.edu.cn/cmss/jyzc" class='company_menu2'>
+																就业政策								</a>
+															</li>
+														<li class="am-parent   am_company3">
+									<a >
+									就业指导																		</a>
+									<ul class="am-menu-sub am-collapse am-avg-sm-4  company_menu_ul3">
+											<li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/lxzxyy" class="">留学咨询预约</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/syzxyy" class="">生涯咨询预约</a>
+												</li><li class="">
+													<a href="https://fzu.careersky.cn/jixun/Account/signIn" class="">职业测评</a>
+												</li><li class="">
+													<a href="https://top.wanxue.cn/" class="">职业路径发展探索</a>
+												</li>										</ul>								</li>							<li class="am-parent   am_company4">
+									<a >
+									学生求职																		</a>
+									<ul class="am-menu-sub am-collapse am-avg-sm-4  company_menu_ul4">
+											<li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/zpxx" class="">日常招聘</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/xjh" class="">宣讲会</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/zph" class="">招聘会</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/zwxx" class="">校招职位</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/index/login.html" class="">登录入口</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/jyxysbl" class="">学生手续办理</a>
+												</li>										</ul>								</li>							<li class="am-parent   am_company5">
+									<a >
+									用人单位服务																		</a>
+									<ul class="am-menu-sub am-collapse am-avg-sm-4  company_menu_ul5">
+											<li class="">
+													<a href="http://jycy.fzu.edu.cn/PositionManageView/positionManager.html" class="">发布职位</a>
+												</li><li class="">
+													<a href="http://jycy.fzu.edu.cn/KeynoteView/keynoteList.html" class="">申请宣讲会</a>
+												</li><li class="">
+													<a href="http://jycy.fzu.edu.cn/JobFairView/jobfairList.html" class="">报名招聘会</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/cksyxx" class="">查看生源信息</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/tzgg/53826" class="">招聘入校指南</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/tzgg/51560.html" class="">校园招聘流程须知</a>
+												</li>										</ul>								</li>							<li class="am-parent   am_company6">
+									<a >
+									下载中心																		</a>
+									<ul class="am-menu-sub am-collapse am-avg-sm-4  company_menu_ul6">
+											<li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/comp" class="">用人单位</a>
+												</li><li class="">
+													<a href="http://fjrclh.fzu.edu.cn/cmss/stu" class="">学生</a>
+												</li>										</ul>								</li>				</ul>
+			</nav>
+
+		</div>
+</div>
+<style>
+	.school-name {
+		height: 21px;
+		font-size: 16px;
+		font-family: Microsoft YaHei;
+		font-weight: bold;
+		line-height: 19px;
+		color: #333366;
+	}
+	.am-menu-dropdown2 .am-menu-nav a {
+		height: 48px;
+    line-height: 48px;
+    padding: 0;
+    text-align: center; color: #333366;font-size:16px;
+	font-weight:400;
+}
+	.am-menu-dropdown2 .am-menu-nav {
+    background-color: #FFFFFF;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+     padding-top: 0px;
+     padding-bottom: 0px;
+}
+	
+	
+	.am-container,
+	.am-g-fixed {
+		max-width: 1200px;
+	}
+	
+	.am-menu-dropdown2 .am-menu-nav>li {
+		float: none;
+		display: inline-block;
+		position: relative;margin-right: -5px;
+	}
+	.am-menu-dropdown2 .am-menu-sub {
+    min-width: 150px;
+}
+.am-menu-dropdown2 .am-menu-sub>li {
+    float: none;
+}
+.am-menu-nav>li>ul>li>a {
+     padding: 0 0 !important; 
+    height: 40px!important;
+}</style>
+<script type="text/javascript">
+	$(function() {
+		$(".am-menu-dropdown2 .am-menu-nav .company_menu1").hover(function() {
+			$(".company_menu_ul1").addClass("am-in");
+			$('.company_menu1').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company1").mouseleave(function() {
+			$('.company_menu1').removeClass("font-color");
+		});
+		$(".am-menu-dropdown2 .am-menu-nav .am_company2").hover(function() {
+			$(".company_menu_ul2").addClass("am-in");
+			$('.company_menu2').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company2").mouseleave(function() {
+			$(".company_menu_ul2").removeClass("am-in");
+			$('.company_menu2').removeClass("font-color");
+		});
+		$(".am-menu-dropdown2 .am-menu-nav .am_company3").hover(function() {
+			$(".company_menu_ul3").addClass("am-in");
+			$('.company_menu3').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company3").mouseleave(function() {
+			$(".company_menu_ul3").removeClass("am-in");
+			$('.company_menu3').removeClass("font-color");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company4").hover(function() {
+			$(".company_menu_ul4").addClass("am-in");
+			$('.company_menu4').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company4").mouseleave(function() {
+			$(".company_menu_ul4").removeClass("am-in");
+			$('.company_menu4').removeClass("font-color");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company5").hover(function() {
+			$(".company_menu_ul5").addClass("am-in");
+			$('.company_menu5').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company5").mouseleave(function() {
+			$(".company_menu_ul5").removeClass("am-in");
+			$('.company_menu5').removeClass("font-color");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company6").hover(function() {
+			$(".company_menu_ul6").addClass("am-in");
+			$('.company_menu6').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company6").mouseleave(function() {
+			$(".company_menu_ul6").removeClass("am-in");
+			$('.company_menu6').removeClass("font-color");
+		});
+		
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company7").hover(function() {
+			$(".company_menu_ul7").addClass("am-in");
+			$('.company_menu7').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company7").mouseleave(function() {
+			$(".company_menu_ul7").removeClass("am-in");
+			$('.company_menu7').removeClass("font-color");
+		});
+		
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company8").hover(function() {
+			$(".company_menu_ul8").addClass("am-in");
+			$('.company_menu8').addClass("font-color");
+			$(this).next('ul').attr("style", "");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .am_company8").mouseleave(function() {
+			$(".company_menu_ul8").removeClass("am-in");
+			$('.company_menu8').removeClass("font-color");
+		});
+
+		$(".am-menu-dropdown2 .am-menu-nav .user_menu").hover(function() {
+			$(".user_menu_ul").addClass("am-in");
+			$(this).next('ul').attr("style", "");
+		});
+		$(".am-menu-dropdown2 .am-menu-nav .am_user").mouseleave(function() {
+			$(".user_menu_ul").removeClass("am-in");
+		});
+		$('li.am-parent>a').click(function(event) {
+			event.preventDefault();
+			$(this).parent('li').removeClass('am-open')
+			$(this).next('ul').attr("style", "");
+
+		});
+	});
+</script>
+
+	<!-- 顶部导航栏 end -->
+	<!-- banner start -->
+	<div class="layui-carousel" id="banner" style="    overflow: hidden;" >
+	<ul carousel-item>
+					<li>
+					<a href="http://fjrclh.fzu.edu.cn/cmss/tzgg/57902" target="_blank" ><img src="/Uploads/image/2024-06-12/6669a8e92a9bd.jpg" width="100%" height="100%"></a>
+				</li><li>
+					<a href="http://fjrclh.fzu.edu.cn/cmss/tzgg/61963.html" target="_blank" ><img src="/Uploads/image/2026-06-17/6a32424319a7b.png" width="100%" height="100%"></a>
+				</li><li>
+					<a href="https://fzu.ncss.cn/student/index.html" target="_blank" ><img src="/Uploads/image/2022-07-19/62d617e29df51.png" width="100%" height="100%"></a>
+				</li><li>
+					<a href="https://www.fj99.org.cn/bys/" target="_blank" ><img src="/Uploads/image/2024-01-03/65951fd38036a.jpg" width="100%" height="100%"></a>
+				</li>	</ul>
+</div>
+<style>
+	.layui-carousel-ind ul {
+		display: inline-block;
+		padding: 5px;
+		background-color: rgba(0, 0, 0, 0);
+		border-radius: 10px;
+		-webkit-transition-duration: .3s;
+		transition-duration: .3s;
+	}
+	
+	.layui-carousel-arrow:hover,
+	.layui-carousel-ind ul:hover {
+		background-color: rgba(0, 0, 0, 0);
+	}
+	
+	.layui-carousel-ind li {
+		display: inline-block;
+		width: 12px;
+		margin-right: 16px;
+		height: 12px;
+		margin: 0 8px;
+		font-size: 14px;
+		background-color: #9999B2;
+		border-radius: 50%;
+		cursor: pointer;
+		-webkit-transition-duration: .3s;
+		transition-duration: .3s;
+	}
+	
+	.layui-carousel-ind li:hover,
+	.layui-carousel-ind li.layui-this {
+		background-color: #377DFF;
+	}
+</style>
+	<!-- banner end -->
+	<div class="cms_container" style="max-width: 1200px;">
+				<!-- serach start -->
+		<div class="serach">
+	<div class="select dowebok">
+		<span class="placeholder" data-id="1">职位</span>
+		<ul>
+			<li data-key="1">职位</li>
+			<li data-key="2">文章</li>
+		</ul>
+	</div>
+	<div style="margin-left: 203px;display: flex;">
+		<input id="search_text" class="googletext" type="text" value="" placeholder="支持职位、单位、信息等搜索" />
+		<div id="searchbtn" class="serachimg" style="float: left;">搜索</div>
+	</div>
+
+</div>
+<style>
+	.serach {
+		height: 70px;
+		width: 100%;
+		background-color: #FFFFFF;
+		position: relative;
+	}
+	.serach input{padding-left: 30px;}
+	.serach select {
+		width: 140px;
+		height: 38px;
+		color: #333366;
+		line-height: 38px; margin-top: 15px; margin-left: 30px;
+	}
+	
+	#search_text {
+		font-size: 14px;
+	}
+	
+	.ie_input {
+		width: 869px;
+		border: 1px solid #EEEEEE;
+		height: 38px;
+		line-height: 38px;
+		margin-right: 18px;
+		margin-left: 13px;
+		/*;margin-top: 40px;*/
+	}
+	
+	.serachimg {
+    cursor: pointer;
+    height: 40px;
+    float: right;
+    font-size: 14px;
+    margin-top: -24px;
+    border-radius: 3px;
+    line-height: 40px;
+    /* padding: 0 26px 0 26px; */
+    color: #FFFFFF;
+    width: 80px;
+    text-align: center;
+}
+	
+	.googletext {float: left;
+		width: 869px;
+		border: 1px solid #EEEEEE;
+		height: 38px;
+		line-height: 38px;
+		position: relative;
+		top: -22px;
+		color: #333366;
+	}
+	
+	.select {
+		position: relative;
+		display: block;
+		width: 140px;
+		color: #333366;
+		vertical-align: middle;
+		text-align: center;
+		user-select: none;
+		-webkit-touch-callout: none;
+		border: 1px solid #EEEEEE;
+		height: 38px;
+		line-height: 38px;
+		top: 16px;
+		left: 50px;
+	}
+	
+	.select .placeholder {
+		position: relative;
+		display: block;
+		z-index: 1;
+		border-radius: 2px;
+		cursor: pointer;
+		font-size: 14px;
+	}
+	
+	.select .placeholder:after {
+		position: absolute;
+		right: 1em;
+		top: 0px;
+		/*transform: translateY(-50%);*/
+		font-family: 'FontAwesome';
+		content: '\f078';
+		z-index: 10;
+	}
+	
+	.select.is-open .placeholder:after {
+		content: '\f077';
+	}
+	
+	.select.is-open ul {
+		display: block;
+	}
+	
+	.select.select--white .placeholder {
+		background: #fff;
+		color: #999;
+	}
+	
+	.select.select--white .placeholder:hover {
+		background: #fafafa;
+	}
+	
+	.select ul {
+		display: none;
+		position: absolute;
+		overflow: hidden;
+		width: 100%;
+		background: #fff;
+		border-radius: 2px;
+		top: 100%;
+		left: 0;
+		list-style: none;
+		margin: 5px 0 0 0;
+		padding: 0;
+		z-index: 100;
+		font-size: 14px;
+	}
+	
+	.select ul li {
+		display: block;
+		text-align: center;
+		color: #333366;
+		cursor: pointer;
+		height: 38px;
+		line-height: 38px;
+		border-bottom: 1px solid #EEEEEE;
+		border-left: 1px solid #EEEEEE;
+		border-right: 1px solid #EEEEEE;
+		font-size: 14px;
+	}
+	
+	.select ul li:hover {
+		color: #B02111 !important;
+	}
+</style>
+<script>
+	$('.select').on('click', '.placeholder', function(e) {
+		var parent = $(this).closest('.select');
+		if(!parent.hasClass('is-open')) {
+			parent.addClass('is-open');
+			$('.select.is-open').not(parent).removeClass('is-open');
+		} else {
+			parent.removeClass('is-open');
+		}
+		e.stopPropagation();
+	}).on('click', 'ul>li', function() {
+		var parent = $(this).closest('.select');
+		parent.removeClass('is-open').find('.placeholder').text($(this).text());
+		parent.removeClass('is-open').find('.placeholder').attr('data-id', $(this).attr('data-key'));
+	});
+
+	$("#searchbtn").click(function() {
+		var search_text = $("#search_text").val();
+		if(search_text != "") {
+			var type = $(".placeholder").attr("data-id");
+			if(type == 1) {
+				location.href = "../cms/zwxx.html?searchtext=" + search_text;;
+			}
+			if(type == 2) {
+				var url = "../cms/searcharticlelist.html?searchtext=" + search_text;
+				location.href = url;
+			}
+		}
+	});
+</script>
+		<!-- serach end -->
+		<div class="inner_context mt">
+			<!-- left start -->
+			<div class="left" style="margin-bottom: 10px;">
+									<!-- 通知公告 start -->
+					<div  class="layui-tab layui-tab-brief left_notice"
+	lay-filter="">
+	<ul class="l_notice layui-tab-title">
+		<li class=' layui-this' lay-id="9"
+				lay-typedir="tzgg"> 通知公告</li>	</ul>
+	<div class="l_notice_content layui-tab-content" style="margin-top: 30px;">
+		<ul id="ln_other" class="layui-tab-item layui-show" style="height: 320px;clear: both;">
+			<div id="ln_other_div" style="height: 300px;">
+			</div>
+		</ul>
+	</div>
+</div>
+<script type="text/javascript">
+	var typeid = $(".l_notice li").attr("lay-id");
+	var typedir = $(".l_notice li").attr("lay-typedir");
+	if (1 > 0) {
+		showNoticeDataList(typeid, typedir);
+	}
+	$(function () {
+		$(".l_notice li").hover(function () {
+			var typeid = $(this).attr("lay-id");
+			var typedir = $(this).attr("lay-typedir");
+			showNoticeDataList(typeid, typedir);
+		}, function () {
+		});
+	});
+
+	function showNoticeDataList(typeid, typedir) {
+		$.ajax({
+			url: '/CmsInterface/getZpxxList',
+			method: 'post',
+			dataType: 'json',
+			async: true,
+			data: {
+				'reid': 1,
+				'typeid': typeid,
+				'typedir': typedir
+			},
+			success: function (data) {
+				if (data != null && data.list.length != 0) {
+					$('#ln_other_div').html("");
+					$('#lnmore').remove("");
+					$('#ln_other_div').html($("#notice_other").tmpl(data.list));
+					$("#notice_other_more").tmpl(data.list).appendTo("#ln_other");
+				} else {
+					$('#ln_other_div').html("");
+					$('#lnmore').remove("");
+					$('#ln_other_div').html($("#notice_other_empty").tmpl(''));
+				}
+			}
+		});
+	}
+</script>
+<!--start文章列表-->
+<script id="notice_other" type="text/x-jquery-tmpl">
+	<li class="info-li">
+		<a href="../cmss/${typedir}/${id}" target="_blank"  class="notice">
+			<!--<div class="downdateimg notice-img"><em></em>${month} ${year}</div>-->
+			{{if istop==1}}
+			<div class="datetext" style="color:#a80f21">▪ ${title}</div>
+			{{/if}}
+			{{if istop!=1}}
+			<div class="datetext">▪ ${title}</div>
+			{{/if}}
+		</a>
+	</li>
+</script>
+<script id="notice_other_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cmss/${typedir}" id="lnmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="notice_other_empty" type="text/x-jquery-tmpl">
+	<li class="gg_errinfo">
+		<img src="/Public/Home/image/cms/dummmy_pic_home.png">
+	</li>
+</script>
+<!--end文章列表-->
+<style>
+	.dateimg {
+		background: url('/Public/Home/image/cms/cms_nocie.png') no-repeat;
+		width: 105px;
+		height: 30px;
+		margin-bottom: 20px;
+		text-align: center;
+		vertical-align: middle;
+		padding: 7px 0;
+		float: left;
+		color: #FFFFFF;
+		font-size: 12px;
+	}
+
+
+	.datetext {
+		max-width: 660px;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		height: 30px;
+		line-height: 30px;
+		font-size: 14px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #333366;
+		float: left;
+		margin-left: 20px;
+	}
+
+	.layui-tab-bar {
+		position: absolute;
+		right: 0;
+		top: 0;
+		z-index: 10;
+		width: 30px;
+		height: 39px;
+		line-height: 39px;
+		border-width: 1px;
+		border-style: solid;
+		border-radius: 2px;
+		text-align: center;
+		background-color: #fff;
+		cursor: pointer;
+		display: none;
+	}
+
+	.layui-tab-title li {
+		color: #8585A3;
+		font-size: 14px;
+		padding: 0;
+		min-width: 0px;
+		margin-right: 40px;
+		width: auto;
+	}
+</style>
+					<!-- 通知公告 end -->
+					<!-- job start -->
+					<div style="width: 100%;height: 20px;background: #F3F5F8;"></div>
+
+<div  id="cms_xzzw" class="layui-tab layui-tab-brief
+	left_job mt" lay-filter="doc">
+	<ul class="l_job layui-tab-title">
+		<li class="layui-this" lay-id="212" lay-typedir="zwxx">
+				校招职位</li><li  lay-id="238" lay-typedir="zpxx">
+				日常招聘</li><li  lay-id="213" lay-typedir="zph">
+				招聘会</li><li  lay-id="214" lay-typedir="xjh">
+				宣讲会</li><li  lay-id="239" lay-typedir="gwyzk">
+				公务员招考</li><li  lay-id="243" lay-typedir="zxzp">
+				专项招聘</li><li  lay-id="232" lay-typedir="sxzp">
+				实习招聘</li>	</ul>
+	<div class="l_job_content layui-tab-content" style="margin-top: 30px;">
+		<ul id="lw_other" class="layui-tab-item layui-show" style="height: 615px;clear: both;">
+			<div id="lw_other_div" style="height: 500px;">
+			</div>
+		</ul>
+	</div>
+</div>
+
+<script type="text/javascript">
+	function getCompanyInfo(id) {
+		window.open("../cms/companyDetails.html?companyId=" + id);
+	}
+	var typeid = $(".l_job li").attr("lay-id");
+	var typedir = $(".l_job li").attr("lay-typedir");
+	if (7 > 0) {
+		showDataList(typeid, typedir);
+	}
+	$(function () {
+		$(".l_job li").hover(function () {
+			var typeid = $(this).attr("lay-id");
+			var typedir = $(this).attr("lay-typedir");
+			showDataList(typeid, typedir);
+		}, function () {
+		});
+	});
+
+	function showDataList(typeid, typedir) {
+		var page_size = 10;
+		if (typedir == "zwxx") {
+			page_size = 10;
+		} else if (typedir == "zph") {
+			page_size = 4;
+		} else if (typedir == "xjh") {
+			page_size = 8;
+		} else if (typedir == "zpjz") {
+			page_size = 12;
+		} else {
+			page_size = 12;
+		}
+		$.ajax({
+			url: '/CmsInterface/getCmsList',
+			method: 'post',
+			dataType: 'json',
+			async: true,
+			data: {
+				'typeid': typeid,
+				'typedir': typedir,
+				'pageSize': page_size
+			},
+			success: function (data) {
+				if (data != null && data.list.length != 0) {
+					$('#lw_other_div').html("");
+					$('#lwmore').remove("");
+					$('#lw_other').css("height", "559px");
+					$('#lw_other_div').css("height", "500px");
+					if (typedir == "zwxx") {
+						$('#lw_other').css("height", "615px");
+						$('#lw_other_div').css("height", "540px");
+						$('#lw_other_div').html($("#xzzw").tmpl(data.list));
+						$("#xzzw_more").tmpl(data.list).appendTo("#lw_other");
+					} else if (typedir == "zph") {
+						$('#lw_other_div').html($("#zph").tmpl(data.list));
+						$("#zph_more").tmpl(data.list).appendTo("#lw_other");
+					} else if (typedir == "xjh") {
+						$('#lw_other_div').html($("#xjh").tmpl(data.list));
+						$("#xjh_more").tmpl(data.list).appendTo("#lw_other");
+					} else if (typedir == "zpjz") {
+						$('#lw_other_div').html($("#zpjz").tmpl(data.list));
+						$("#zpjz_more").tmpl(data.list).appendTo("#lw_other");
+					} else {
+						$('#lw_other_div').html($("#other").tmpl(data.list));
+						$("#other_more").tmpl(data.list).appendTo("#lw_other");
+					}
+				} else {
+					$('#lw_other_div').html("");
+					$('#lwmore').remove("");
+					$('#lw_other').css("height", "519px");
+					$('#lw_other_div').css("height", "500px");
+					if (typedir == "zwxx") {
+						$('#lw_other').css("height", "559px");
+						$('#lw_other_div').css("height", "540px");
+						$('#lw_other_div').html($("#xzzw_empty").tmpl(''));
+					} else if (typedir == "zph") {
+						$('#lw_other_div').html($("#zph_empty").tmpl(''));
+					} else if (typedir == "xjh") {
+						$('#lw_other_div').html($("#xjh_empty").tmpl(''));
+					} else if (typedir == "zpjz") {
+						$('#lw_other_div').html($("#zpjz_empty").tmpl(''));
+					} else {
+						$('#lw_other_div').html($("#other_empty").tmpl(''));
+					}
+				}
+			}
+		});
+	}
+</script>
+
+<!--start校招职位-->
+<script id="xzzw" type="text/x-jquery-tmpl">
+	{{if no %2 == 0}}
+	<li style="margin-bottom: 15px;width: 370px;float:right;    margin-right: 10px;">
+		<a href="../cms/jobDetails.html?jobId=${id_job}&iszhaopinhui=0" target="_blank" >
+			<div class="joba">
+				<div class="jobimg"><img src="${companylogo}" width="56px" height="56px"></div>
+				<div class="jobtext">
+					<p class="jobinfo">
+						${jobname}
+					</p>
+					<span class="dizhi">${workplace}</span>
+											<span class="address worktype" style="color: #3ACBA8;">${worktype}</span>					<span class="xz">${paymin}K-${paymax}K</span>
+				</div>
+				<div style="padding: 4px 8px 16px 8px">
+					<p class="jobcompany" onclick="getCompanyInfo(${id});"> ${companyshort}</p>
+					<span class="jzdate">截止时间：${enddate}</span>
+				</div>
+			</div>
+		</a>
+	</li>
+	{{/if}} {{if no %2 == 1}}
+	<li style="margin-bottom: 15px;width: 370px;float:left;">
+		<a href="../cms/jobDetails.html?jobId=${id_job}&iszhaopinhui=0" target="_blank" >
+			<div class="joba">
+				<div class="jobimg"><img src="${companylogo}" width="56px" height="56px"></div>
+				<div class="jobtext">
+					<p class="jobinfo">${jobname}</p>
+					<span class="dizhi">${workplace}</span>
+											<span class="address worktype" style="color: #3ACBA8;">${worktype}</span>					<span class="xz">${paymin}K-${paymax}K</span>
+				</div>
+				<div style="padding: 4px 8px 16px 8px">
+					<p class="jobcompany" onclick="getCompanyInfo(${id});">${companyshort}</p>
+					<span class="jzdate">截止时间：${enddate}</span>
+				</div>
+			</div>
+		</a>
+	</li>
+	{{/if}} 
+</script>
+<script id="xzzw_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cms/zwxx" id="lwmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="xzzw_empty" type="text/x-jquery-tmpl">
+	<li class="emptyinfo">
+		<div class="emmsg">近期无招聘职位，快完善你的简历吧！
+			<div class="emmsgbtn">
+				<a href="../index/login.html">[立即完善简历]</a>
+			</div>
+		</div>
+	</li>
+</script>
+<!--end校招职位-->
+<!--start招聘会-->
+<script id="zph" type="text/x-jquery-tmpl">
+	<li style="margin-bottom: 17px;">
+		<a href="../cms/zphdetail.html?id=${id}" target="_blank" >
+			<div class="zpha">
+				<div class="zphimg"><img src="${logopath}"></div>
+				<div class="zphtext">
+					<span class="zphinfo">${name}</span>
+					{{if type==0}}
+					<p class="zphtype" style="margin-top: 25px;">
+						<img src="/Public/Home/image/cms/cms_type.png" width="12px" height="12px">
+						<span>招聘会形式：网络招聘会</span>
+					</p>
+					{{/if}}
+					{{if type==2}}
+					<p class="zphtype" style="    margin-top: 7px;">
+						<img src="/Public/Home/image/cms/cms_type.png" width="12px" height="12px">
+						<span>招聘会形式：校园招聘会</span>
+					</p>
+					<p class="zphtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px">
+						<span>举办场地：${place_name}</span>
+					</p>
+					{{/if}}
+					<p class="zphdate">
+						<img src="/Public/Home/image/cms/cms_date.png" width="12px" height="12px">
+						<span>${starttime}</span>
+					</p>
+				</div>
+				{{if state==4}}
+				<div class="xjhend">
+				    <img src="/Public/Home/image/cms/cms_end.png" width="60px" height="60px">
+				</div>
+				{{/if}}
+			</div>
+		</a>
+	</li>
+</script>
+<script id="zph_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cms/zph" id="lwmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="zph_empty" type="text/x-jquery-tmpl">
+	<li class="emptyinfo">
+		<div class="emmsg">近期无招聘会，快完善你的简历吧！
+			<div class="emmsgbtn">
+				<a href="../index/login.html">[立即完善简历]</a>
+			</div>
+		</div>
+	</li>
+</script>
+<!--end招聘会-->
+<!--start宣讲会-->
+<script id="xjh" type="text/x-jquery-tmpl">
+	{{if no %2 == 1}}
+	<li style="margin-bottom: 17px;float: left;">
+		<a href="../cms/xjhdetail.html?id=${id}" target="_blank" >
+			<div class="xjha">
+				<div class="xjhimg">
+					<span class="xjht">${cname}</span>
+				</div>
+				<div class="xjhtext">
+					<span class="xjhinfo">${company_name}</span>
+					{{if type==0||type==2}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px"><span> ${place}</span>
+					</span>
+					{{/if}}
+					{{if type==1&&terrace}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px"><span> 空中宣讲(${terrace})</span>
+					</span>
+					{{/if}}
+					{{if type==1&&!terrace}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px"><span> 空中宣讲</span>
+					</span>
+					{{/if}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_date.png" width="12px" height="12px"><span> ${start_time}-${end_time}</span>
+					</span>
+				</div>
+				{{if state==-1}}
+				<div class="xjhend">
+				    <img src="/Public/Home/image/cms/cms_end.png" width="60px" height="60px">
+				</div>
+				{{/if}}
+			</div>
+		</a>
+	</li>
+	{{/if}}
+	{{if no %2 == 0}}
+	<li style="margin-bottom: 17px;float: right;">
+		<a href="../cms/xjhdetail.html?id=${id}" target="_blank" >
+			<div class="xjha">
+				<div class="xjhimg">
+					<span class="xjht">${cname}</span>
+				</div>
+				<div class="xjhtext">
+					<span class="xjhinfo">${company_name}</span>
+					{{if type==0||type==2}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px"><span> ${place}</span>
+					</span>
+					{{/if}}
+					{{if type==1&&terrace}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px"><span> 空中宣讲(${terrace})</span>
+					</span>
+					{{/if}}
+					{{if type==1&&!terrace}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_addr.png" width="12px" height="12px"><span> 空中宣讲</span>
+					</span>
+					{{/if}}
+					<span class="xjhtype">
+						<img src="/Public/Home/image/cms/cms_date.png" width="12px" height="12px"><span> ${start_time}-${end_time}</span>
+					</span>
+				</div>
+				{{if state==-1}}
+					<div class="xjhend">
+					    <img src="/Public/Home/image/cms/cms_end.png" width="60px" height="60px">
+					</div>
+				{{/if}}
+			</div>
+		</a>
+	</li>
+	{{/if}}
+</script>
+<script id="xjh_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cms/xjh" id="lwmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="xjh_empty" type="text/x-jquery-tmpl">
+	<li class="emptyinfo">
+		<div class="emmsg">近期无宣讲会，快完善你的简历吧！
+			<div class="emmsgbtn">
+				<a href="../index/login.html">[立即完善简历]</a>
+			</div>
+		</div>
+	</li>
+</script>
+<!--end宣讲会-->
+
+
+<!--start招聘简章-->
+<script id="zpjz" type="text/x-jquery-tmpl">
+	<li  class="info-li">
+		<a href="../cms/zpjzdetail.html?id=${id}" target="_blank"  class="notice">
+			<div class="downdateimg"><em></em>${month} ${year}</div>
+			<div class="datetext">▪ ${title}</div>
+		</a>
+	</li>
+</script>
+<script id="zpjz_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cmss/${typedir}" id="lwmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="zpjz_empty" type="text/x-jquery-tmpl">
+	<li class="emptyinfo">
+		<div class="emmsg">暂无招聘简章单位，快完善你的简历吧！
+			<div class="emmsgbtn">
+				<a href="../index/login.html">[立即完善简历]</a>
+			</div>
+		</div>
+	</li>
+</script>
+<!--end招聘简章-->
+<!--start文章列表-->
+<script id="other" type="text/x-jquery-tmpl">
+	<li  class="info-li">
+		<a href="../cmss/${typedir}/${id}" target="_blank"  class="notice">
+			<div class="downdateimg"><em></em>${month} ${year}</div>
+			{{if istop==1}}
+			<div class="datetext">▪ 【置顶】${title}</div>
+			{{/if}}
+			{{if istop!=1}}
+			<div class="datetext">▪ ${title}</div>
+			{{/if}}
+		</a>
+	</li>
+</script>
+<script id="other_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cmss/${typedir}" id="lwmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="other_empty" type="text/x-jquery-tmpl">
+	<li class="emptyinfo">
+		<img src="/Public/Home/image/cms/dummmy_pic_home.png">
+	</li>
+</script>
+<!--end文章列表-->
+
+<style>
+	.emptyinfo {
+		padding: 170px 260px;
+		height: 519px;
+		cursor: default;
+	}
+
+	.emmsg {
+		font-size: 14px;
+		text-align: center;
+		margin-top: 50px;
+	}
+
+	.emmsgbtn {
+		margin-top: 10px;
+		color: #333366;
+		font-size: 14px;
+	}
+
+	*+address,
+	*+blockquote,
+	*+dl,
+	*+fieldset,
+	*+figure,
+	*+hr,
+	*+ol,
+	*+p,
+	*+pre,
+	*+ul {
+		margin-top: 0rem;
+	}
+
+	.xjht {
+		width: 40px;
+		height: 52px;
+		font-size: 40px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		line-height: 48px;
+		color: #FFFFFF;
+	}
+
+	.xjha {
+		border: 1px solid #EFEFEF;
+		width: 380px;
+		height: 100px;
+		clear: both;
+		position: relative;
+	}
+
+	.xjhimg {
+		text-align: center;
+		width: 78px;
+		height: 78px;
+		margin: 11px 8px 18px 18px;
+		float: left;
+		background: #B8D6FF;
+		border-radius: 50%;
+		opacity: 1;
+		padding-top: 13px;
+	}
+
+	.xjhtype {
+		width: 251px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		height: 18px;
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #9898B2;
+		margin-bottom: 5px;
+		display: block;
+	}
+
+	.xjhend {
+		position: absolute;
+		overflow: hidden;
+		right: 10px;
+		bottom: 10px;
+	}
+
+	.xjhtext {
+		padding: 14px 20px 14px 0;
+	}
+
+	.xjhinfo {
+		max-width: 251px;
+		height: 22px;
+		font-size: 14px;
+		font-family: Microsoft YaHei;
+		font-weight: bold;
+		line-height: 19px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		float: left;
+		margin-right: 3px;
+		margin-bottom: 8px;
+	}
+
+	.l_zw li {
+		float: left;
+		margin-right: 10px;
+	}
+
+	.zpha {
+		height: 108px;
+		clear: both;
+		border: 1px solid #EFEFEF;
+		position: relative;
+	}
+
+	.zphinfo:hover {
+		font-family: Microsoft YaHei;
+		font-weight: bold;
+	}
+
+	.zpha:hover {
+		box-shadow: 0px 1px 8px rgba(51, 51, 102, 0.19);
+	}
+
+	.zphimg img {
+		width: 174px;
+		height: 88px;
+		float: left;
+		margin-right: 16px;
+		margin-top: 9px;
+		margin-left: 13px;
+	}
+
+	.zphtext {
+		padding: 10px 0 10px 0;
+	}
+
+	.zphtype {
+		width: 572px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		height: 18px;
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #9898B2;
+		margin-bottom: 5px;
+	}
+
+	.zphdate {
+		height: 16px;
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #9898B2;
+	}
+
+	.joba {
+		border: 1px solid #EEEEEE;
+		width: 380px;
+		height: 88px;
+		clear: both;
+	}
+
+	.zphinfo {
+		max-width: 563px;
+		height: 20px;
+		font-size: 14px;
+		font-family: Microsoft YaHei;
+		font-weight: bold;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		color: #333366;
+		margin-bottom: 10px;
+		white-space: nowrap;
+		vertical-align: middle;
+		float: left;
+	}
+
+	.jobimg img {
+		width: 56px;
+		height: 56px;
+		margin: 16px 8px 16px 16px;
+		float: left;
+		border-radius: 10px;
+	}
+
+	.jobtext {
+		padding: 16px 8px 8px 8px;
+	}
+
+	.jobinfo {
+		color: #333366;
+		width: 102px;
+		height: 19px;
+		font-size: 14px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		line-height: 19px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		float: left;
+		margin-right: 3px;
+		margin-top: 5px;
+	}
+
+	.address {
+		color: #7F7FA2;
+		height: 20px;
+		font-size: 11px;
+		font-family: PingFang SC;
+		font-weight: 300;
+		background: #F3F5F8;
+		padding: 5px;
+		border-radius: 3px;
+		width: 70px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.dizhi {
+		max-width: 80px;
+		color: #7F7FA2;
+		height: 26px;
+		font-size: 11px;
+		font-family: PingFang SC;
+		font-weight: 300;
+		background: #F3F5F8;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		float: left;
+		padding-top: 5px;
+		margin-top: 1px;
+		padding-right: 5px;
+		padding-left: 5px;
+		border-radius: 3px;
+	}
+
+	.worktype {
+		margin-left: 5px;
+		color: #377DFF;
+		border-radius: 3px;
+	}
+
+	.worktype2 {
+		margin-left: 5px;
+		color: #3ACBA8;
+		border-radius: 3px;
+	}
+
+	.xz {
+		height: 19px;
+		font-size: 14px;
+		color: #FA6041;
+		float: right;
+		padding-top: 5px;
+	}
+
+	.jobcompany {
+		width: 170px;
+		height: 19px;
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 300;
+		line-height: 19px;
+		color: #9191AC;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		float: left;
+		margin-left: -104px;
+	}
+
+	.jzdate {
+		color: #9191AC;
+		height: 15px;
+		font-size: 10px;
+		font-family: Microsoft YaHei;
+		font-weight: 300;
+		margin-left: 12px;
+		float: right;
+	}
+
+	.jobinfo:hover a {
+		color: #6293FD;
+	}
+
+	.xjha:hover,
+	.joba:hover {
+		box-shadow: 0px 1px 8px rgba(51, 51, 102, 0.16);
+		opacity: 0.92;
+	}
+</style>
+					<!-- job end -->								<!-- down start -->
+				<div style="width: 100%;height: 20px;background: #F3F5F8; "></div>
+<div  class="layui-tab layui-tab-brief left_down" lay-filter="test1">
+	<ul class="l_down layui-tab-title">
+		<li class=' layui-this' lay-id="260" lay-typedir="kysx"> 考研升学</li><li class=' ' lay-id="257" lay-typedir="hwsz"> 海外深造</li><li class=' ' lay-id="258" lay-typedir="gjzz"> 国际组织</li><li class=' ' lay-id="262" lay-typedir="lxzxyy"> 留学咨询预约</li><li class=' ' lay-id="254" lay-typedir="syzxyy"> 生涯咨询预约</li><li class=' ' lay-id="255" lay-typedir="zycp"> 职业测评</li><li class=' ' lay-id="263" lay-typedir="slzjy"> 石榴籽就业</li>	</ul>
+	<div class="l_down_content layui-tab-content" style="margin-top: 30px;">
+		<ul id="ld_other" class="layui-tab-item layui-show" style="height: 320px;clear: both;">
+			<div id="ld_other_div" style="height: 300px;">
+			</div>
+		</ul>
+	</div>
+</div>
+
+<script type="text/javascript">
+	var typeid = $(".l_down li").attr("lay-id");
+	var typedir = $(".l_down li").attr("lay-typedir");
+	if(7>0){
+	showDownDataList(typeid, typedir);
+	}
+	$(function() {
+		$(".l_down li").hover(function() {
+			var typeid = $(this).attr("lay-id");
+			var typedir = $(this).attr("lay-typedir");
+			showDownDataList(typeid, typedir);
+		},function (){
+		});
+	});
+
+	function showDownDataList(typeid, typedir) {
+		$.ajax({
+			url: '/CmsInterface/getZpxxList',
+			method: 'post',
+			dataType: 'json',
+			async: true,
+			data: {
+				'reid':3,
+				'typeid': typeid,
+				'typedir': typedir
+			},
+			success: function(data) {
+				if(data != null && data.list.length !=0) {
+					$('#ld_other_div').html("");
+					$('#ldmore').remove("");
+						$('#ld_other_div').html($("#down_other").tmpl(data.list));
+						 $("#down_other_more").tmpl(data.list).appendTo("#ld_other");
+				} else {
+					$('#ld_other_div').html("");
+					$('#ldmore').remove("");
+						$('#ld_other_div').html($("#down_other_empty").tmpl(''));
+				}
+			}
+		});
+	}
+</script>
+<!--start文章列表-->
+<script id="down_other" type="text/x-jquery-tmpl">
+	<li class="info-li">
+		<a href="../cmss/${typedir}/${id}" target="_blank"  class="notice">
+			<!--<div class="downdateimg"><em></em>${month} ${year}</div>-->
+			{{if istop==1}}
+			<div class="datetext">▪ 【置顶】${title}</div>
+			{{/if}}
+			{{if istop!=1}}
+			<div class="datetext">▪ ${title}</div>
+			{{/if}}
+		</a>
+	</li>
+</script>
+<script id="down_other_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cmss/${typedir}" id="ldmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="down_other_empty" type="text/x-jquery-tmpl">
+	<li class="gg_errinfo">
+		<img src="/Public/Home/image/cms/dummmy_pic_home.png">
+	</li>
+</script>
+<!--end文章列表-->
+<style>
+	
+	.down:hover .datetext {
+		color: #6293FD;
+	}
+	.gg_errinfo{
+		padding: 80px 260px;height: 320px;cursor: default;
+	}
+</style>
+				<!-- down end -->
+				<!-- carve start -->
+				<div style="display:none;width: 100%;height: 20px;background: #F3F5F8; "></div>
+<div style="display:none;"   class="layui-tab layui-tab-brief left_carve">
+	<ul class="l_carve layui-tab-title">
+		<li class=' layui-this' lay-id="242" lay-typedir="schd"> 双创活动</li><li class=' ' lay-id="244" lay-typedir="cyjq"> 创业技巧</li><li class=' ' lay-id="245" lay-typedir="cygs"> 创业故事</li><li class=' ' lay-id="246" lay-typedir="zckj"> 众创空间</li>	</ul>
+	<div class="l_carve_content layui-tab-content" style="margin-top: 30px;">
+		<ul id="lc_other" class="layui-tab-item layui-show" style="height: 320px;clear: both;">
+			<div id="lc_other_div" style="height: 300px;">
+			</div>
+		</ul>
+	</div>
+</div>
+<script type="text/javascript">
+	var typeid = $(".l_carve li").attr("lay-id");
+	var typedir = $(".l_carve li").attr("lay-typedir");
+	if(7>0){
+		showCarveDataList(typeid, typedir);
+	}
+	$(function() {
+		$(".l_carve li").hover(function() {
+			var typeid = $(this).attr("lay-id");
+			var typedir = $(this).attr("lay-typedir");
+			showCarveDataList(typeid, typedir);
+		},function (){
+		});
+	});
+
+	function showCarveDataList(typeid, typedir) {
+		$.ajax({
+			url: '/CmsInterface/getZpxxList',
+			method: 'post',
+			dataType: 'json',
+			async: true,
+			data: {
+				'reid':4,
+				'typeid': typeid,
+				'typedir': typedir
+			},
+			success: function(data) {
+				if(data != null && data.list.length !=0) {
+					$('#lc_other_div').html("");
+					$('#lcmore').remove("");
+						$('#lc_other_div').html($("#carve_other").tmpl(data.list));
+						 $("#carve_other_more").tmpl(data.list).appendTo("#lc_other");
+				} else {
+					$('#lc_other_div').html("");
+					$('#lcmore').remove("");
+					$('#lc_other_div').html($("#carve_other_empty").tmpl(''));
+				}
+			}
+		});
+	}
+</script>
+<!--start文章列表-->
+<script id="carve_other" type="text/x-jquery-tmpl">
+	<li class="info-li">
+		<a href="../cmss/${typedir}/${id}" target="_blank"  class="notice">
+			<!--<div class="downdateimg"><em></em>${month} ${year}</div>-->
+			{{if istop==1}}
+			<div class="datetext">▪ 【置顶】${title}</div>
+			{{/if}}
+			{{if istop!=1}}
+			<div class="datetext">▪ ${title}</div>
+			{{/if}}
+		</a>
+	</li>
+</script>
+<script id="carve_other_more" type="text/x-jquery-tmpl">
+	{{if no==total}}
+	<a href="/cmss/${typedir}" id="lcmore"  class="more">查看更多 >></a>
+	{{/if}}
+</script>
+<script id="carve_other_empty" type="text/x-jquery-tmpl">
+	<li class="gg_errinfo">
+		<img src="/Public/Home/image/cms/dummmy_pic_home.png">
+	</li>
+</script>
+<!--end文章列表-->
+<style>
+	.noticedateimg {
+		width: 105px;
+		height: 30px;
+		margin-bottom: 20px;
+		text-align: center;
+		vertical-align: middle;
+		padding: 7px 0;
+		float: left;
+		color: #333366;
+	}
+	.carve:hover .datetext {
+		color: #6293FD;
+	}
+	.l_carve_content .datetext {
+    max-width: 660px;
+    margin-left: 20px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    height: 30px;
+    line-height: 40px;
+    font-size: 14px;
+    font-family: Microsoft YaHei;
+    font-weight: 400;
+    color: #4B4B68;
+    float: left;
+    margin-top: -4px;
+}
+
+
+</style>
+				<!-- carve end -->
+				<!-- 友情入口 start -->
+				<div class="r_link mt">
+	<div class="rntext">
+		<div>
+			<span class="title" style="font-size: 18px;font-weight:bold;">
+								友情入口
+			</span>
+		</div>
+	</div>
+	<div>
+		<select class="r_link_select" onchange="open_link(this.options[this.selectedIndex].value)">
+			<option value="">校内网站</option>
+			<option value="http://www.fzu.edu.cn/">福州大学</option>
+			<option value="https://stuic.fzu.edu.cn/index.jsp">学生工作处</option>
+			<option value="http://jwch.fzu.edu.cn/">教务处</option>
+			<option value="http://xyzh.fzu.edu.cn/">福州大学校友会</option>
+		</select>
+		<select class="r_link_select" onchange="open_link(this.options[this.selectedIndex].value)">
+			<option value="">公共就业服务平台</option>
+			<option value="http://www.hxrc.com/">中国海峡人才网</option>
+			
+			<option value="http://www.xmrc.com.cn/">厦门人才网</option>
+			<option value="http://www.job168.com/">中国南方人才网</option>
+			<option value="http://www.bjbys.net.cn/">北京高校毕业生就业信息网</option>
+			<option value="http://www.rc114.com/">中国成都人才网</option>
+			<option value="http://www.xajob.com/">中国西安人才网</option>
+			<option value="http://www.syrc.com.cn/">中国沈阳人才网</option>
+			<option value="http://www.szhr.com.cn/ ">深圳人才网</option>
+			<option value="https://hrsspub.sz.gov.cn/szrshreco/pc/#/collegeStudents">深圳市人力资源生态服务平台</option>
+		</select>
+		<select class="r_link_select" onchange="open_link(this.options[this.selectedIndex].value)">
+			<option value="">人才招聘网站</option>
+			<option value="http://www.zhaopin.com/">智联招聘</option>
+			<option value="http://www.51job.com/">前程无忧</option>
+			<option value="https://campus.chinahr.com/">中华英才网</option>
+			<option value="https://www.zhipin.com/?city=100010000&ka=city-sites-100010000/">BOSS直聘</option>
+			<option value="https://jiuyeyuren.com/#/">毕业申</option>
+			<!-- <option value="http://www.dajie.com/">大街网</option>
+			<option value="http://www.shuobojob.com">硕博英才网</option>
+			<option value="http://www.91boshuo.com/">中研博硕英才网</option> -->
+			<option value="https://www.ciiczhaopin.com/index/">中智招聘网</option>
+			<option value="https://jobone.51job.com/School/FZDX">福州大学专属求职平台</option>
+		</select>
+	</div>
+</div>
+<style>
+	.r_link {
+		background-color: #F3F5F8;
+		width: 100%;
+		height: 120px;
+	}
+
+	.r_link_select {
+		display: inline-block;
+		border-radius: 2px;
+		border: 1px dashed #c2c1c1;
+		height: 30px;
+		width: 200px;
+		line-height: 30px;
+		margin-left: 28px;
+		margin-bottom: 5px;
+		background: none;
+	}
+</style>
+<script>
+	function open_link(href) {
+		if (href != "") {
+			window.open(href);
+		}
+	}
+</script>
+				<!-- 友情入口 end -->
+			</div>
+			<!-- left end -->
+			<!-- right start -->
+			<div class="right">
+				<div class="ml">
+					<!-- 招聘日历 start -->
+					<div class="r_date">
+	<div class="calendar_item" style="height: 384px;background: #FFFFFF; ">
+		<input id="template_style" type="hidden" value="1" />
+		<div class="cmitemtt">
+			<span class="cmtitle">
+								招聘日历</span>
+		</div>
+		<div id="calendar" class="calendar_div"></div>
+	</div>
+</div>
+
+<div id="Adiv" style="display: none;">
+	<ul id="Adiv_list" style="overflow-x: hidden;overflow-y: auto;background: #fff">
+							<li class="flex_box justify_bettwn algin_center">
+						<div class="rdateaimg">宣讲会</div>
+						<a href="../cms/xjhdetail.html?id=3badc9f3b42217094e089f3ed1f268a1" target="_blank"  class="rfateatext">
+								<span class="rdateainfo">福建雪人集团股份有限公司2027届校园招聘宣讲会【】</span>
+								<p class="ppdate">10:12</p>
+						</a>
+					</li>					<li class="flex_box justify_bettwn algin_center">
+						<div class="rdateaimg">宣讲会</div>
+						<a href="../cms/xjhdetail.html?id=fc246bd115e97d427ab6bc1ebd33ae49" target="_blank"  class="rfateatext">
+								<span class="rdateainfo">福州市新东方培训学校有限公司专场宣讲会【】</span>
+								<p class="ppdate">10:12</p>
+						</a>
+					</li>					<li class="flex_box justify_bettwn algin_center">
+						<div class="rdateaimg">宣讲会</div>
+						<a href="../cms/xjhdetail.html?id=efba18053fa9e9d0661fa4693b330507" target="_blank"  class="rfateatext">
+								<span class="rdateainfo">星宸科技股份有限公司专场宣讲会【】</span>
+								<p class="ppdate">10:12</p>
+						</a>
+					</li>				</ul>
+</div>
+<style>
+	  .algin_center{
+    	align-items:center;
+    }
+	.rfateatext {
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		line-height: 15px;
+		color: #333366;
+	}
+	.ppdate{
+		width: 40px;
+        margin-top: 0px;
+        margin-bottom: 0px;
+		color: #333366;
+		opacity:0.56;
+		float: right;
+	}
+	.rdateainfo {
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		color: #333366;
+		white-space: normal;
+		max-height: 30px;
+		width: 225px;
+		float: left;
+	}
+	
+	.rdateaimg {
+		width: 50px;
+		height: 32px;
+		background: #F3F5F8;
+		color: #333366;
+		text-align: center;
+		padding: 1px 7px;
+		border-radius: 4px;
+		margin-right: 4px;
+		padding-top: 7px;
+		float: left;
+	}
+	
+	.r_datesp {
+		width: 50px;
+		float: left;
+		background: #F3F5F8;
+		opacity: 1;
+		border-radius: 3px;
+		padding: px;
+		color: #377DFF;
+		padding-left: 8px;
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
+	
+	.calendar-today{
+		z-index: 10000;
+		opacity: 1;
+		right: 20px;
+		top: 20px;
+		overflow: hidden;
+		background: url(/Public/Home/image/cms/r_date.png) no-repeat;
+		height: 217px;
+		width: 389px;
+	}
+	.calendar-today2{
+		z-index: 10000;
+		opacity: 1;
+		right: 20px;
+		top: 20px;
+		overflow: hidden;
+		background: url(/Public/Home/image/cms/r_date2.png) no-repeat;
+		height: 217px;
+		width: 389px;
+	}
+	#Adiv_list {
+    max-height: 180px;
+    padding: 20px 15px 5px 20px;
+    width: 370px;
+    overflow-y: auto;
+	}
+	
+	.rightitem {
+		margin-top: 0;
+	}
+	
+	#Adiv_list li {
+		font-size: 12px;
+		margin-bottom: 11px;
+    	width: 325px;
+	}
+	
+	#Adiv_list li span {
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #333366;
+		display: block;
+	}
+	
+	.cmcal {
+		font-size: 12px;
+		color: #333366;
+		opacity: 0.5;
+	}
+	
+	.cmitemtt {
+		height: 59px;
+		border-bottom: 1px solid #E1E1E1;
+		line-height: 59px;
+		margin-left: 20px;
+		margin-right: 20px;
+	}
+	
+	.cmtitle {
+		font-size: 14px;
+		color: #333366;
+		padding-right: 10px;
+	}
+	.r_date {
+		background: #FFFFFF;
+	}
+	
+	.calendar_div {
+		height: 324px;
+		margin-top: 0;
+		border: none;
+		margin-left: 20px;
+		margin-right: 20px;
+	}
+	
+	.calendar-week .item,
+	.calendar-date .item {
+		float: left;
+		width: 35px;
+		line-height: 34px;
+		text-align: center;
+		margin-top: 5px;
+		margin-left: 7px;
+		box-sizing: border-box;
+	}
+	
+	.item-curDay {
+		border: 1px solid;
+		border-color: #377DFF;
+		border-radius: 50%;
+	}
+	
+	*+address,
+	*+blockquote,
+	*+dl,
+	*+fieldset,
+	*+figure,
+	*+hr,
+	*+ol,
+	*+p,
+	*+pre,
+	*+ul {
+		margin-top: 0;
+	}
+	.calendar-title .arrow span{
+		color: #B02111 !important;
+	}
+</style>
+					<!-- 招聘日历 end -->
+					<!-- 快捷入口 start -->
+					<div class="r_notice mt">
+	<div class="rntext">
+		<div>
+			<span class="title">
+								快捷入口
+			</span>
+			<p class="line"></p>
+		</div>
+		<ul style="margin-top: 28px;">
+			<li class="rnpt" style="margin-right: 14px;">
+					<a href="http://fjrclh.fzu.edu.cn/cmss/jyzc">
+						<p>就业政策</p>
+					</a>
+				</li><li class="rnpt" >
+					<a href="http://fjrclh.fzu.edu.cn/cmss/qzjq">
+						<p>就业指导</p>
+					</a>
+				</li><li class="rnpt" style="margin-right: 14px;">
+					<a href="https://wq.ncss.cn/">
+						<p>网签入口</p>
+					</a>
+				</li><li class="rnpt" >
+					<a href="http://fjrclh.fzu.edu.cn/cmss/zwxx">
+						<p>学生求职</p>
+					</a>
+				</li><li class="rnpt" style="margin-right: 14px;">
+					<a href="https://fzu.careersky.cn/jixun/Account/signIn">
+						<p>职业测评</p>
+					</a>
+				</li><li class="rnpt" >
+					<a href="/cmss/comp">
+						<p>下载中心</p>
+					</a>
+				</li>		</ul>
+	</div>
+</div>
+<style>
+	.title div,
+	.cmtitle div {
+		width: 4px;
+		height: 16px;
+		display: inline-block;
+		margin-right: 5px;
+		top: 3px;
+		position: relative;
+	}
+
+	.rnpt:hover p {
+		color: #FFFFFF;
+	}
+
+	li,
+	a {
+		cursor: pointer;
+	}
+
+	.rnpt {
+		border-radius: 5px;
+		width: 135px;
+		height: 50px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		background: #F3F5F8;
+		text-align: center;
+
+		float: left;
+		margin-bottom: 16px;
+	}
+
+	.rnpt p {
+		padding: 13px;
+	}
+
+	.r_notice {
+		width: 340px;
+		height: 286px;
+		background: #FFFFFF;
+		font-size: 14px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #8585A3;
+	}
+
+	.rntext {
+		padding: 0 28px 0 28px;
+		font-size: 11px;
+		word-wrap: break-word;
+		word-break: normal;
+	}
+
+	.line {
+		width: 284px;
+		height: 1px;
+		background: #E1E1E1;
+		opacity: 0.84
+	}
+
+	.rntext .title {
+		font-size: 14px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		color: #333366;
+		height: 60px;
+		line-height: 60px;
+	}
+</style>
+					<!-- 快捷入口 end -->
+					<!-- 近期招聘活动 start -->
+					<div style="display:none;" class="r_active mt">
+	<div class="rntext">
+		<div>
+			<span class="title">
+							近期招聘活动
+		</span>
+			<p class="line"></p>
+		</div>
+	</div>
+	<ul class="raul">
+							<li>
+						<a href="../cms/xjhdetail.html?id=3badc9f3b42217094e089f3ed1f268a1" target="_blank" >
+							<div class="raimg">宣</div>
+							<div class="ratext">
+								<div class="rainfo" >
+									[09月07日]福建雪人集团股份有限公司2027届校园招聘宣讲会								</div>
+							</div>
+						</a>
+					</li>					<li>
+						<a href="../cms/xjhdetail.html?id=fc246bd115e97d427ab6bc1ebd33ae49" target="_blank" >
+							<div class="raimg">宣</div>
+							<div class="ratext">
+								<div class="rainfo" >
+									[09月07日]福州市新东方培训学校有限公司专场宣讲会								</div>
+							</div>
+						</a>
+					</li>					<li>
+						<a href="../cms/xjhdetail.html?id=efba18053fa9e9d0661fa4693b330507" target="_blank" >
+							<div class="raimg">宣</div>
+							<div class="ratext">
+								<div class="rainfo" style="display:table-cell">
+									[09月07日]星宸科技股份有限公司专场宣讲会								</div>
+							</div>
+						</a>
+					</li>				</ul>
+</div>
+<style>
+	.raul {
+		padding: 0 28px 28px 28px;
+	}
+	.raul li{
+		    margin-bottom: 10px;
+	}
+	
+	.r_active {
+		width: 341px;
+		height: 228px;
+		background: #FFFFFF;
+	}
+	
+	.raimg {
+		width: 29px;
+		height: 29px;
+		background: #F5F5F5;
+		color: #4B4B68;
+		text-align: center;
+		    padding: 1px 7px;
+		border-radius: 4px;
+		float: left;
+		margin-right: 4px;
+	}
+	
+	.ratext {
+		width: 288px;
+		height: 35px;
+		font-size: 12px;
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		line-height: 15px;
+		color: #333366;
+	}
+	
+	.rainfo {
+		font-family: Microsoft YaHei;
+		font-weight: 400;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		color: #333366;
+		margin-bottom: 10px;
+		white-space: normal;
+		/*display: table-cell;*/
+		height: 29px;
+		vertical-align: middle;
+	}
+</style>
+					<!-- 近期招聘活动 end -->
+					<!-- 系统链接 start -->
+					<div class="r_href mt" style="height: 1010px;">
+
+	<div class="rntext">
+		<div>
+			<span class="title">
+								系统链接
+			</span>
+			<p class="line"></p>
+		</div>
+		<ul>
+			<div class="rhimg">
+					<a href="http://xds.fzu.edu.cn">
+						<img src="/Uploads/image/2025-11-12/6913f2ba03506.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="http://www.moe.gov.cn/">
+						<img src="/Public/Home/image/cms/zixun_pic_04.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://fzu.ncss.cn/student/index.html">
+						<img src="/Uploads/image/2022-07-13/62ce7063bd135.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://www.chsi.com.cn/">
+						<img src="/Public/Home/image/cms/zixun_pic_03.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://xz.chsi.com.cn/home.action">
+						<img src="/Uploads/image/2022-07-14/62cff0735685f.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://dxs.moe.gov.cn/zx/">
+						<img src="/Public/Home/image/cms/zixun_pic_02.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://www.fjbysjc.com/">
+						<img src="/Uploads/image/2022-08-10/62f3c4761f785.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://220.160.52.58/">
+						<img src="/Uploads/image/2022-08-10/62f3c480893d1.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://gj.ncss.cn/index.html">
+						<img src="/Uploads/image/2022-08-11/62f451340a04b.png" />
+					</a>
+				</div><div class="rhimg">
+					<a href="https://xj.ncss.cn/">
+						<img src="/Uploads/image/2022-08-10/62f3c48d246e8.png" />
+					</a>
+				</div>		</ul>
+	</div>
+</div>
+<style>
+	.r_href {
+		background: #FFFFFF;
+		height: 518px;
+		margin-bottom: 20px;
+	}
+
+	.rhimg {
+		width: 284px;
+		height: 90px;
+		margin-bottom: 2px;
+	}
+
+	.rhimg img {
+
+		width: 284px;
+		height: 85px;
+	}
+</style>
+					<!-- 系统链接 end -->
+				</div>
+			</div>
+			<!-- right end -->
+			<div style="clear: both;"></div>
+		</div>
+	</div>
+	<!--悬浮按钮组-->
+	<div class="position_fixed">
+		<div class="fixedBtn_box">
+			<div onclick="$(window).scrollTop(0)" class="fixedBtn1">返回顶部</div>
+			<div class="fixedBtn2">意见反馈</div>
+		</div>
+	</div>
+
+	<!--意见反馈弹框-->
+	<div class="am-modal am-modal-no-btn" tabindex="-1" id="feedback-modal">
+		<div class="am-modal-dialog" style="border-radius: 10px;">
+			<div class="feedback-title am-text-center am-padding">意见反馈</div>
+			<form id="feedback-form" class="am-form" style="margin-top: 2px;height: 200px;"
+				action="/SchoolInterface/addFeedback" method="post">
+				<input style="display: none;" type="text" />
+				<div class="am-form-group">
+					<textarea class="feedback-ctn" id="feedback_text" name="text" placeholder="请输入反馈内容(1-100字内)"
+						required="required" minlength="1" maxlength="100" data-validation-message="请输入反馈内容(1-100字内)"
+						style="resize:none"></textarea>
+					<div class="am-alert am-alert-danger" id="errormss"
+						style="display: none; margin-left: 40px; color: rgb(234, 105, 72); background: rgb(248, 248, 248); border: none; text-align: left;">
+						请输入反馈内容(1-100字内)</div>
+				</div>
+				<div>
+					<input name="verify" type="text"
+						style="width: 149px;height: 43px;margin-left: 41px;border-radius: 3px;margin-right: 20px;"
+						id="from-forget-password-verify" placeholder="验证码" minlength="1"
+						data-validation-message="请输入验证码" required />
+					<img title="点击刷新" style="height: 43px;margin-left: 29px;margin-top: -72px;" class="verifyImg"
+						src="/Index/verify" onclick="fleshVerify()" />
+				</div>
+				<div style="margin-top: -25px;display: none;" id="error-yzm"><span id="error-yzm-span"
+						style="font-size: 14px;color:rgb(234, 105, 72);margin-left: -262px;">错误</span></div>
+			</form>
+			<div style="margin-top: 74px;">
+				<span class="feedback-btn feedback-btn-cancel" data-am-modal-close>取消</span>
+				<span class="feedback-btn feedback-btn-OK" id="feedback-btn-ok">提交</span>
+			</div>
+		</div>
+	</div>
+	<div class="am-modal am-modal-alert" tabindex="-1" id="school_state_tip">
+		<div class="am-modal-dialog am-cf" style="height: 170px;">
+			<div class="am-modal-bd">
+				<div style="margin-top: 10px;font-size: 20px;color: #1aa0f9;">该宣讲会已经被取消，您可关注同一时间其他宣讲会</div>
+			</div>
+			<a style="width: 178px;height: 38px;margin-top: 30px;" id="tip_btn" class="am-btn am-btn-primary"
+				data-am-modal-close>确定</a>
+		</div>
+	</div>
+	<!-- 底部导航栏 start -->
+	<!-- 顶部导航栏 -->
+<div style="bottom: 0; position: relative;width: 100%;z-index: 10;" class="am-footer-default">
+    <footer class="am-footer am-footer-default">
+        <div class="am-footer-miscs">
+            <div style="margin-top: 5px;font-size: 14px;color: #FFFFFF;">
+                <div style="display:inline-block;vertical-align: top;margin-right: 100px;">
+                    <div style="text-align: left;">
+                        <p>就业招聘服务:</p>
+                        <p>0591-22866663 &nbsp;&nbsp;&nbsp; 邮箱：22866660@163.com</p>
+                    </div>
+                    <div style="text-align: left;">
+                        <p>就业手续办理:</p>
+                        <p>0591-22866661</p>
+                    </div>
+                    <div style="text-align: left;">
+                        <p>地址:福建省福州市福州大学城乌龙江北大道2号</p>
+                        <p>传真:0591-22866660</p>
+                        <p>邮编:350108</p>
+                    </div>
+                </div>
+                <div style="display: inline-block;vertical-align: top;">
+                    <div style="text-align: left;">
+                        <p>就业指导咨询:</p>
+                        <p>0591-22874055</p>
+                    </div>
+                    <div style="text-align: left;">
+                        <p>创业指导咨询:</p>
+                        <p>0591-22867920</p>
+                    </div>
+                </div>
+                <!--    <div style="display: inline-block;vertical-align: top;">友情链接：</div>                     学职平台 新职业 教育部网站
+                    <div style="display: inline-block;vertical-align: top;">
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="http://www.moe.gov.cn/">教育部官网 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="https://www.ncss.cn/">24365国家大学生就业服务平台 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="https://xz.chsi.com.cn/home.action">学职平台 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="https://fzu.careersky.cn/jixun/Account/signIn">职业测评 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="https://220.160.52.58/">福建省毕业生就业创业公共服务网 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="http://gwykl.fujian.gov.cn/">福建省公务员考试录用网 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="https://www.fzu.edu.cn/">福州大学主页 &nbsp;</a>
+                        <a style="display: block;text-align: left;padding-bottom: 10px;" target="_blank"
+                            href="https://stuic.fzu.edu.cn/">福州大学学生工作部（处）&nbsp;</a>
+                    </div>
+                </div> -->
+            </div>
+            <div style="margin-top: 30px;font-size: 10px;color: #FFFFFF;opacity: 0.4;">Copyright &copy; 2021-2026 福州大学学生就业创业指导中心 版权所有 All Rights Reserved
+</div>
+        </div>
+    </footer>
+</div>
+<style>
+    .am-footer-default {
+        background-color: #47474E;
+        word-break: keep-all;
+    }
+
+    .am-footer-miscs a {
+        cursor: pointer;
+    }
+
+    .am-footer-miscs a:hover {
+        color: rgb(55, 125, 255);
+    }
+</style>
+	<!-- 底部导航栏 end -->
+
+
+    <!-- /主体 -->
+    <!-- 底部 -->
+    
+	<script type="text/javascript" src="/Public/static/js/calendar.js?v=20210413"></script>
+	<script type="text/javascript">
+		$('.fixedBtn2').click(function () {
+			var options = {
+				closeViaDimmer: 0,
+				width: 468,
+				height: 430
+			}
+			$("#errormss").css("display", "none");
+			$(".feedback-ctn").removeClass("am-field-error");
+			$(".feedback-ctn").val("");
+			$('#feedback-form .am-form-group').find('.am-alert').hide();
+			$('#feedback-form .am-form-group').removeClass('am-form-error');
+			$('#feedback-modal').modal(options)
+		})
+		var falg = 0;
+		$('#feedback-btn-ok').click(function () {
+			$('#error-yzm').hide();
+			$('#error-yzm-span').text('');
+			var textval = $("#feedback_text").val();
+			if (textval != "") {
+				$("#errormss").css("display", "none");
+				$(".feedback-ctn").removeClass("am-field-error");
+				if ($('#feedback-form').validator('isFormValid') && falg == 0) {
+					falg++;
+					$('#feedback-form').ajaxSubmit({
+						type: 'post',
+						dataType: 'json',
+						beforeSend: function () {
+							// 禁用按钮防止重复提交
+							$('#feedback-btn-ok').attr({
+								disabled: "disabled"
+							});
+							$('#feedback-btn-ok').button('loading');
+						},
+						success: function (data) {
+							if (data.success) {
+								alert(data.msg);
+								location.reload()
+							} else {
+								if (data.status == 3) {
+									$('#error-yzm').show();
+									$('#error-yzm-span').text(data.msg);
+									$('#feedback-btn-ok').text('确定');
+									$('#feedback-btn-ok').removeAttr("disabled");
+									falg = 0;
+									fleshVerify();
+								} else {
+									alert(data.msg);
+									location.reload();
+								}
+							}
+						},
+						complete: function () {
+						}
+					});
+				}
+			} else {
+				$("#errormss").css("display", "block");
+				$(".feedback-ctn").addClass("am-field-error");
+			}
+		});
+		function fleshVerify() {
+			$('.verifyImg').attr("src", "/index/verify.html?" + Math.random());
+		}
+	</script>
+	<script src="/Public/static/layui/layui.js"></script>
+	<script>
+		//注意：导航 依赖 element 模块，否则无法进行功能性操作
+		layui.use('element', function () {
+			var element = layui.element;
+		});
+		layui.use('carousel', function () {
+			var carousel = layui.carousel;
+			//建造实例
+			carousel.render({
+				elem: '#banner',
+				width: '1200px' //设置容器宽度
+				,
+				arrow: 'none' //始终显示箭头
+				,
+				autoplay: true,
+				interval: 5000
+				, height: '380px' //指示器位置，可选outside,none
+				//,anim: 'updown' //切换动画方式
+			});
+		});
+		layui.use('element', function () {
+			var element = layui.element;
+			var $ = layui.jquery;
+			$(".l_job li").hover(function () {
+				var $i = $(this).index();
+				$(this).addClass("layui-this").siblings().removeClass("layui-this");
+				$(".l_job_content .layui-tab-item").eq($i).addClass("layui-show").siblings().removeClass("layui-show");
+			});
+			$(".l_notice li").hover(function () {
+				var $i = $(this).index();
+				$(this).addClass("layui-this").siblings().removeClass("layui-this");
+				$(".l_notice_content .layui-tab-item").eq($i).addClass("layui-show").siblings().removeClass("layui-show");
+			});
+			$(".l_down li").hover(function () {
+				var $i = $(this).index();
+				$(this).addClass("layui-this").siblings().removeClass("layui-this");
+				$(".l_down_content .layui-tab-item").eq($i).addClass("layui-show").siblings().removeClass("layui-show");
+			});
+			$(".l_carve li").hover(function () {
+				var $i = $(this).index();
+				$(this).addClass("layui-this").siblings().removeClass("layui-this");
+				$(".l_carve_content .layui-tab-item").eq($i).addClass("layui-show").siblings().removeClass("layui-show");
+			});
+			$(".l_jiangxi li").hover(function () {
+				var $i = $(this).index();
+				$(this).addClass("layui-this").siblings().removeClass("layui-this");
+				$(".l_jinagxi_content .layui-tab-item").eq($i).addClass("layui-show").siblings().removeClass("layui-show");
+			});
+		});
+	</script>
+	<style>
+		.layui-nav * {
+			font-size: 16px;
+		}
+
+		.layui-carousel>[carousel-item] {
+			position: unset;
+			width: 0;
+			height: 100%;
+			overflow: hidden;
+			top: 0px;
+		}
+
+		.am-footer-miscs a:hover {
+			color: {
+				$color_secondary
+			}
+
+			!important;
+		}
+	</style>
+
+<!-- 浏览器提示 -->
+    <!-- /底部 -->
+</body>
+
+</html>
