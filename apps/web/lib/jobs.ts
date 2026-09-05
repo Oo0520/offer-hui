@@ -39,7 +39,7 @@ export type JobView = {
   company: string;
   city: string;
   industry: string;
-  jobType: "校招" | "实习";
+  jobType: "校招" | "实习" | "招聘会";
   degree: string;
   cohort: string;
   salaryText: string;
@@ -110,7 +110,7 @@ export function bjDayStart(now = new Date()): number {
 
 export function toView(r: JobRow): JobView {
   const company = r.companies?.name || "官方发布";
-  const jobType = (r.job_type === "intern" ? "实习" : "校招") as JobView["jobType"];
+  const jobType = (r.job_type === "intern" ? "实习" : r.job_type === "fair" ? "招聘会" : "校招") as JobView["jobType"];
   const dl = r.deadline_at ? r.deadline_at.slice(0, 10) : null;
   let days: number | null = null;
   if (dl) {

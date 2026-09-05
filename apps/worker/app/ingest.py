@@ -7,6 +7,7 @@ import httpx
 from .config import settings
 from .models import Job
 from .sources.base import BaseSource
+from .sources.feishu import FeishuSource
 from .sources.fj99 import Fj99Source
 from .sources.fjrclh import FjrclhSource
 from .sources.fjut import FjutSource
@@ -18,11 +19,20 @@ def get_storage():
 
 
 def get_sources(client: httpx.AsyncClient) -> list[BaseSource]:
-    return [
+    sources = [
         FjutSource(client),
         FjrclhSource(client),
         Fj99Source(client),
     ]
+    # 飞书招聘系企业（Playwright，每个 tenant 一个实例）
+    feishu_companies = [
+        ("nio", "蔚来", "新能源汽车", "/campus"),
+        ("mi", "小米", "消费电子/智能硬件", "/campus"),
+        ("xiaopeng", "小鹏汽车", "新能源汽车", "/campus/position/list"),
+    ]
+    for tenant, name, industry, path in feishu_companies:
+        sources.append(FeishuSource(client, tenant, name, industry, path))
+    return sources
 
 
 async def run_pipeline(dry_run: bool = False) -> dict:

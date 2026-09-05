@@ -34,6 +34,7 @@ const CHIPS = [
   { key: "all", label: "全部" },
   { key: "校招", label: "校招" },
   { key: "实习", label: "实习" },
+  { key: "招聘会", label: "招聘会" },
   { key: "urgent", label: "30天内截止" },
 ];
 
@@ -103,10 +104,11 @@ export default function HomeClient({
             : jobs.filter((j) => j[d.key] === v).length,
       }));
     }
-    // 招聘类型固定两项
+    // 招聘类型固定三项
     m.jobType = [
       { v: "校招", n: jobs.filter((j) => j.jobType === "校招").length },
       { v: "实习", n: jobs.filter((j) => j.jobType === "实习").length },
+      { v: "招聘会", n: jobs.filter((j) => j.jobType === "招聘会").length },
     ];
     return m;
   }, [jobs]);
@@ -124,6 +126,7 @@ export default function HomeClient({
     }
     if (chip === "校招") l = l.filter((j) => j.jobType === "校招");
     if (chip === "实习") l = l.filter((j) => j.jobType === "实习");
+    if (chip === "招聘会") l = l.filter((j) => j.jobType === "招聘会");
     if (chip === "urgent")
       l = l.filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30);
     if (q.trim()) {
