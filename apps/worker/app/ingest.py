@@ -10,15 +10,11 @@ from .sources.base import BaseSource
 from .sources.fj99 import Fj99Source
 from .sources.fjrclh import FjrclhSource
 from .sources.fjut import FjutSource
-from .storage import PostgresStorage, SqliteStorage, SupabaseStorage
+from .storage import PostgresStorage
 
 
 def get_storage():
-    if settings.storage_backend == "supabase":
-        return SupabaseStorage(settings.supabase_url, settings.supabase_service_key)
-    if settings.storage_backend == "postgres":
-        return PostgresStorage(settings.database_url)
-    return SqliteStorage(settings.db_path)
+    return PostgresStorage(settings.database_url)
 
 
 def get_sources(client: httpx.AsyncClient) -> list[BaseSource]:

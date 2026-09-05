@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from app.models import Job
-from app.storage import SupabaseStorage
+from app.storage import PostgresStorage
 
 
 def load_env():
@@ -23,13 +23,12 @@ def load_env():
 
 def main():
     load_env()
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_KEY")
-    if not url or not key:
-        print("缺少 Supabase 凭据")
+    dsn = os.environ.get("DATABASE_URL")
+    if not dsn:
+        print("缺少 DATABASE_URL")
         return
 
-    storage = SupabaseStorage(url, key)
+    storage = PostgresStorage(dsn)
 
     with open("_feishu_jobs.json", "r", encoding="utf-8") as f:
         data = json.load(f)
