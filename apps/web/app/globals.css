@@ -132,11 +132,11 @@ svg{display:block}
 .today-card .lg-t{position:relative;z-index:1;flex:none;background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.3);border-radius:9999px;padding:6px 14px;font-size:10.5px;font-weight:900;letter-spacing:.06em;color:#fff}
 
 /* ===== 岗位卡 ===== */
-.job-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.job-card{display:flex;align-items:flex-start;gap:15px;padding:20px 22px;border-radius:var(--radius-card);position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.job-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.job-card{display:flex;align-items:flex-start;gap:15px;padding:20px 22px;border-radius:var(--radius-card);position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s;height:100%}
 .job-card:hover{transform:translateY(-3px)}
 .logo-badge{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;font-size:18px;color:#fff;flex:none}
-.job-main{flex:1;min-width:0}
+.job-main{flex:1;min-width:0;display:flex;flex-direction:column}
 .job-title{font-family:var(--font-title);font-weight:900;font-size:15px;color:var(--white);display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-right:44px}
 .job-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .jtag{font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:7px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.3);color:#c4b5fd}
@@ -145,7 +145,7 @@ svg{display:block}
 .jtag.rd{background:rgba(202,0,19,.14);border-color:rgba(202,0,19,.35);color:#fda4af}
 .job-meta{font-size:11.5px;color:rgba(183,198,194,.75);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .job-meta .sep{opacity:.4}
-.job-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(183,198,194,.14)}
+.job-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:12px;border-top:1px solid rgba(183,198,194,.14)}
 .job-foot .src{font-size:10px;color:rgba(183,198,194,.55);font-weight:700}
 .job-foot .ops{display:flex;align-items:center;gap:10px;flex:none}
 .job-foot .go{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#c4b5fd}
