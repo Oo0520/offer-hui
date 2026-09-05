@@ -133,7 +133,7 @@ svg{display:block}
 
 /* ===== 岗位卡 ===== */
 .job-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.job-card{display:flex;align-items:flex-start;gap:15px;padding:20px 22px;border-radius:var(--radius-card);position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s;height:100%}
+.job-card{display:flex;align-items:stretch;gap:15px;padding:20px 22px;border-radius:var(--radius-card);position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s;height:100%}
 .job-card:hover{transform:translateY(-3px)}
 .logo-badge{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;font-size:18px;color:#fff;flex:none}
 .job-main{flex:1;min-width:0;display:flex;flex-direction:column}
