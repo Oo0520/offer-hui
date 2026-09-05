@@ -33,8 +33,7 @@ export default function Nav() {
       <header className="nav">
         <div className="nav-in">
           <Link href="/" className="brand">
-            <span className="logo">汇</span>
-            <span>Offer汇</span>
+            <img src="/logo.png" alt="Offer汇" className="logo-img" />
           </Link>
           <nav className="nav-links">
             {LINKS.map((l) => (
@@ -66,7 +65,7 @@ export default function Nav() {
       <div className={"mask" + (open ? " open" : "")} onClick={() => setOpen(false)} />
       <aside className={"drawer" + (open ? " open" : "")}>
         <div className="d-brand">
-          <span className="logo">汇</span>Offer汇
+          <img src="/logo.png" alt="Offer汇" className="logo-img" />
         </div>
         {LINKS.map((l) => (
           <Link

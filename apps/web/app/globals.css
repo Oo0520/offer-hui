@@ -33,6 +33,7 @@ svg{display:block}
 .nav-in{max-width:1140px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:14px;height:62px}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;font-size:19px;color:var(--white);letter-spacing:.3px}
 .brand .logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#ca0013,#ef4444);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-family:var(--font-title)}
+.logo-img{height:38px;width:auto;border-radius:10px;display:block}
 .nav-links{display:flex;gap:2px}
 .nav-links a{padding:8px 12px;border-radius:12px;font-weight:800;color:rgba(238,235,227,.6);font-size:13px;transition:color .2s,background .2s;white-space:nowrap}
 .nav-links a:hover{color:var(--white);background:rgba(183,198,194,.1)}
