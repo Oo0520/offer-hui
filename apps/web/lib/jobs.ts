@@ -1,5 +1,6 @@
 // 岗位数据层：Supabase REST 拉取 + 展示字段映射
 // 服务端使用（密钥不暴露浏览器），客户端组件接收映射后的 JobView[]
+import { unstable_cache } from "next/cache";
 
 export type JobRow = {
   id: string;
@@ -66,7 +67,6 @@ const AUTH_HEADERS = {
 
 export const SOURCE_NAME: Record<string, string> = {
   ncss: "国家24365平台",
-  hit: "哈工大就业网",
   fjut: "福建理工大学就业网",
   fjrclh: "福建人才联合网",
   fj99: "福建就业网",
@@ -142,17 +142,25 @@ export function toView(r: JobRow): JobView {
   };
 }
 
-// 全量拉取（137 条级，直接 REST，Next 层缓存）
-export async function fetchAllJobs(): Promise<JobView[]> {
+// 全量拉取（unstable_cache 共享缓存，所有页面 60s 内只打一次 Supabase）
+const RAW_FETCH_FIELDS =
+  "id,source,source_url,external_id,title,city,industry,job_type,degree,cohort,salary_min,salary_max,salary_text,deadline_at,posted_at,apply_url,companies(name)";
+
+async function _fetchAllJobsRaw(): Promise<JobView[]> {
   const params = new URLSearchParams();
-  params.set("select", "*,companies(name)");
+  params.set("select", RAW_FETCH_FIELDS);
   params.set("limit", "1000");
   const url = `${URL}/rest/v1/jobs?${params.toString()}`;
-  const res = await fetch(url, { headers: AUTH_HEADERS, next: { revalidate: 60 } });
+  const res = await fetch(url, { headers: AUTH_HEADERS });
   if (!res.ok) throw new Error(`Supabase 查询失败 ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const rows = (await res.json()) as JobRow[];
   return rows.map(toView);
 }
+
+export const fetchAllJobs = unstable_cache(_fetchAllJobsRaw, ["all-jobs"], {
+  revalidate: 60,
+  tags: ["jobs"],
+});
 
 // 学历层级映射：不限=0, 专科=1, 本科=2, 硕士=3, 博士=4
 export function degreeLevel(degree: string | null | undefined): number {

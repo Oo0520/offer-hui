@@ -1,5 +1,4 @@
 import HomeClient from "@/components/HomeClient";
-export const dynamic = "force-dynamic";
 import { fetchAllJobs } from "@/lib/jobs";
 
 export const metadata = { title: "Offer汇 · 岗位聚合" };
