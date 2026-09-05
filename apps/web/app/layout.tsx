@@ -1,9 +1,9 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "Offer汇 - 应届生求职信息聚合",
+  title: "Offer派 - 应届生求职信息聚合",
   description:
     "聚合国家 24365 平台与高校就业网的校招/实习信息，校招日历、DDL 提醒、求职看板、AI 匹配一站汇聚，全部跳转官方投递入口。",
 };

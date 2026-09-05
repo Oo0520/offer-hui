@@ -1,7 +1,7 @@
-import BoardClient from "@/components/BoardClient";
+﻿import BoardClient from "@/components/BoardClient";
 import { fetchAllJobs } from "@/lib/jobs";
 
-export const metadata = { title: "求职看板 · Offer汇" };
+export const metadata = { title: "求职看板 · Offer派" };
 
 export default async function BoardPage() {
   const jobs = await fetchAllJobs();

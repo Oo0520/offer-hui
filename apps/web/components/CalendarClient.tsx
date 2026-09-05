@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import type { JobView } from "@/lib/jobs";
@@ -75,7 +75,7 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
       "VERSION:2.0",
       "PRODID:-//OfferHui//CN",
       "CALSCALE:GREGORIAN",
-      "X-WR-CALNAME:Offer汇 校招截止提醒",
+      "X-WR-CALNAME:Offer派 校招截止提醒",
     ];
     for (const j of soon) {
       const date = (j.deadlineAt || "").replace(/-/g, "");

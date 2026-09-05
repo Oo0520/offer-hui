@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -167,7 +167,7 @@ export default function ProfileClient() {
             关于
           </h4>
           <p style={{ fontSize: 12.5, lineHeight: 1.8, color: "rgba(183,198,194,.75)" }}>
-            Offer汇 —— 应届生求职信息聚合中台。聚合校招 / 实习信息，提供校招日历、DDL
+            Offer派 —— 应届生求职信息聚合中台。聚合校招 / 实习信息，提供校招日历、DDL
             提醒、求职看板、AI 匹配与轻社区。聚焦材料 / 计算机 / 软件 / 电子等专业。
           </p>
         </div>

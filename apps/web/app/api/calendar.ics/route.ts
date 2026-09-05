@@ -1,4 +1,4 @@
-import { fetchAllJobs } from "@/lib/jobs";
+﻿import { fetchAllJobs } from "@/lib/jobs";
 import { NextResponse } from "next/server";
 
 // 服务端动态生成 ICS 订阅文件，手机日历通过 URL 订阅后自动同步
@@ -30,9 +30,9 @@ export async function GET() {
     "PRODID:-//OfferHui//CN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Offer汇 校招截止提醒",
+    "X-WR-CALNAME:Offer派 校招截止提醒",
     "X-WR-TIMEZONE:Asia/Shanghai",
-    "X-WR-CALDESC:Offer汇聚合的校招/实习岗位截止日期提醒",
+    "X-WR-CALDESC:Offer派聚合的校招/实习岗位截止日期提醒",
   ];
 
   for (const j of soon) {

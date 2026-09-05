@@ -1,7 +1,7 @@
-import HomeClient from "@/components/HomeClient";
+﻿import HomeClient from "@/components/HomeClient";
 import { fetchAllJobs } from "@/lib/jobs";
 
-export const metadata = { title: "Offer汇 · 岗位聚合" };
+export const metadata = { title: "Offer派 · 岗位聚合" };
 
 export default async function HomePage() {
   const jobs = await fetchAllJobs();
