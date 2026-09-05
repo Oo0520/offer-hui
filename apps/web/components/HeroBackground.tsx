@@ -90,7 +90,7 @@ export default function HeroBackground() {
         x: logoX + p.x, y: logoY + p.y,
         vx: 0, vy: 0,
         size: Math.random() * 1.5 + 1.8,
-        color: Math.random() < 0.65 ? "238,235,227" : "202,0,19",
+        color: Math.random() < 0.6 ? "202,0,19" : "239,68,68",
       }));
     }
 
@@ -149,40 +149,75 @@ export default function HeroBackground() {
         glowRef.current.style.opacity = "0";
       }
 
-      // 画网格
-      const gridSize = 44;
-      ctx.strokeStyle = "rgba(183,198,194,0.05)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = 0; x <= w; x += gridSize) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-      }
-      for (let y = 0; y <= h; y += gridSize) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-      }
-      ctx.stroke();
-
-      // 网格交叉点鼠标互动
-      if (mouse.active) {
-        const gx = Math.round(smoothMouse.x / gridSize) * gridSize;
-        const gy = Math.round(smoothMouse.y / gridSize) * gridSize;
-        for (let di = -4; di <= 4; di++) {
-          for (let dj = -4; dj <= 4; dj++) {
-            const px = gx + di * gridSize;
-            const py = gy + dj * gridSize;
-            if (px < 0 || px > w || py < 0 || py > h) continue;
-            const dist = Math.sqrt(di * di + dj * dj);
-            if (dist > 4) continue;
-            const alpha = (1 - dist / 4) * 0.5;
-            ctx.fillStyle = `rgba(139,92,246,${alpha})`;
-            ctx.beginPath();
-            ctx.arc(px, py, 2, 0, Math.PI * 2);
-            ctx.fill();
+      // 画粒子 Logo（最底层）
+      ctx.globalCompositeOperation = "source-over";
+      particles.forEach((p) => {
+        if (mouse.active) {
+          const dx = p.x - smoothMouse.x;
+          const dy = p.y - smoothMouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 180 && dist > 0) {
+            const force = (180 - dist) / 180 * 3;
+            p.vx += (dx / dist) * force;
+            p.vy += (dy / dist) * force;
           }
         }
+        p.vx += (p.tx - p.x) * 0.02;
+        p.vy += (p.ty - p.y) * 0.02;
+        p.vx *= 0.88;
+        p.vy *= 0.88;
+        p.x += p.vx;
+        p.y += p.vy;
+        ctx.fillStyle = `rgba(${p.color},0.45)`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 画网格（鼠标靠近时线条弯曲躲避）
+      const gridSize = 44;
+      const segLen = 25; // 每段长度
+      const pushRadius = 150; // 鼠标排斥半径
+      const pushForce = 28; // 最大偏移
+      ctx.strokeStyle = "rgba(183,198,194,0.06)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+
+      // 垂直线
+      for (let gx = 0; gx <= w; gx += gridSize) {
+        let first = true;
+        for (let py = 0; py <= h; py += segLen) {
+          let px = gx;
+          if (mouse.active) {
+            const dx = px - smoothMouse.x;
+            const dy = py - smoothMouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < pushRadius && dist > 0) {
+              px += (dx / dist) * (1 - dist / pushRadius) * pushForce;
+            }
+          }
+          if (first) { ctx.moveTo(px, py); first = false; }
+          else ctx.lineTo(px, py);
+        }
       }
+      // 水平线
+      for (let gy = 0; gy <= h; gy += gridSize) {
+        let first = true;
+        for (let px = 0; px <= w; px += segLen) {
+          let py = gy;
+          if (mouse.active) {
+            const dx = px - smoothMouse.x;
+            const dy = py - smoothMouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < pushRadius && dist > 0) {
+              py += (dy / dist) * (1 - dist / pushRadius) * pushForce;
+            }
+          }
+          if (first) { ctx.moveTo(px, py); first = false; }
+          else ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
 
       // 画光斑
       ctx.globalCompositeOperation = "lighter";
@@ -206,31 +241,6 @@ export default function HeroBackground() {
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(bx, by, b.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      // 画粒子 Logo
-      ctx.globalCompositeOperation = "source-over";
-      particles.forEach((p) => {
-        if (mouse.active) {
-          const dx = p.x - smoothMouse.x;
-          const dy = p.y - smoothMouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 180 && dist > 0) {
-            const force = (180 - dist) / 180 * 3;
-            p.vx += (dx / dist) * force;
-            p.vy += (dy / dist) * force;
-          }
-        }
-        p.vx += (p.tx - p.x) * 0.02;
-        p.vy += (p.ty - p.y) * 0.02;
-        p.vx *= 0.88;
-        p.vy *= 0.88;
-        p.x += p.vx;
-        p.y += p.vy;
-        ctx.fillStyle = `rgba(${p.color},1)`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
       });
 
