@@ -173,9 +173,9 @@ export default function HomeClient({
 
   return (
     <div className="wrap">
+      <HeroBackground />
       {/* ===== Hero ===== */}
       <div className="hero">
-        <HeroBackground />
         <span className="label">2026 秋招季 · 信息聚合</span>
         <h1 className="h-display">
           秋招信息
