@@ -52,50 +52,47 @@ export default function HeroBackground() {
 
     // 生成 O+对勾 图形的粒子目标位置
     function generateLogoPoints(w: number, h: number) {
-      const off = document.createElement("canvas");
-      const size = Math.min(w, h) * 0.35;
-      off.width = size;
-      off.height = size;
-      const octx = off.getContext("2d");
-      if (!octx) return;
-
-      octx.clearRect(0, 0, size, size);
-      octx.strokeStyle = "#fff";
-      octx.lineWidth = size * 0.14;
-      octx.lineCap = "round";
-      octx.lineJoin = "round";
-
-      // O 圆
-      octx.beginPath();
-      octx.arc(size * 0.42, size * 0.5, size * 0.32, 0, Math.PI * 2);
-      octx.stroke();
-
-      // 对勾
-      octx.beginPath();
-      octx.moveTo(size * 0.28, size * 0.52);
-      octx.lineTo(size * 0.42, size * 0.66);
-      octx.lineTo(size * 0.72, size * 0.34);
-      octx.stroke();
-
-      // 采样像素
-      const img = octx.getImageData(0, 0, size, size).data;
+      const size = Math.min(w, h) * 0.45;
       const points: { x: number; y: number }[] = [];
-      const step = Math.max(2, Math.floor(size / 60));
-      for (let y = 0; y < size; y += step) {
-        for (let x = 0; x < size; x += step) {
-          const idx = (y * size + x) * 4 + 3;
-          if (img[idx] > 128) {
-            points.push({ x, y });
-          }
+      const lineWidth = size * 0.18;
+
+      // O 圆：参数方程 + 线宽偏移
+      const cx = size * 0.42, cy = size * 0.5, r = size * 0.32;
+      const circleCount = 500;
+      for (let i = 0; i < circleCount; i++) {
+        const t = (i / circleCount) * Math.PI * 2;
+        const wr = (Math.random() - 0.5) * lineWidth;
+        points.push({
+          x: cx + (r + wr) * Math.cos(t),
+          y: cy + (r + wr) * Math.sin(t),
+        });
+      }
+
+      // 对勾：两条线段
+      function addLine(x1: number, y1: number, x2: number, y2: number, count: number) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const nx = -dy / len, ny = dx / len; // 法向量
+        for (let i = 0; i < count; i++) {
+          const t = i / count;
+          const offset = (Math.random() - 0.5) * lineWidth;
+          points.push({
+            x: x1 + dx * t + nx * offset,
+            y: y1 + dy * t + ny * offset,
+          });
         }
       }
+      addLine(size * 0.28, size * 0.52, size * 0.42, size * 0.66, 200);
+      addLine(size * 0.42, size * 0.66, size * 0.72, size * 0.34, 300);
 
-      // 随机选 250 个
-      const count = Math.min(250, points.length);
-      const selected: { x: number; y: number }[] = [];
-      for (let i = 0; i < count; i++) {
-        selected.push(points[Math.floor(Math.random() * points.length)]);
+      // 打乱顺序
+      for (let i = points.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [points[i], points[j]] = [points[j], points[i]];
       }
+
+      // 取前 1000 个
+      const selected = points.slice(0, 1000);
 
       // Logo 放在右上角
       const logoX = w - size - 40;
@@ -104,11 +101,11 @@ export default function HeroBackground() {
       particles = selected.map((p) => ({
         tx: logoX + p.x,
         ty: logoY + p.y,
-        x: logoX + p.x + (Math.random() - 0.5) * 200,
-        y: logoY + p.y + (Math.random() - 0.5) * 200,
+        x: logoX + p.x,
+        y: logoY + p.y,
         vx: 0, vy: 0,
-        size: Math.random() * 2 + 1.2,
-        color: Math.random() < 0.7 ? "238,235,227" : "202,0,19",
+        size: Math.random() * 2 + 2.5,
+        color: Math.random() < 0.65 ? "238,235,227" : "202,0,19",
       }));
     }
 
@@ -230,7 +227,7 @@ export default function HeroBackground() {
         p.x += p.vx;
         p.y += p.vy;
 
-        ctx.fillStyle = `rgba(${p.color},0.9)`;
+        ctx.fillStyle = `rgba(${p.color},1)`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
