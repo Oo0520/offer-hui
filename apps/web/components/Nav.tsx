@@ -73,7 +73,6 @@ export default function Nav() {
         <div className="nav-in">
           <Link href="/" className="brand">
             <img src="/logo.png" alt="Offer派" className="logo-img" />
-            <Typewriter />
           </Link>
           <nav className="nav-links">
             {LINKS.map((l) => (
@@ -82,6 +81,7 @@ export default function Nav() {
               </Link>
             ))}
           </nav>
+          <Typewriter />
           <div className="nav-search">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
               <circle cx="11" cy="11" r="7" stroke="#b7c6c2" strokeWidth="2" />
