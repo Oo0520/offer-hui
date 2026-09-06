@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const LINKS = [
   { href: "/", label: "首页" },
@@ -13,6 +13,45 @@ const LINKS = [
   { href: "/favorites", label: "收藏" },
   { href: "/profile", label: "我的" },
 ];
+
+const SLOGANS = ["不错过每一个Offer", "陪你拿到第一个Offer", "别慌，Offer在路上"];
+
+function Typewriter() {
+  const [text, setText] = useState("");
+  const [idx, setIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const current = SLOGANS[idx];
+    let timeout: NodeJS.Timeout;
+
+    if (!deleting && text === current) {
+      // 打完停顿 2 秒
+      timeout = setTimeout(() => setDeleting(true), 2000);
+    } else if (deleting && text === "") {
+      // 删完切下一句
+      setDeleting(false);
+      setIdx((i) => (i + 1) % SLOGANS.length);
+    } else {
+      // 打字或删字
+      timeout = setTimeout(() => {
+        setText((t) =>
+          deleting ? current.slice(0, t.length - 1) : current.slice(0, t.length + 1)
+        );
+      }, deleting ? 50 : 100);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [text, deleting, idx]);
+
+  return (
+    <span className="slogan">
+      <span className="slogan-brand">Offer派·</span>
+      <span className="slogan-text">{text}</span>
+      <span className="slogan-cursor">|</span>
+    </span>
+  );
+}
 
 export default function Nav() {
   const pathname = usePathname();
@@ -34,6 +73,7 @@ export default function Nav() {
         <div className="nav-in">
           <Link href="/" className="brand">
             <img src="/logo.png" alt="Offer派" className="logo-img" />
+            <Typewriter />
           </Link>
           <nav className="nav-links">
             {LINKS.map((l) => (

@@ -34,6 +34,11 @@ svg{display:block}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;font-size:19px;color:var(--white);letter-spacing:.3px}
 .brand .logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#ca0013,#ef4444);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-family:var(--font-title)}
 .logo-img{height:38px;width:auto;border-radius:10px;display:block}
+.slogan{display:flex;align-items:baseline;font-size:14px;font-weight:700;white-space:nowrap}
+.slogan-brand{color:var(--white)}
+.slogan-text{color:rgba(238,235,227,.7);margin-left:2px}
+.slogan-cursor{color:var(--red);animation:blink 1s step-end infinite;margin-left:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .nav-links{display:flex;gap:2px}
 .nav-links a{padding:8px 12px;border-radius:12px;font-weight:800;color:rgba(238,235,227,.6);font-size:13px;transition:color .2s,background .2s;white-space:nowrap}
 .nav-links a:hover{color:var(--white);background:rgba(183,198,194,.1)}
