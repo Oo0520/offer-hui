@@ -81,7 +81,7 @@ export default function HeroBackground() {
           const j = Math.floor(Math.random() * (i + 1));
           [pts[i], pts[j]] = [pts[j], pts[i]];
         }
-        const selected = pts.slice(0, 1500);
+        const selected = pts.slice(0, 1000);
 
         // 计算 logo 显示尺寸和位置
         const hero = document.querySelector(".hero");
@@ -93,11 +93,13 @@ export default function HeroBackground() {
         const logoY = heroTop + 50;
         const scale = logoSize / sampleSize;
 
+        const centerX = logoX + logoSize / 2;
+        const centerY = logoY + logoSize / 2;
         particles = selected.map((p) => ({
           tx: logoX + p.x * scale,
           ty: logoY + p.y * scale,
-          x: logoX + p.x * scale,
-          y: logoY + p.y * scale,
+          x: centerX + (Math.random() - 0.5) * 20,
+          y: centerY + (Math.random() - 0.5) * 20,
           vx: 0, vy: 0,
           size: Math.random() * 1.2 + 1.5,
           color: Math.random() < 0.5 ? "202,0,19" : "239,68,68",
@@ -163,8 +165,7 @@ export default function HeroBackground() {
       // 粒子 Logo（仅首页）
       if (isHome && particlesReady) {
         ctx.globalCompositeOperation = "source-over";
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = "rgba(202,0,19,0.5)";
+        // 底层：大粒子半透明模拟发光（无shadowBlur，性能好）
         particles.forEach((p) => {
           if (mouse.active) {
             const dx = p.x - smoothMouse.x;
@@ -182,12 +183,21 @@ export default function HeroBackground() {
           p.vy *= 0.86;
           p.x += p.vx;
           p.y += p.vy;
-          ctx.fillStyle = `rgba(${p.color},0.7)`;
+        });
+        // 发光层
+        ctx.fillStyle = "rgba(202,0,19,0.12)";
+        particles.forEach((p) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        // 实色层
+        particles.forEach((p) => {
+          ctx.fillStyle = `rgba(${p.color},0.75)`;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
         });
-        ctx.shadowBlur = 0;
       }
 
       // 网格（鼠标靠近时线条弯曲躲避）
