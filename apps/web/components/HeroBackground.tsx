@@ -166,16 +166,16 @@ export default function HeroBackground() {
       if (isHome && particlesReady) {
         ctx.globalCompositeOperation = "source-over";
         // 底层：大粒子半透明模拟发光（无shadowBlur，性能好）
-        // 物理更新
+        // 物理更新（排斥用即时鼠标坐标，无延迟）
         const repulseR2 = 160 * 160;
         particles.forEach((p) => {
           if (mouse.active) {
-            const dx = p.x - smoothMouse.x;
-            const dy = p.y - smoothMouse.y;
+            const dx = p.x - mouse.x;
+            const dy = p.y - mouse.y;
             const d2 = dx * dx + dy * dy;
             if (d2 < repulseR2 && d2 > 0) {
               const dist = Math.sqrt(d2);
-              const force = (160 - dist) / 160 * 4;
+              const force = (160 - dist) / 160 * 5;
               p.vx += (dx / dist) * force;
               p.vy += (dy / dist) * force;
             }
