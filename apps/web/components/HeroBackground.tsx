@@ -22,6 +22,7 @@ export default function HeroBackground() {
 
   useEffect(() => {
     if (!enabled) return;
+    const isHome = window.location.pathname === "/";
     const canvas = canvasRef.current!;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
@@ -47,11 +48,14 @@ export default function HeroBackground() {
     function generateLogoPoints(w: number) {
       const size = Math.min(w, H) * 0.38;
       const points: { x: number; y: number }[] = [];
-      const lineWidth = size * 0.16;
+      const lineWidth = size * 0.22;
 
       const cx = size * 0.42, cy = size * 0.5, r = size * 0.32;
+      // O 圆，右上角留缺口（对勾穿过处，30度~60度）
+      const startAngle = Math.PI / 3; // 60度
+      const endAngle = Math.PI * 2 + Math.PI / 6; // 390度=30度
       for (let i = 0; i < 500; i++) {
-        const t = (i / 500) * Math.PI * 2;
+        const t = startAngle + (i / 500) * (endAngle - startAngle);
         const wr = (Math.random() - 0.5) * lineWidth;
         points.push({ x: cx + (r + wr) * Math.cos(t), y: cy + (r + wr) * Math.sin(t) });
       }
@@ -65,8 +69,9 @@ export default function HeroBackground() {
           points.push({ x: x1 + dx * t + nx * offset, y: y1 + dy * t + ny * offset });
         }
       }
-      addLine(size * 0.28, size * 0.52, size * 0.42, size * 0.66, 200);
-      addLine(size * 0.42, size * 0.66, size * 0.72, size * 0.34, 300);
+      // 对勾：左下短边 + 右上长边（延伸出圆外）
+      addLine(size * 0.26, size * 0.56, size * 0.42, size * 0.70, 200);
+      addLine(size * 0.42, size * 0.70, size * 0.82, size * 0.20, 400);
 
       for (let i = points.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -141,7 +146,8 @@ export default function HeroBackground() {
         glowRef.current.style.opacity = "0";
       }
 
-      // 粒子 Logo（最底层）
+      // 粒子 Logo（仅首页，最底层）
+      if (isHome) {
       ctx.globalCompositeOperation = "source-over";
       particles.forEach((p) => {
         if (mouse.active) {
@@ -165,6 +171,7 @@ export default function HeroBackground() {
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
       });
+      }
 
       // 网格（鼠标靠近时线条弯曲躲避）
       const gridSize = 44;
