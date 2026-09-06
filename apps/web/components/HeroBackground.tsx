@@ -105,9 +105,9 @@ export default function HeroBackground() {
     window.addEventListener("resize", resize);
 
     function onMove(e: MouseEvent) {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-      mouse.active = mouse.y < H;
+      mouse.x = e.clientX + window.scrollX;
+      mouse.y = e.clientY + window.scrollY;
+      mouse.active = mouse.y < H && mouse.y > 0;
     }
     function onLeave() {
       mouse.active = false;
