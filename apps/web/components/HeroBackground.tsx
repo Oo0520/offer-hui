@@ -151,13 +151,13 @@ export default function HeroBackground() {
       const h = H;
       ctx.clearRect(0, 0, w, h);
 
-      smoothMouse.x = lerp(smoothMouse.x, mouse.x, 0.08);
-      smoothMouse.y = lerp(smoothMouse.y, mouse.y, 0.08);
+      smoothMouse.x = lerp(smoothMouse.x, mouse.x, 0.2);
+      smoothMouse.y = lerp(smoothMouse.y, mouse.y, 0.2);
 
-      // 鼠标光晕
+      // 鼠标光晕（即时跟随，不用缓动）
       if (glowRef.current && mouse.active) {
         glowRef.current.style.opacity = "1";
-        glowRef.current.style.transform = `translate(${smoothMouse.x - 200}px, ${smoothMouse.y - 200}px)`;
+        glowRef.current.style.transform = `translate(${mouse.x - 200}px, ${mouse.y - 200}px)`;
       } else if (glowRef.current) {
         glowRef.current.style.opacity = "0";
       }
@@ -166,12 +166,15 @@ export default function HeroBackground() {
       if (isHome && particlesReady) {
         ctx.globalCompositeOperation = "source-over";
         // 底层：大粒子半透明模拟发光（无shadowBlur，性能好）
+        // 物理更新
+        const repulseR2 = 160 * 160;
         particles.forEach((p) => {
           if (mouse.active) {
             const dx = p.x - smoothMouse.x;
             const dy = p.y - smoothMouse.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 160 && dist > 0) {
+            const d2 = dx * dx + dy * dy;
+            if (d2 < repulseR2 && d2 > 0) {
+              const dist = Math.sqrt(d2);
               const force = (160 - dist) / 160 * 4;
               p.vx += (dx / dist) * force;
               p.vy += (dy / dist) * force;
