@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * HeroBackground - 桌面端首页最底层动态背景
+ * HeroBackground - 桌面端首页最底层动态背景（fixed 全屏宽）
  * 液体光斑 + 互动网格 + 粒子Logo + 鼠标光晕
- * 只在 >=992px 桌面端渲染，只在首页顶部区域
+ * 只在 >=992px 桌面端渲染，覆盖页面顶部 650px 全宽区域
  */
 export default function HeroBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -13,7 +13,6 @@ export default function HeroBackground() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    // 只桌面端
     const mq = window.matchMedia("(min-width: 992px)");
     setEnabled(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setEnabled(e.matches);
@@ -24,20 +23,17 @@ export default function HeroBackground() {
   useEffect(() => {
     if (!enabled) return;
     const canvas = canvasRef.current!;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
-    const wrap = canvas.parentElement!;
-    if (!canvas || !wrap) return;
 
     let raf = 0;
     let running = true;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const H = 600; // 背景区域高度
+    const H = 650;
 
-    // 鼠标
     const mouse = { x: -9999, y: -9999, active: false };
     const smoothMouse = { x: -9999, y: -9999 };
 
-    // 光斑
     type Blob = { x: number; y: number; r: number; color: string; alpha: number; phase: number; speed: number };
     const blobs: Blob[] = [
       { x: 0.2, y: 0.3, r: 340, color: "202,0,19", alpha: 0.10, phase: 0, speed: 0.003 },
@@ -45,23 +41,20 @@ export default function HeroBackground() {
       { x: 0.5, y: 0.8, r: 300, color: "6,182,212", alpha: 0.08, phase: 4, speed: 0.0035 },
     ];
 
-    // 粒子 Logo
     type Particle = { tx: number; ty: number; x: number; y: number; vx: number; vy: number; size: number; color: string };
     let particles: Particle[] = [];
 
     function generateLogoPoints(w: number) {
-      const size = Math.min(w, H) * 0.42;
+      const size = Math.min(w, H) * 0.38;
       const points: { x: number; y: number }[] = [];
       const lineWidth = size * 0.16;
 
-      // O 圆
       const cx = size * 0.42, cy = size * 0.5, r = size * 0.32;
       for (let i = 0; i < 500; i++) {
         const t = (i / 500) * Math.PI * 2;
         const wr = (Math.random() - 0.5) * lineWidth;
         points.push({ x: cx + (r + wr) * Math.cos(t), y: cy + (r + wr) * Math.sin(t) });
       }
-      // 对勾
       function addLine(x1: number, y1: number, x2: number, y2: number, count: number) {
         const dx = x2 - x1, dy = y2 - y1;
         const len = Math.sqrt(dx * dx + dy * dy);
@@ -75,15 +68,14 @@ export default function HeroBackground() {
       addLine(size * 0.28, size * 0.52, size * 0.42, size * 0.66, 200);
       addLine(size * 0.42, size * 0.66, size * 0.72, size * 0.34, 300);
 
-      // 打乱
       for (let i = points.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [points[i], points[j]] = [points[j], points[i]];
       }
 
-      // Logo 在右上角
-      const logoX = w - size - 50;
-      const logoY = 70;
+      // Logo 在视口右上角
+      const logoX = w - size - 60;
+      const logoY = 80;
 
       particles = points.slice(0, 1000).map((p) => ({
         tx: logoX + p.x, ty: logoY + p.y,
@@ -95,7 +87,7 @@ export default function HeroBackground() {
     }
 
     function resize() {
-      const w = wrap.clientWidth;
+      const w = window.innerWidth;
       canvas.width = w * dpr;
       canvas.height = H * dpr;
       canvas.style.width = w + "px";
@@ -108,11 +100,9 @@ export default function HeroBackground() {
     setTimeout(resize, 100);
     window.addEventListener("resize", resize);
 
-    // 鼠标事件（监听整个 wrap）
     function onMove(e: MouseEvent) {
-      const rect = wrap.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
       mouse.active = mouse.y < H;
     }
     function onLeave() {
@@ -120,10 +110,9 @@ export default function HeroBackground() {
       mouse.x = -9999;
       mouse.y = -9999;
     }
-    wrap.addEventListener("mousemove", onMove);
-    wrap.addEventListener("mouseleave", onLeave);
+    window.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseleave", onLeave);
 
-    // 视口可见性
     let visible = true;
     const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { threshold: 0.01 });
     io.observe(canvas);
@@ -134,14 +123,13 @@ export default function HeroBackground() {
       if (!running) return;
       if (!visible) { raf = requestAnimationFrame(draw); return; }
 
-      const w = wrap.clientWidth;
+      const w = window.innerWidth;
       const h = H;
       ctx.clearRect(0, 0, w, h);
 
       smoothMouse.x = lerp(smoothMouse.x, mouse.x, 0.08);
       smoothMouse.y = lerp(smoothMouse.y, mouse.y, 0.08);
 
-      // 鼠标光晕
       if (glowRef.current && mouse.active) {
         glowRef.current.style.opacity = "1";
         glowRef.current.style.transform = `translate(${smoothMouse.x - 200}px, ${smoothMouse.y - 200}px)`;
@@ -149,7 +137,7 @@ export default function HeroBackground() {
         glowRef.current.style.opacity = "0";
       }
 
-      // 画粒子 Logo（最底层）
+      // 粒子 Logo（最底层）
       ctx.globalCompositeOperation = "source-over";
       particles.forEach((p) => {
         if (mouse.active) {
@@ -174,16 +162,15 @@ export default function HeroBackground() {
         ctx.fill();
       });
 
-      // 画网格（鼠标靠近时线条弯曲躲避）
+      // 网格（鼠标靠近时线条弯曲躲避）
       const gridSize = 44;
-      const segLen = 25; // 每段长度
-      const pushRadius = 150; // 鼠标排斥半径
-      const pushForce = 28; // 最大偏移
+      const segLen = 25;
+      const pushRadius = 150;
+      const pushForce = 28;
       ctx.strokeStyle = "rgba(183,198,194,0.06)";
       ctx.lineWidth = 1;
       ctx.beginPath();
 
-      // 垂直线
       for (let gx = 0; gx <= w; gx += gridSize) {
         let first = true;
         for (let py = 0; py <= h; py += segLen) {
@@ -200,7 +187,6 @@ export default function HeroBackground() {
           else ctx.lineTo(px, py);
         }
       }
-      // 水平线
       for (let gy = 0; gy <= h; gy += gridSize) {
         let first = true;
         for (let px = 0; px <= w; px += segLen) {
@@ -219,7 +205,7 @@ export default function HeroBackground() {
       }
       ctx.stroke();
 
-      // 画光斑
+      // 光斑
       ctx.globalCompositeOperation = "lighter";
       blobs.forEach((b) => {
         b.phase += b.speed;
@@ -252,8 +238,8 @@ export default function HeroBackground() {
       running = false;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
-      wrap.removeEventListener("mousemove", onMove);
-      wrap.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
       io.disconnect();
     };
   }, [enabled]);

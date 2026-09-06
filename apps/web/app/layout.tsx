@@ -1,6 +1,7 @@
 ﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import HeroBackground from "@/components/HeroBackground";
 
 export const metadata: Metadata = {
   title: "Offer派 - 应届生求职信息聚合",
@@ -29,6 +30,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <HeroBackground />
         <Nav />
         {children}
         <footer className="site-foot">
