@@ -73,9 +73,13 @@ export default function HeroBackground() {
         [points[i], points[j]] = [points[j], points[i]];
       }
 
-      // Logo 在视口右上角
-      const logoX = w - size - 60;
-      const logoY = 80;
+      // Logo 固定在 hero 卡片内部右上角
+      const hero = document.querySelector(".hero");
+      const rect = hero ? hero.getBoundingClientRect() : null;
+      const heroRight = rect ? rect.right : w - 60;
+      const heroTop = rect ? rect.top + window.scrollY : 80;
+      const logoX = heroRight - 42 - size - 10; // hero padding-right 42 + 间距
+      const logoY = heroTop + 44 + 10; // hero padding-top 44 + 间距
 
       particles = points.slice(0, 1000).map((p) => ({
         tx: logoX + p.x, ty: logoY + p.y,
