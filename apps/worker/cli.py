@@ -28,6 +28,22 @@ def cmd_stats(args):
     print(json.dumps(st.stats(), ensure_ascii=False, indent=2))
 
 
+def cmd_scheduler(args):
+    """透传调度器参数：python cli.py scheduler [--now] [--once] [--hour N]"""
+    import sys
+
+    from scheduler import main as sched_main
+
+    sys.argv = ["scheduler"]
+    if args.now:
+        sys.argv.append("--now")
+    if args.once:
+        sys.argv.append("--once")
+    if args.hour != 2:
+        sys.argv += ["--hour", str(args.hour)]
+    sched_main()
+
+
 def main():
     parser = argparse.ArgumentParser(prog="offer-worker", description="OfferHub 数据管道")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -43,6 +59,12 @@ def main():
 
     p = sub.add_parser("stats", help="查看库统计")
     p.set_defaults(func=cmd_stats)
+
+    p = sub.add_parser("scheduler", help="启动定时抓取调度器（每天自动爬）")
+    p.add_argument("--now", action="store_true", help="启动前立即执行一次")
+    p.add_argument("--once", action="store_true", help="只执行一次后退出")
+    p.add_argument("--hour", type=int, default=2, help="每日抓取小时（默认 2 点）")
+    p.set_defaults(func=cmd_scheduler)
 
     args = parser.parse_args()
     args.func(args)

@@ -23,7 +23,12 @@ class PostgresStorage:
         import psycopg
 
         self._psycopg = psycopg
-        self.conn = psycopg.connect(dsn, autocommit=True)
+        # prepare_threshold=None：禁用服务端 prepared statement。
+        # Supabase pooler(pgbouncer transaction 模式) 不支持它，会导致
+        # DuplicatePreparedStatement 报错。
+        self.conn = psycopg.connect(
+            dsn, autocommit=True, prepare_threshold=None
+        )
 
     def upsert_job(self, job: Job) -> str:
         with self.conn.cursor() as cur:
@@ -120,5 +125,58 @@ class PostgresStorage:
                 )
         return len(to_expire)
 
-    def close(self):
-        self.conn.close()
+    def record_run(
+        self,
+        source_name: str,
+        kind: str,
+        started_at: str,
+        finished_at: str,
+        status: str,
+        items_found: int,
+        items_new: int,
+        items_updated: int,
+        items_expired: int,
+        error: str = "",
+    ) -> str:
+        """记录一次爬取运行到 crawl_sources / crawl_runs 表（监控）。"""
+        base_url = {
+            "ncss": "https://www.ncss.cn/",
+            "fjut": "https://fjut.jysd.com/",
+            "fjrclh": "http://fjrclh.fzu.edu.cn/",
+            "fj99": "https://www.fj99.org.cn/bys/",
+            "feishu_nio": "https://nio.jobs.feishu.cn/",
+            "feishu_mi": "https://mi.jobs.feishu.cn/",
+            "feishu_xiaopeng": "https://xiaopeng.jobs.feishu.cn/",
+        }.get(source_name, "")
+        with self.conn.cursor() as cur:
+            sid = cur.execute(
+                "SELECT id FROM crawl_sources WHERE name=%s", (source_name,)
+            ).fetchone()
+            if sid:
+                sid = sid[0]
+                cur.execute(
+                    "UPDATE crawl_sources SET last_run_at=%s, last_success_at=%s "
+                    "WHERE id=%s",
+                    (started_at, finished_at if status == "success" else None, sid),
+                )
+            else:
+                cur.execute(
+                    """INSERT INTO crawl_sources (name, kind, base_url, active,
+                         last_run_at, last_success_at)
+                       VALUES (%s,%s,%s,true,%s,%s) RETURNING id""",
+                    (
+                        source_name, kind, base_url, started_at,
+                        finished_at if status == "success" else None,
+                    ),
+                )
+                sid = cur.fetchone()[0]
+            cur.execute(
+                """INSERT INTO crawl_runs (source_id, started_at, finished_at, status,
+                     items_found, items_new, items_updated, items_failed, error)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,0,%s)""",
+                (
+                    sid, started_at, finished_at, status,
+                    items_found, items_new, items_updated, error or None,
+                ),
+            )
+        return sid

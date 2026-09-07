@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """数据管道主流程：抓取各源 → 去重入库 → 增量清理 → 统计。"""
 import asyncio
+from datetime import datetime, timezone
 
 import httpx
 
@@ -16,6 +17,18 @@ from .storage import PostgresStorage
 
 def get_storage():
     return PostgresStorage(settings.database_url)
+
+
+# 数据源 → 监控分类（university 高校 / corporate 企业 / ncss 平台）
+SOURCE_KIND = {
+    "ncss": "ncss",
+    "fjut": "university",
+    "fjrclh": "university",
+    "fj99": "university",
+    "feishu_nio": "corporate",
+    "feishu_mi": "corporate",
+    "feishu_xiaopeng": "corporate",
+}
 
 
 def get_sources(client: httpx.AsyncClient) -> list[BaseSource]:
@@ -36,7 +49,7 @@ def get_sources(client: httpx.AsyncClient) -> list[BaseSource]:
 
 
 async def run_pipeline(dry_run: bool = False) -> dict:
-    """执行一次全量抓取。返回每个源的统计。"""
+    """执行一次全量抓取。返回每个源的统计（含 crawl_runs 监控记录）。"""
     storage = get_storage()
     results: dict = {}
     async with httpx.AsyncClient(
@@ -45,6 +58,7 @@ async def run_pipeline(dry_run: bool = False) -> dict:
         for src in get_sources(client):
             stat = {"found": 0, "new": 0, "updated": 0, "skipped": 0, "error": ""}
             alive: set = set()
+            started = datetime.now(timezone.utc).isoformat()
             try:
                 items: list[Job] = await src.fetch()
                 stat["found"] = len(items)
@@ -55,11 +69,28 @@ async def run_pipeline(dry_run: bool = False) -> dict:
                     stat[storage.upsert_job(job)] += 1
                 if not dry_run and hasattr(storage, "mark_expired"):
                     stat["expired"] = storage.mark_expired(src.name, alive)
+                status = "success"
             except Exception as e:
                 stat["error"] = f"{type(e).__name__}: {e}"
+                status = "failed"
+            finished = datetime.now(timezone.utc).isoformat()
+            if not dry_run:
+                storage.record_run(
+                    src.name,
+                    SOURCE_KIND.get(src.name, "other"),
+                    started, finished, status,
+                    stat["found"], stat["new"], stat["updated"], stat.get("expired", 0),
+                    stat["error"],
+                )
             results[src.name] = stat
+    backend = settings.storage_backend
+    stats = storage.stats()
+    try:
+        storage.close()
+    except Exception:
+        pass
     return {
-        "backend": settings.storage_backend,
+        "backend": backend,
         "results": results,
-        "stats": storage.stats(),
+        "stats": stats,
     }
