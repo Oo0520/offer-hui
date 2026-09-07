@@ -8,10 +8,12 @@ import httpx
 from .config import settings
 from .models import Job
 from .sources.base import BaseSource
+from .sources.campus2027 import Campus2027Source
 from .sources.feishu import FeishuSource
 from .sources.fj99 import Fj99Source
 from .sources.fjrclh import FjrclhSource
 from .sources.fjut import FjutSource
+from .sources.open_jobs import OpenJobsDataSource
 from .storage import PostgresStorage
 
 
@@ -19,7 +21,7 @@ def get_storage():
     return PostgresStorage(settings.database_url)
 
 
-# 数据源 → 监控分类（university 高校 / corporate 企业 / ncss 平台）
+# 数据源 → 监控分类（university 高校 / corporate 企业 / ncss 平台 / community 社区）
 SOURCE_KIND = {
     "ncss": "ncss",
     "fjut": "university",
@@ -28,6 +30,8 @@ SOURCE_KIND = {
     "feishu_nio": "corporate",
     "feishu_mi": "corporate",
     "feishu_xiaopeng": "corporate",
+    "campus2027": "community",
+    "open_jobs": "community",
 }
 
 
@@ -37,6 +41,9 @@ def get_sources(client: httpx.AsyncClient) -> list[BaseSource]:
         FjrclhSource(client),
         Fj99Source(client),
     ]
+    # 社区维护开源数据源
+    sources.append(Campus2027Source(client))
+    sources.append(OpenJobsDataSource(client))
     # 飞书招聘系企业（Playwright，每个 tenant 一个实例）
     feishu_companies = [
         ("nio", "蔚来", "新能源汽车", "/campus"),

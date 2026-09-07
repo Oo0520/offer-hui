@@ -73,6 +73,8 @@ export const SOURCE_NAME: Record<string, string> = {
   feishu_nio: "蔚来官网",
   feishu_mi: "小米官网",
   feishu_xiaopeng: "小鹏汽车官网",
+  campus2027: "Campus2027社区",
+  open_jobs: "open-jobs数据",
 };
 
 const GRADS = [
@@ -146,15 +148,26 @@ export function toView(r: JobRow): JobView {
 const RAW_FETCH_FIELDS =
   "id,source,source_url,external_id,title,city,industry,job_type,degree,cohort,salary_min,salary_max,salary_text,deadline_at,posted_at,apply_url,companies(name)";
 
+// PostgREST 服务端单请求上限 1000 行（db-max-rows），数据超 1000 需分页循环拉取
+const PAGE_SIZE = 1000;
+
 async function _fetchAllJobsRaw(): Promise<JobView[]> {
-  const params = new URLSearchParams();
-  params.set("select", RAW_FETCH_FIELDS);
-  params.set("limit", "1000");
-  const url = `${URL}/rest/v1/jobs?${params.toString()}`;
-  const res = await fetch(url, { headers: AUTH_HEADERS });
-  if (!res.ok) throw new Error(`Supabase 查询失败 ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const rows = (await res.json()) as JobRow[];
-  return rows.map(toView);
+  const all: JobRow[] = [];
+  let offset = 0;
+  while (true) {
+    const params = new URLSearchParams();
+    params.set("select", RAW_FETCH_FIELDS);
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(offset));
+    const url = `${URL}/rest/v1/jobs?${params.toString()}`;
+    const res = await fetch(url, { headers: AUTH_HEADERS });
+    if (!res.ok) throw new Error(`Supabase 查询失败 ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const rows = (await res.json()) as JobRow[];
+    all.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+  return all.map(toView);
 }
 
 export const fetchAllJobs = unstable_cache(_fetchAllJobsRaw, ["all-jobs"], {

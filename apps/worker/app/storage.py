@@ -147,6 +147,8 @@ class PostgresStorage:
             "feishu_nio": "https://nio.jobs.feishu.cn/",
             "feishu_mi": "https://mi.jobs.feishu.cn/",
             "feishu_xiaopeng": "https://xiaopeng.jobs.feishu.cn/",
+            "campus2027": "https://campus2027.top/",
+            "open_jobs": "https://github.com/ConorsCode/open-jobs-data",
         }.get(source_name, "")
         with self.conn.cursor() as cur:
             sid = cur.execute(
@@ -180,3 +182,6 @@ class PostgresStorage:
                 ),
             )
         return sid
+
+    def close(self):
+        self.conn.close()
