@@ -75,6 +75,7 @@ export const SOURCE_NAME: Record<string, string> = {
   feishu_xiaopeng: "小鹏汽车官网",
   campus2027: "Campus2027社区",
   open_jobs: "open-jobs数据",
+  wechat: "企业公众号",
 };
 
 const GRADS = [

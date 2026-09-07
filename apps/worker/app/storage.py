@@ -149,6 +149,7 @@ class PostgresStorage:
             "feishu_xiaopeng": "https://xiaopeng.jobs.feishu.cn/",
             "campus2027": "https://campus2027.top/",
             "open_jobs": "https://github.com/ConorsCode/open-jobs-data",
+            "wechat": "https://mp.weixin.qq.com/",
         }.get(source_name, "")
         with self.conn.cursor() as cur:
             sid = cur.execute(

@@ -32,6 +32,7 @@ SOURCE_KIND = {
     "feishu_xiaopeng": "corporate",
     "campus2027": "community",
     "open_jobs": "community",
+    "wechat": "corporate",
 }
 
 
