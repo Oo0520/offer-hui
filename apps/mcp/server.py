@@ -61,11 +61,11 @@ def _conn():
 
 _DEGREE_CASE = """
 CASE
-  WHEN j.degree IS NULL OR j.degree = '' OR j.degree LIKE '%不限%' THEN 0
-  WHEN j.degree LIKE '%博士%' THEN 4
-  WHEN j.degree LIKE '%硕士%' THEN 3
-  WHEN j.degree LIKE '%本科%' THEN 2
-  WHEN j.degree LIKE '%专科%' OR j.degree LIKE '%大专%' THEN 1
+  WHEN j.degree IS NULL OR j.degree = '' OR j.degree LIKE '%%不限%%' THEN 0
+  WHEN j.degree LIKE '%%博士%%' THEN 4
+  WHEN j.degree LIKE '%%硕士%%' THEN 3
+  WHEN j.degree LIKE '%%本科%%' THEN 2
+  WHEN j.degree LIKE '%%专科%%' OR j.degree LIKE '%%大专%%' THEN 1
   ELSE 0
 END
 """
