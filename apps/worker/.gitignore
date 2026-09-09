@@ -3,3 +3,7 @@
 _ojd_jobs.json
 _ojd_summary.json
 _campus2027_readme.md
+
+# fjut 登录态与日志（敏感，不入库）
+fjut_cookies.txt
+*.log

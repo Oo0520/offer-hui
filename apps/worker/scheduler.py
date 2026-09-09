@@ -9,6 +9,9 @@
 import argparse
 import asyncio
 import logging
+import subprocess
+import sys
+from pathlib import Path
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -20,6 +23,23 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 log = logging.getLogger("scheduler")
+
+
+def fjut_full_job():
+    """fjut 福建理工全量列表采集（Playwright + 登录态，需独立进程）"""
+    script = Path(__file__).parent / "fjut_full.py"
+    log.info("开始 fjut 全量采集 ...")
+    try:
+        res = subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True, text=True, timeout=1800, encoding="utf-8",
+        )
+        tail = (res.stdout or res.stderr or "").strip().splitlines()[-1]
+        log.info(f"fjut 全量采集完成：{tail}")
+        if res.returncode != 0:
+            log.warning(f"fjut 采集异常退出：{(res.stderr or '')[-300:]}")
+    except Exception as e:
+        log.error(f"fjut 全量采集失败：{e}")
 
 
 def crawl_job():
@@ -48,6 +68,7 @@ def main():
 
     if args.once:
         crawl_job()
+        fjut_full_job()
         return
 
     sched = BlockingScheduler(timezone="Asia/Shanghai")
@@ -57,7 +78,13 @@ def main():
         id="daily_crawl",
         misfire_grace_time=3600,
     )
-    log.info(f"调度器已启动，每天 {args.hour:02d}:00 执行抓取")
+    sched.add_job(
+        fjut_full_job,
+        CronTrigger(hour=args.hour, minute=15),
+        id="fjut_full_daily",
+        misfire_grace_time=3600,
+    )
+    log.info(f"调度器已启动，每天 {args.hour:02d}:00 常规抓取 / :15 fjut 全量采集")
     if args.now:
         crawl_job()
     try:
