@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/community", label: "社区" },
   { href: "/favorites", label: "收藏" },
   { href: "/profile", label: "我的" },
+  { href: "/agents", label: "Agent 接入" },
 ];
 
 const SLOGANS = ["不错过每一个Offer", "陪你拿到第一个Offer", "别慌，Offer在路上"];
