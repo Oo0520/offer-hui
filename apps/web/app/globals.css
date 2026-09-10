@@ -96,7 +96,9 @@ svg{display:block}
 .filter-btn:hover,.filter-btn.open{border-color:rgba(183,198,194,.55);color:var(--white)}
 .filter-btn .arr{display:inline-flex;color:var(--graygreen);transition:transform .2s;line-height:0}
 .filter-btn.open .arr{transform:rotate(180deg)}
-.filter-panel{position:absolute;top:calc(100% + 8px);left:0;width:210px;background:var(--charcoal-2);border:1px solid rgba(183,198,194,.3);border-radius:var(--radius-inner);padding:14px;box-shadow:0 20px 50px -12px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
+.filter-panel{position:absolute;top:calc(100% + 8px);left:0;width:210px;background:#171e19;border:1px solid rgba(183,198,194,.3);border-radius:var(--radius-inner);padding:14px;box-shadow:0 24px 60px -12px rgba(0,0,0,.7);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
+.filter-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.filter-mask.open{opacity:1;pointer-events:auto}
 .filter-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
 .f-opt{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px;cursor:pointer;font-size:12.5px;color:rgba(238,235,227,.8)}
 .f-opt:hover{background:rgba(183,198,194,.08)}
