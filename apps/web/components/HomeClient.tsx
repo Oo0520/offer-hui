@@ -267,10 +267,6 @@ export default function HomeClient({
               清除
             </button>
           )}
-          <div
-            className={"filter-mask" + (openDim ? " open" : "")}
-            onClick={() => setOpenDim(null)}
-          />
           <div className={"filter-panel" + (openDim ? " open" : "")}>
             {openDim &&
               dimOpts[openDim].map((o) => (
@@ -299,6 +295,12 @@ export default function HomeClient({
           </div>
         </div>
       </div>
+
+      {/* 筛选遮罩层 */}
+      <div
+        className={"filter-mask" + (openDim ? " open" : "")}
+        onClick={() => setOpenDim(null)}
+      />
 
       {/* ===== 主体 ===== */}
       <div className="main">
