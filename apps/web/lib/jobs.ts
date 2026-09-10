@@ -192,12 +192,13 @@ export const DEGREE_FILTER_LEVEL: Record<string, number> = {
   "专科及以上": 1,
   "本科及以上": 2,
   "硕士及以上": 3,
+  "博士及以上": 4,
 };
 
 // 筛选维度选项（按出现次数降序）
 export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree"): string[] {
   if (key === "degree") {
-    return ["不限", "专科及以上", "本科及以上", "硕士及以上"];
+    return ["专科及以上", "本科及以上", "硕士及以上", "博士及以上"];
   }
   const m = new Map<string, number>();
   for (const j of jobs) {

@@ -99,9 +99,7 @@ export default function HomeClient({
         v,
         n:
           d.key === "degree"
-            ? v === "不限"
-              ? jobs.filter((j) => degreeLevel(j.degree) === 0).length
-              : jobs.filter((j) => degreeLevel(j.degree) >= (DEGREE_FILTER_LEVEL[v] ?? 0)).length
+            ? jobs.filter((j) => degreeLevel(j.degree) >= (DEGREE_FILTER_LEVEL[v] ?? 0)).length
             : jobs.filter((j) => j[d.key] === v).length,
       }));
     }
@@ -268,30 +266,7 @@ export default function HomeClient({
             </button>
           )}
           <div className={"filter-panel" + (openDim ? " open" : "")}>
-            {openDim &&
-              dimOpts[openDim].map((o) => (
-                <div
-                  key={o.v}
-                  className={"f-opt" + (filters[openDim].includes(o.v) ? " on" : "")}
-                  onClick={() => {
-                    toggleDim(openDim, o.v);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <span className="cb">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
-                      <path d="m5 12 4 4L19 6" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                  {o.v}
-                  <span className="n">{o.n}</span>
-                </div>
-              ))}
-            {openDim && filters[openDim].length > 0 && (
-              <button className="f-clear" onClick={() => clearDim(openDim)}>
-                清空该维度
-              </button>
-            )}
+            {openDim && <FilterOptions dim={openDim} opts={dimOpts[openDim]} filters={filters} toggleDim={toggleDim} clearDim={clearDim} setCurrentPage={setCurrentPage} />}
           </div>
         </div>
       </div>
@@ -566,5 +541,94 @@ export default function HomeClient({
         </svg>
       </button>
     </div>
+  );
+}
+
+// 城市分组配置
+const HOT_CITIES = ["北京", "上海", "广州", "深圳", "杭州", "南京", "苏州", "武汉", "西安", "成都", "天津", "重庆", "香港"];
+const FUJIAN_CITIES = ["福州", "厦门", "泉州", "漳州", "莆田", "宁德", "龙岩", "福清"];
+
+function FilterOptions({
+  dim,
+  opts,
+  filters,
+  toggleDim,
+  clearDim,
+  setCurrentPage,
+}: {
+  dim: Dim;
+  opts: { v: string; n: number }[];
+  filters: FState;
+  toggleDim: (d: Dim, v: string) => void;
+  clearDim: (d: Dim) => void;
+  setCurrentPage: (n: number) => void;
+}) {
+  const renderOpt = (o: { v: string; n: number }) => (
+    <div
+      key={o.v}
+      className={"f-opt" + (filters[dim].includes(o.v) ? " on" : "")}
+      onClick={() => {
+        toggleDim(dim, o.v);
+        setCurrentPage(1);
+      }}
+    >
+      <span className="cb">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+          <path d="m5 12 4 4L19 6" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+      {o.v}
+      <span className="n">{o.n}</span>
+    </div>
+  );
+
+  // 城市维度分组
+  if (dim === "city") {
+    const all = opts;
+    const nationwide = all.filter((o) => o.v === "全国");
+    const hot = all.filter((o) => HOT_CITIES.includes(o.v));
+    const fujian = all.filter((o) => FUJIAN_CITIES.includes(o.v));
+    const other = all.filter((o) => o.v !== "全国" && !HOT_CITIES.includes(o.v) && !FUJIAN_CITIES.includes(o.v));
+    return (
+      <>
+        {nationwide.length > 0 && (
+          <>
+            <div className="f-group">全国</div>
+            {nationwide.map(renderOpt)}
+          </>
+        )}
+        {hot.length > 0 && (
+          <>
+            <div className="f-group">热门城市</div>
+            {hot.map(renderOpt)}
+          </>
+        )}
+        {fujian.length > 0 && (
+          <>
+            <div className="f-group">福建本地</div>
+            {fujian.map(renderOpt)}
+          </>
+        )}
+        {other.length > 0 && (
+          <>
+            <div className="f-group">其他城市</div>
+            {other.map(renderOpt)}
+          </>
+        )}
+        {filters[dim].length > 0 && (
+          <button className="f-clear" onClick={() => clearDim(dim)}>清空该维度</button>
+        )}
+      </>
+    );
+  }
+
+  // 其他维度不分组
+  return (
+    <>
+      {opts.map(renderOpt)}
+      {filters[dim].length > 0 && (
+        <button className="f-clear" onClick={() => clearDim(dim)}>清空该维度</button>
+      )}
+    </>
   );
 }
