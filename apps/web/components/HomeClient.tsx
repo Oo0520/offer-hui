@@ -100,10 +100,11 @@ export default function HomeClient({
     };
     for (const d of DIMS) {
       if (d.key === "school") {
-        // 学校维度从 source 提取
+        // 学校维度只从招聘会/宣讲会提取
         const m2 = new Map<string, number>();
         for (const j of jobs) {
           if (!j.source) continue;
+          if (j.jobType !== "招聘会" && j.jobType !== "宣讲会") continue;
           m2.set(j.source, (m2.get(j.source) || 0) + 1);
         }
         m.school = [...m2.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
