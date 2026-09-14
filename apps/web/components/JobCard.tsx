@@ -73,6 +73,23 @@ export default function JobCard({ job }: { job: JobView }) {
   useEffect(() => {
     setFav(readFavs().includes(job.id));
     setBoard(readBoard()[job.id] || null);
+
+    // 登录后从数据库读状态
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      if (!u) return;
+      supabase
+        .from("user_jobs")
+        .select("status")
+        .eq("user_id", u.id)
+        .eq("job_id", job.id)
+        .then(({ data: rows }) => {
+          if (!rows) return;
+          const statuses = new Set(rows.map((r) => r.status));
+          setFav(statuses.has("star"));
+          setBoard(statuses.has("pending") ? "待投" : null);
+        });
+    });
   }, [job.id]);
 
   function toggleFav(e: React.MouseEvent) {
