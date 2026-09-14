@@ -3,10 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import type { JobView } from "@/lib/jobs";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 const STAGES = ["待投", "已投", "笔试", "面试", "Offer"] as const;
 type Stage = (typeof STAGES)[number];
 const KEY = "offer_board";
+
+// 中文阶段 -> 数据库 status
+const STAGE_TO_STATUS: Record<string, string> = {
+  "待投": "pending",
+  "已投": "applied",
+  "笔试": "written",
+  "面试": "interview",
+  "Offer": "offer",
+};
+const STATUS_TO_STAGE: Record<string, string> = Object.fromEntries(
+  Object.entries(STAGE_TO_STATUS).map(([k, v]) => [v, k])
+);
 
 function readBoard(): Record<string, string> {
   try {
@@ -24,16 +37,60 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
   const [dropCol, setDropCol] = useState<string | null>(null);
 
   useEffect(() => {
+    // localStorage
     setStages(readBoard());
-    const sync = () => setStages(readBoard());
-    window.addEventListener("offer-board", sync);
-    return () => window.removeEventListener("offer-board", sync);
+
+    // 登录后从数据库同步
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      if (!u) return;
+      supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id)
+        .then(({ data: rows }) => {
+          if (!rows) return;
+          const b: Record<string, string> = {};
+          for (const r of rows) {
+            const st = STATUS_TO_STAGE[r.status];
+            if (st) b[r.job_id] = st;
+          }
+          setStages(b);
+        });
+    });
+
+    // 监听登录状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) return;
+      supabase.from("user_jobs").select("job_id, status").eq("user_id", session.user.id)
+        .then(({ data: rows }) => {
+          if (!rows) return;
+          const b: Record<string, string> = {};
+          for (const r of rows) {
+            const st = STATUS_TO_STAGE[r.status];
+            if (st) b[r.job_id] = st;
+          }
+          setStages(b);
+        });
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  function setStage(id: string, st: Stage) {
-    const next = { ...readBoard(), [id]: st };
+  async function setStage(id: string, st: Stage) {
+    const next = { ...stages, [id]: st };
+    delete next[id];
+    next[id] = st;
     localStorage.setItem(KEY, JSON.stringify(next));
     setStages(next);
+
+    // 数据库：先删掉旧状态，再写入新状态
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      // 删掉所有状态
+      await supabase.from("user_jobs").delete()
+        .eq("user_id", session.user.id).eq("job_id", id);
+      // 写入新状态
+      await supabase.from("user_jobs").upsert({
+        user_id: session.user.id, job_id: id, status: STAGE_TO_STATUS[st],
+      }, { onConflict: "user_id,job_id,status" });
+    }
   }
 
   const cols = useMemo(() => {
@@ -68,7 +125,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           <div className="tags-row">
             <span>拖拽卡片到目标阶段</span>
             <span>移动端点击卡片改状态</span>
-            <span>进度保存在本地浏览器</span>
+            <span>登录后自动云端同步</span>
           </div>
         </div>
         <div className="orbital">
