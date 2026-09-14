@@ -1,7 +1,9 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 function Switch({
   on,
@@ -20,20 +22,98 @@ function Switch({
 }
 
 export default function ProfileClient() {
-  const [email, setEmail] = useState("");
-  const [saved, setSaved] = useState<string | null>(null);
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [school, setSchool] = useState("");
+  const [major, setMajor] = useState("");
+  const [cohort, setCohort] = useState("");
+  const [saved, setSaved] = useState(false);
   const [sw, setSw] = useState({ email: true, push: false, ics: true });
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+      setUser(u);
+      setName(u.user_metadata?.name || "");
+      // 从 profiles 表读资料
+      supabase
+        .from("profiles")
+        .select("name, school, major, cohort")
+        .eq("id", u.id)
+        .single()
+        .then(({ data: p }) => {
+          if (p) {
+            setName(p.name || "");
+            setSchool(p.school || "");
+            setMajor(p.major || "");
+            setCohort(p.cohort || "");
+          }
+          setLoading(false);
+        });
+    });
+  }, [router]);
+
+  async function saveProfile() {
+    if (!user) return;
+    await supabase
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        email: user.email,
+        name, school, major, cohort,
+        updated_at: new Date().toISOString(),
+      });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  if (loading) {
+    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(238,235,227,0.5)" }}>加载中...</div>;
+  }
 
   return (
     <div className="wrap">
       <div className="page-hero" style={{ marginTop: 24 }}>
         <div>
           <h1 className="h-display">我的</h1>
-          <p>求职工具 · 截止提醒与订阅设置。</p>
+          <p>{user?.email}</p>
         </div>
       </div>
 
       <div className="profile-grid">
+        {/* 个人资料 */}
+        <div className="profile-card glass" style={{ gridColumn: "1/-1" }}>
+          <h4>个人资料</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div>
+              <label style={{ fontSize: "12px", color: "rgba(238,235,227,0.6)", display: "block", marginBottom: "4px" }}>昵称</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder="你的名字" />
+            </div>
+            <div>
+              <label style={{ fontSize: "12px", color: "rgba(238,235,227,0.6)", display: "block", marginBottom: "4px" }}>学校</label>
+              <input value={school} onChange={(e) => setSchool(e.target.value)} style={inputStyle} placeholder="如：福州大学" />
+            </div>
+            <div>
+              <label style={{ fontSize: "12px", color: "rgba(238,235,227,0.6)", display: "block", marginBottom: "4px" }}>专业</label>
+              <input value={major} onChange={(e) => setMajor(e.target.value)} style={inputStyle} placeholder="如：计算机科学与技术" />
+            </div>
+            <div>
+              <label style={{ fontSize: "12px", color: "rgba(238,235,227,0.6)", display: "block", marginBottom: "4px" }}>届别</label>
+              <input value={cohort} onChange={(e) => setCohort(e.target.value)} style={inputStyle} placeholder="如：2027届" />
+            </div>
+            <button onClick={saveProfile} style={saveBtnStyle}>
+              {saved ? "✓ 已保存" : "保存资料"}
+            </button>
+          </div>
+        </div>
+
+        {/* 求职工具 */}
         <div className="profile-card glass" style={{ gridColumn: "1/-1" }}>
           <h4>
             <span className="gicon">
@@ -84,62 +164,6 @@ export default function ProfileClient() {
           <h4>
             <span className="gicon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                <path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" />
-              </svg>
-            </span>
-            截止提醒
-          </h4>
-          <div className="switch-row">
-            <div>
-              <div className="t">邮件提醒</div>
-              <div className="s">截止前 3 天发送邮件</div>
-            </div>
-            <Switch on={sw.email} onChange={(v) => setSw({ ...sw, email: v })} />
-          </div>
-          <div className="switch-row">
-            <div>
-              <div className="t">Web 推送</div>
-              <div className="s">浏览器通知提醒</div>
-            </div>
-            <Switch on={sw.push} onChange={(v) => setSw({ ...sw, push: v })} />
-          </div>
-          <div className="switch-row">
-            <div>
-              <div className="t">日历订阅</div>
-              <div className="s">ICS 同步到手机日历</div>
-            </div>
-            <Switch on={sw.ics} onChange={(v) => setSw({ ...sw, ics: v })} />
-          </div>
-          <div className="sub-status">✓ 日历订阅已启用 · 可在校招日历页导出 ICS 文件</div>
-          <div className="email-row">
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="输入接收提醒的邮箱"
-            />
-            <button
-              onClick={() => {
-                if (!email.trim()) {
-                  alert("请输入邮箱地址");
-                  return;
-                }
-                setSaved(email.trim());
-              }}
-            >
-              保存
-            </button>
-          </div>
-          {saved && (
-            <div style={{ marginTop: 8, fontSize: 11, color: "#67e8f9" }}>
-              ✓ 已保存提醒邮箱：{saved}（正式版生效）
-            </div>
-          )}
-        </div>
-
-        <div className="profile-card glass">
-          <h4>
-            <span className="gicon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="9" stroke="#06b6d4" strokeWidth="2" />
                 <path d="M12 7v5l3 3" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" />
               </svg>
@@ -171,22 +195,30 @@ export default function ProfileClient() {
             提醒、求职看板、AI 匹配与轻社区。聚焦材料 / 计算机 / 软件 / 电子等专业。
           </p>
         </div>
-
-        <div className="profile-card glass">
-          <h4>
-            <span className="gicon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="#8b5cf6" strokeWidth="2" />
-                <path d="M12 8v5M12 16.5v.5" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </span>
-            帮助
-          </h4>
-          <p style={{ fontSize: 12.5, lineHeight: 1.8, color: "rgba(183,198,194,.75)" }}>
-            有任何问题或建议，欢迎反馈。数据每周自动增量更新，岗位信息以官方页面为准。
-          </p>
-        </div>
       </div>
     </div>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 14px",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: "10px",
+  color: "#eeebe3",
+  fontSize: "14px",
+  outline: "none",
+};
+
+const saveBtnStyle: React.CSSProperties = {
+  padding: "12px",
+  background: "#ca0013",
+  color: "#fff",
+  border: "none",
+  borderRadius: "10px",
+  fontSize: "14px",
+  fontWeight: 700,
+  cursor: "pointer",
+  marginTop: "4px",
+};

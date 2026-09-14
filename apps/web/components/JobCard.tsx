@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { JobView } from "@/lib/jobs";
+import { supabase } from "@/lib/supabase";
 
 const FAV_KEY = "offer_fav";
 const BOARD_KEY = "offer_board";
@@ -19,6 +20,23 @@ function readBoard(): Record<string, string> {
     return JSON.parse(localStorage.getItem(BOARD_KEY) || "{}");
   } catch {
     return {};
+  }
+}
+
+async function toggleDb(jobId: string, status: string, on: boolean) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return;
+  if (on) {
+    await supabase
+      .from("user_jobs")
+      .upsert({ user_id: session.user.id, job_id: jobId, status }, { onConflict: "user_id,job_id,status" });
+  } else {
+    await supabase
+      .from("user_jobs")
+      .delete()
+      .eq("user_id", session.user.id)
+      .eq("job_id", jobId)
+      .eq("status", status);
   }
 }
 
@@ -68,6 +86,7 @@ export default function JobCard({ job }: { job: JobView }) {
     if (!next && i > -1) list.splice(i, 1);
     localStorage.setItem(FAV_KEY, JSON.stringify(list));
     window.dispatchEvent(new Event("offer-fav"));
+    toggleDb(job.id, "star", next);
   }
 
   function toggleBoard(e: React.MouseEvent) {
@@ -77,9 +96,11 @@ export default function JobCard({ job }: { job: JobView }) {
     if (board) {
       delete b[job.id];
       setBoard(null);
+      toggleDb(job.id, "pending", false);
     } else {
       b[job.id] = "待投";
       setBoard("待投");
+      toggleDb(job.id, "pending", true);
     }
     localStorage.setItem(BOARD_KEY, JSON.stringify(b));
     window.dispatchEvent(new Event("offer-board"));
