@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const LINKS = [
   { href: "/", label: "首页" },
@@ -59,6 +60,21 @@ export default function Nav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [kw, setKw] = useState("");
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   const isOn = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -100,6 +116,30 @@ export default function Nav() {
               placeholder="搜索公司 / 岗位"
             />
           </div>
+          {user ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Link href="/profile" style={{
+                width: "32px", height: "32px", borderRadius: "50%",
+                background: "linear-gradient(135deg, #ca0013, #8b5cf6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontWeight: 800, fontSize: "13px",
+              }}>
+                {user.email?.[0]?.toUpperCase()}
+              </Link>
+              <button onClick={handleLogout} style={{
+                background: "none", border: "none", color: "rgba(238,235,227,0.5)",
+                fontSize: "12px", cursor: "pointer",
+              }}>退出</button>
+            </div>
+          ) : (
+            <Link href="/login" style={{
+              padding: "8px 16px", background: "#ca0013", color: "#fff",
+              borderRadius: "20px", fontSize: "13px", fontWeight: 700,
+              textDecoration: "none",
+            }}>
+              登录
+            </Link>
+          )}
         </div>
       </header>
 
