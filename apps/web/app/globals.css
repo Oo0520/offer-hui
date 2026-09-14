@@ -36,6 +36,10 @@ svg{display:block}
 /* ===== 导航 ===== */
 .nav{position:sticky;top:0;z-index:90;background:rgba(23,30,25,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(183,198,194,.14)}
 .nav-in{max-width:1140px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:14px;height:62px}
+.nav-user-desktop, .nav-login-desktop{display:flex;align-items:center}
+@media (max-width:768px){
+  .nav-user-desktop, .nav-login-desktop{display:none}
+}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;font-size:19px;color:var(--white);letter-spacing:.3px}
 .brand .logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#ca0013,#ef4444);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-family:var(--font-title)}
 .logo-img{height:38px;width:auto;border-radius:10px;display:block}

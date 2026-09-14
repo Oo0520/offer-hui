@@ -117,7 +117,7 @@ export default function Nav() {
             />
           </div>
           {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className="nav-user-desktop">
               <Link href="/profile" style={{
                 width: "32px", height: "32px", borderRadius: "50%",
                 background: "linear-gradient(135deg, #ca0013, #8b5cf6)",
@@ -132,7 +132,7 @@ export default function Nav() {
               }}>退出</button>
             </div>
           ) : (
-            <Link href="/login" style={{
+            <Link href="/login" className="nav-login-desktop" style={{
               padding: "8px 16px", background: "#ca0013", color: "#fff",
               borderRadius: "20px", fontSize: "13px", fontWeight: 700,
               textDecoration: "none",
@@ -158,6 +158,30 @@ export default function Nav() {
             {l.label}
           </Link>
         ))}
+        <div style={{ marginTop: "auto", padding: "16px 0", borderTop: "1px solid rgba(183,198,194,0.15)" }}>
+          {user ? (
+            <>
+              <div style={{ padding: "8px 24px", fontSize: "13px", color: "rgba(238,235,227,0.5)", marginBottom: "8px" }}>
+                {user.email}
+              </div>
+              <button onClick={() => { handleLogout(); setOpen(false); }} style={{
+                width: "100%", padding: "10px", background: "rgba(202,0,19,0.2)", color: "#ca0013",
+                border: "1px solid rgba(202,0,19,0.3)", borderRadius: "12px",
+                fontSize: "14px", fontWeight: 700, cursor: "pointer",
+              }}>
+                退出登录
+              </button>
+            </>
+          ) : (
+            <Link href="/login" onClick={() => setOpen(false)} style={{
+              display: "block", width: "100%", padding: "10px", background: "#ca0013", color: "#fff",
+              borderRadius: "12px", fontSize: "14px", fontWeight: 700, textAlign: "center",
+              textDecoration: "none",
+            }}>
+              登录 / 注册
+            </Link>
+          )}
+        </div>
       </aside>
     </>
   );
