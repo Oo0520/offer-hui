@@ -6,22 +6,12 @@ conn = psycopg.connect(
 )
 cur = conn.cursor()
 
-# 查 user_jobs 的 RLS 策略
-cur.execute("""
-  SELECT policyname, cmd, qual FROM pg_policies WHERE tablename='user_jobs'
-""")
-print("user_jobs RLS 策略:")
-for row in cur.fetchall():
-    print(f"  {row[1]}: {row[0]} | USING: {row[2]}")
-
-# 查 user_jobs 表的 RLS 是否开启
-cur.execute("SELECT relrowsecurity FROM pg_class WHERE relname='user_jobs'")
-print(f"\nRLS 开启: {cur.fetchone()[0]}")
-
-# 看 user_jobs 里的 user_id 是谁的
-cur.execute("SELECT user_id, job_id, status FROM user_jobs LIMIT 5")
-print("\nuser_jobs 数据:")
-for row in cur.fetchall():
-    print(f"  user={row[0]} | job={row[1]} | status={row[2]}")
+# 模拟 RLS：用 user_id 查
+cur.execute("SET role anon; SET request.jwt.claims = '{\"sub\": \"85c9b974-cf6d-494a-a3f7-cacc18bd0d59\"}'::json;")
+cur.execute("SELECT job_id, status FROM user_jobs WHERE user_id = '85c9b974-cf6d-494a-a3f7-cacc18bd0d59'")
+rows = cur.fetchall()
+print(f"模拟 anon 用户查询: {len(rows)} 条")
+for row in rows:
+    print(f"  {row[1]} | {row[0]}")
 
 conn.close()

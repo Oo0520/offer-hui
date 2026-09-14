@@ -35,6 +35,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
   const [sheet, setSheet] = useState<JobView | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropCol, setDropCol] = useState<string | null>(null);
+  const [debug, setDebug] = useState("");
 
   useEffect(() => {
     // localStorage
@@ -43,9 +44,18 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
     // 登录后从数据库同步
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user;
-      if (!u) return;
+      if (!u) {
+        setDebug("未登录");
+        return;
+      }
+      setDebug(`已登录: ${u.id}`);
       supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id)
-        .then(({ data: rows }) => {
+        .then(({ data: rows, error }) => {
+          if (error) {
+            setDebug(`查询错误: ${error.message}`);
+            return;
+          }
+          setDebug(`查到 ${rows?.length || 0} 条记录`);
           if (!rows) return;
           const b: Record<string, string> = {};
           for (const r of rows) {
@@ -136,6 +146,10 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             从首页添加岗位
           </button>
         </div>
+      </div>
+
+      <div style={{padding: 12, marginBottom: 12, background: "rgba(139,92,246,0.1)", borderRadius: 12, fontSize: 12, color: "#c4b5fd"}}>
+        调试: {debug || "加载中..."}
       </div>
 
       <div className="board-stats">
