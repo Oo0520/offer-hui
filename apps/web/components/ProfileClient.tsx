@@ -44,13 +44,13 @@ export default function ProfileClient() {
       // 从 profiles 表读资料
       supabase
         .from("profiles")
-        .select("name, school, major, cohort")
+        .select("username, university, major, cohort")
         .eq("id", u.id)
         .single()
         .then(({ data: p }) => {
           if (p) {
-            setName(p.name || "");
-            setSchool(p.school || "");
+            setName(p.username || "");
+            setSchool(p.university || "");
             setMajor(p.major || "");
             setCohort(p.cohort || "");
           }
@@ -66,7 +66,7 @@ export default function ProfileClient() {
       .upsert({
         id: user.id,
         email: user.email,
-        name, school, major, cohort,
+        username: name, university: school, major, cohort,
         updated_at: new Date().toISOString(),
       });
     setSaved(true);
