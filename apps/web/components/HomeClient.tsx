@@ -83,10 +83,41 @@ export default function HomeClient({
       setBoards(localBoards);
     } catch {}
 
-    // 登录后从数据库同步
-    supabase.auth.getSession().then(({ data }) => {
+    // 登录后：先把 localStorage 的未同步数据上传，再从数据库读
+    supabase.auth.getSession().then(async ({ data }) => {
       const u = data.session?.user;
       if (!u) return;
+
+      // localStorage 的数据
+      const localFavs = new Set(JSON.parse(localStorage.getItem("offer_fav") || "[]"));
+      const localBoards = JSON.parse(localStorage.getItem("offer_board") || "{}");
+
+      // 数据库已有的
+      const { data: existing } = await supabase
+        .from("user_jobs")
+        .select("job_id, status")
+        .eq("user_id", u.id);
+      const existingMap = new Set((existing || []).map((r) => r.job_id + "_" + r.status));
+
+      // 上传 localStorage 有但数据库没有的
+      for (const jobId of localFavs) {
+        if (!existingMap.has(jobId + "_star")) {
+          await supabase.from("user_jobs").upsert(
+            { user_id: u.id, job_id: jobId, status: "star" },
+            { onConflict: "user_id,job_id,status" }
+          );
+        }
+      }
+      for (const [jobId, stage] of Object.entries(localBoards)) {
+        if (!existingMap.has(jobId + "_pending")) {
+          await supabase.from("user_jobs").upsert(
+            { user_id: u.id, job_id: jobId, status: "pending" },
+            { onConflict: "user_id,job_id,status" }
+          );
+        }
+      }
+
+      // 再从数据库读全部
       supabase
         .from("user_jobs")
         .select("job_id, status")

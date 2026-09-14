@@ -42,20 +42,39 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
     setStages(readBoard());
 
     // 登录后从数据库同步
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       const u = data.session?.user;
       if (!u) {
         setDebug("未登录");
         return;
       }
-      setDebug(`已登录: ${u.id}`);
+
+      // 先把 localStorage 里的未同步数据上传到数据库
+      const local = readBoard();
+      const existing = await supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id);
+      const existingMap: Record<string, string> = {};
+      if (existing.data) {
+        for (const r of existing.data) {
+          const st = STATUS_TO_STAGE[r.status];
+          if (st) existingMap[r.job_id] = st;
+        }
+      }
+      // 找出 localStorage 有但数据库没有的，上传
+      for (const [jobId, stage] of Object.entries(local)) {
+        if (!existingMap[jobId]) {
+          await supabase.from("user_jobs").upsert({
+            user_id: u.id, job_id: jobId, status: STAGE_TO_STATUS[stage],
+          }, { onConflict: "user_id,job_id,status" });
+        }
+      }
+
+      // 再从数据库读全部
       supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id)
         .then(({ data: rows, error }) => {
           if (error) {
             setDebug(`查询错误: ${error.message}`);
             return;
           }
-          setDebug(`查到 ${rows?.length || 0} 条记录`);
           if (!rows) return;
           const b: Record<string, string> = {};
           for (const r of rows) {
@@ -63,6 +82,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             if (st) b[r.job_id] = st;
           }
           setStages(b);
+          setDebug(`同步完成: ${rows.length} 条`);
         });
     });
 
