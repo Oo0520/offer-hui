@@ -4,12 +4,7 @@ conn = psycopg.connect(
     prepare_threshold=None,
 )
 cur = conn.cursor()
-# 恢复：原来的招聘会保留，新的宣讲会单独
-# 现在 jobType=宣讲会 的 362 条保持不变，再看看有没有其他招聘会
-cur.execute("SELECT DISTINCT job_type FROM jobs")
-print("现有 jobType:", [r[0] for r in cur.fetchall()])
-cur.execute("SELECT COUNT(*) FROM jobs WHERE job_type='招聘会'")
-print("招聘会:", cur.fetchone()[0])
-cur.execute("SELECT COUNT(*) FROM jobs WHERE job_type='宣讲会'")
-print("宣讲会:", cur.fetchone()[0])
+cur.execute("SELECT source, COUNT(*) FROM jobs WHERE job_type IN ('宣讲会','fair') GROUP BY source ORDER BY COUNT(*) DESC")
+for row in cur.fetchall():
+    print(f"  {row[0]}: {row[1]}条")
 conn.close()
