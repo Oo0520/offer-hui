@@ -20,7 +20,7 @@ export type HomeStats = {
   due30: number;
 };
 
-type Dim = "city" | "industry" | "jobType" | "cohort" | "degree";
+type Dim = "city" | "industry" | "jobType" | "cohort" | "degree" | "school";
 type FState = Record<Dim, string[]>;
 
 const DIMS: { key: Dim; label: string }[] = [
@@ -29,13 +29,14 @@ const DIMS: { key: Dim; label: string }[] = [
   { key: "jobType", label: "招聘类型" },
   { key: "cohort", label: "届别" },
   { key: "degree", label: "学历" },
+  { key: "school", label: "学校" },
 ];
 
 const CHIPS = [
   { key: "all", label: "全部" },
   { key: "校招", label: "校招" },
   { key: "实习", label: "实习" },
-  { key: "招聘会", label: "招聘会" },
+  { key: "宣讲会", label: "宣讲会" },
   { key: "urgent", label: "30天内截止" },
 ];
 
@@ -54,6 +55,7 @@ export default function HomeClient({
     jobType: [],
     cohort: [],
     degree: [],
+    school: [],
   });
   const [openDim, setOpenDim] = useState<Dim | null>(null);
   const [view, setView] = useState<"card" | "table">("card");
@@ -93,21 +95,32 @@ export default function HomeClient({
       jobType: [],
       cohort: [],
       degree: [],
+      school: [],
     };
     for (const d of DIMS) {
+      if (d.key === "school") {
+        // 学校维度从 source 提取
+        const m2 = new Map<string, number>();
+        for (const j of jobs) {
+          if (!j.source) continue;
+          m2.set(j.source, (m2.get(j.source) || 0) + 1);
+        }
+        m.school = [...m2.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
+        continue;
+      }
       m[d.key] = dimOptions(jobs, d.key as "city").map((v) => ({
         v,
         n:
           d.key === "degree"
             ? jobs.filter((j) => degreeLevel(j.degree) >= (DEGREE_FILTER_LEVEL[v] ?? 0)).length
-            : jobs.filter((j) => j[d.key] === v).length,
+            : jobs.filter((j) => (j as any)[d.key] === v).length,
       }));
     }
     // 招聘类型固定三项
     m.jobType = [
       { v: "校招", n: jobs.filter((j) => j.jobType === "校招").length },
       { v: "实习", n: jobs.filter((j) => j.jobType === "实习").length },
-      { v: "招聘会", n: jobs.filter((j) => j.jobType === "招聘会").length },
+      { v: "宣讲会", n: jobs.filter((j) => j.jobType === "宣讲会").length },
     ];
     return m;
   }, [jobs]);
@@ -119,13 +132,14 @@ export default function HomeClient({
     if (f("city").length) l = l.filter((j) => f("city").includes(j.city));
     if (f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
     if (f("cohort").length) l = l.filter((j) => f("cohort").includes(j.cohort));
+    if (f("school").length) l = l.filter((j) => f("school").includes(j.source));
     if (f("degree").length) {
       const minLevel = Math.min(...f("degree").map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
       l = l.filter((j) => degreeLevel(j.degree) >= minLevel);
     }
     if (chip === "校招") l = l.filter((j) => j.jobType === "校招");
     if (chip === "实习") l = l.filter((j) => j.jobType === "实习");
-    if (chip === "招聘会") l = l.filter((j) => j.jobType === "招聘会");
+    if (chip === "宣讲会") l = l.filter((j) => j.jobType === "宣讲会");
     if (chip === "urgent")
       l = l.filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30);
     if (q.trim()) {
@@ -259,7 +273,7 @@ export default function HomeClient({
               className="filter-btn"
               style={{ borderColor: "rgba(202,0,19,.5)", color: "#fda4af" }}
               onClick={() =>
-                setFilters({ city: [], industry: [], jobType: [], cohort: [], degree: [] })
+                setFilters({ city: [], industry: [], jobType: [], cohort: [], degree: [], school: [] })
               }
             >
               清除
@@ -368,7 +382,7 @@ export default function HomeClient({
                 onClick={() => {
                   setChip("all");
                   setQ("");
-                  setFilters({ city: [], industry: [], jobType: [], cohort: [], degree: [] });
+                  setFilters({ city: [], industry: [], jobType: [], cohort: [], degree: [], school: [] });
                   setCurrentPage(1);
                 }}
               >
