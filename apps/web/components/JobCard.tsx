@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { JobView } from "@/lib/jobs";
-import { supabase } from "@/lib/supabase";
 
 const FAV_KEY = "offer_fav";
 const BOARD_KEY = "offer_board";
@@ -12,31 +10,6 @@ export function readFavs(): string[] {
     return JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
   } catch {
     return [];
-  }
-}
-
-function readBoard(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(BOARD_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-async function toggleDb(jobId: string, status: string, on: boolean) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) return;
-  if (on) {
-    await supabase
-      .from("user_jobs")
-      .upsert({ user_id: session.user.id, job_id: jobId, status }, { onConflict: "user_id,job_id,status" });
-  } else {
-    await supabase
-      .from("user_jobs")
-      .delete()
-      .eq("user_id", session.user.id)
-      .eq("job_id", jobId)
-      .eq("status", status);
   }
 }
 
@@ -66,63 +39,19 @@ function BoardIcon({ on }: { on: boolean }) {
   );
 }
 
-export default function JobCard({ job }: { job: JobView }) {
-  const [fav, setFav] = useState(false);
-  const [board, setBoard] = useState<string | null>(null);
-
-  useEffect(() => {
-    setFav(readFavs().includes(job.id));
-    setBoard(readBoard()[job.id] || null);
-
-    // 登录后从数据库读状态
-    supabase.auth.getSession().then(({ data }) => {
-      const u = data.session?.user;
-      if (!u) return;
-      supabase
-        .from("user_jobs")
-        .select("status")
-        .eq("user_id", u.id)
-        .eq("job_id", job.id)
-        .then(({ data: rows }) => {
-          if (!rows) return;
-          const statuses = new Set(rows.map((r) => r.status));
-          setFav(statuses.has("star"));
-          setBoard(statuses.has("pending") ? "待投" : null);
-        });
-    });
-  }, [job.id]);
-
-  function toggleFav(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const next = !fav;
-    setFav(next);
-    const list = readFavs();
-    const i = list.indexOf(job.id);
-    if (next && i === -1) list.push(job.id);
-    if (!next && i > -1) list.splice(i, 1);
-    localStorage.setItem(FAV_KEY, JSON.stringify(list));
-    window.dispatchEvent(new Event("offer-fav"));
-    toggleDb(job.id, "star", next);
-  }
-
-  function toggleBoard(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const b = readBoard();
-    if (board) {
-      delete b[job.id];
-      setBoard(null);
-      toggleDb(job.id, "pending", false);
-    } else {
-      b[job.id] = "待投";
-      setBoard("待投");
-      toggleDb(job.id, "pending", true);
-    }
-    localStorage.setItem(BOARD_KEY, JSON.stringify(b));
-    window.dispatchEvent(new Event("offer-board"));
-  }
-
+export default function JobCard({
+  job,
+  fav,
+  board,
+  onToggleFav,
+  onToggleBoard,
+}: {
+  job: JobView;
+  fav: boolean;
+  board: string | null;
+  onToggleFav: (e: React.MouseEvent) => void;
+  onToggleBoard: (e: React.MouseEvent) => void;
+}) {
   const days = job.deadlineDays;
   const hot = days !== null && days >= 0 && days <= 3;
   const dday =
@@ -142,12 +71,12 @@ export default function JobCard({ job }: { job: JobView }) {
       rel="noopener noreferrer"
       data-id={job.id}
     >
-      <button className={"fav-btn" + (fav ? " on" : "")} onClick={toggleFav} aria-label="收藏">
+      <button className={"fav-btn" + (fav ? " on" : "")} onClick={onToggleFav} aria-label="收藏">
         <Heart on={fav} />
       </button>
       <button
         className={"board-btn" + (board ? " on" : "")}
-        onClick={toggleBoard}
+        onClick={onToggleBoard}
         aria-label={board ? "已加入待投，点击移除" : "加入待投"}
         title={board ? "已加入待投，点击移除" : "加入待投"}
       >

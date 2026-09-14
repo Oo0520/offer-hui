@@ -6,21 +6,22 @@ conn = psycopg.connect(
 )
 cur = conn.cursor()
 
-# 查 user_jobs 表存在吗
-cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name='user_jobs')")
-print(f"user_jobs 表存在: {cur.fetchone()[0]}")
-
-# 查 profiles 表
-cur.execute("SELECT COUNT(*) FROM profiles")
-print(f"profiles 用户数: {cur.fetchone()[0]}")
-
-# 查 user_jobs 数据
-cur.execute("SELECT COUNT(*) FROM user_jobs")
-print(f"user_jobs 记录数: {cur.fetchone()[0]}")
-
-# 看 auth.users 有多少用户
-cur.execute("SELECT id, email, created_at FROM auth.users")
+# 查 user_jobs 的 RLS 策略
+cur.execute("""
+  SELECT policyname, cmd, qual FROM pg_policies WHERE tablename='user_jobs'
+""")
+print("user_jobs RLS 策略:")
 for row in cur.fetchall():
-    print(f"  用户: {row[1]} | {row[2]}")
+    print(f"  {row[1]}: {row[0]} | USING: {row[2]}")
+
+# 查 user_jobs 表的 RLS 是否开启
+cur.execute("SELECT relrowsecurity FROM pg_class WHERE relname='user_jobs'")
+print(f"\nRLS 开启: {cur.fetchone()[0]}")
+
+# 看 user_jobs 里的 user_id 是谁的
+cur.execute("SELECT user_id, job_id, status FROM user_jobs LIMIT 5")
+print("\nuser_jobs 数据:")
+for row in cur.fetchall():
+    print(f"  user={row[0]} | job={row[1]} | status={row[2]}")
 
 conn.close()

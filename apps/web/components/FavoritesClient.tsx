@@ -3,26 +3,69 @@
 import { useEffect, useMemo, useState } from "react";
 import type { JobView } from "@/lib/jobs";
 import JobCard from "./JobCard";
-import { readFavs } from "./JobCard";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function FavoritesClient({ jobs }: { jobs: JobView[] }) {
-  const [favs, setFavs] = useState<string[]>([]);
+  const [favs, setFavs] = useState<Set<string>>(new Set());
+  const [boards, setBoards] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setFavs(readFavs());
-    const on = () => setFavs(readFavs());
-    window.addEventListener("storage", on);
-    window.addEventListener("offer-fav", on);
-    return () => {
-      window.removeEventListener("storage", on);
-      window.removeEventListener("offer-fav", on);
-    };
+    // localStorage
+    try {
+      setFavs(new Set(JSON.parse(localStorage.getItem("offer_fav") || "[]")));
+      setBoards(JSON.parse(localStorage.getItem("offer_board") || "{}"));
+    } catch {}
+
+    // 登录后从数据库同步
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      if (!u) return;
+      supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id)
+        .then(({ data: rows }) => {
+          if (!rows) return;
+          const f = new Set<string>();
+          const b: Record<string, string> = {};
+          for (const r of rows) {
+            if (r.status === "star") f.add(r.job_id);
+            else if (r.status === "pending") b[r.job_id] = "待投";
+          }
+          setFavs(f);
+          setBoards(b);
+        });
+    });
   }, []);
+
+  async function toggleFav(e: React.MouseEvent, jobId: string) {
+    e.preventDefault(); e.stopPropagation();
+    const on = !favs.has(jobId);
+    const n = new Set(favs);
+    if (on) n.add(jobId); else n.delete(jobId);
+    setFavs(n);
+    localStorage.setItem("offer_fav", JSON.stringify([...n]));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      if (on) await supabase.from("user_jobs").upsert({ user_id: session.user.id, job_id: jobId, status: "star" }, { onConflict: "user_id,job_id,status" });
+      else await supabase.from("user_jobs").delete().eq("user_id", session.user.id).eq("job_id", jobId).eq("status", "star");
+    }
+  }
+
+  async function toggleBoard(e: React.MouseEvent, jobId: string) {
+    e.preventDefault(); e.stopPropagation();
+    const b = { ...boards };
+    if (b[jobId]) delete b[jobId]; else b[jobId] = "待投";
+    setBoards(b);
+    localStorage.setItem("offer_board", JSON.stringify(b));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      if (b[jobId]) await supabase.from("user_jobs").upsert({ user_id: session.user.id, job_id: jobId, status: "pending" }, { onConflict: "user_id,job_id,status" });
+      else await supabase.from("user_jobs").delete().eq("user_id", session.user.id).eq("job_id", jobId).eq("status", "pending");
+    }
+  }
 
   const list = useMemo(() => {
     const byId = new Map(jobs.map((j) => [j.id, j]));
-    return favs.map((id) => byId.get(id)).filter((x): x is JobView => !!x);
+    return [...favs].map((id) => byId.get(id)).filter((x): x is JobView => !!x);
   }, [jobs, favs]);
 
   const urgent = list.filter(
@@ -62,7 +105,14 @@ export default function FavoritesClient({ jobs }: { jobs: JobView[] }) {
       ) : (
         <div className="job-grid">
           {list.map((j) => (
-            <JobCard key={j.id} job={j} />
+            <JobCard
+              key={j.id}
+              job={j}
+              fav={favs.has(j.id)}
+              board={boards[j.id] || null}
+              onToggleFav={(e) => toggleFav(e, j.id)}
+              onToggleBoard={(e) => toggleBoard(e, j.id)}
+            />
           ))}
         </div>
       )}

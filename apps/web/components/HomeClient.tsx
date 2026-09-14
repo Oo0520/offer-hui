@@ -12,6 +12,7 @@ import {
 } from "@/lib/jobs";
 import JobCard from "./JobCard";
 import JobTable from "./JobTable";
+import { supabase } from "@/lib/supabase";
 
 
 export type HomeStats = {
@@ -67,6 +68,108 @@ export default function HomeClient({
   const PAGE_SIZE = 12;
   const fgRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // 用户岗位状态：favs = 收藏的 jobId 集合, boards = { jobId: 状态 }
+  const [favs, setFavs] = useState<Set<string>>(new Set());
+  const [boards, setBoards] = useState<Record<string, string>>({});
+
+  // 初始化：从 localStorage 读，再从数据库同步
+  useEffect(() => {
+    // 先读 localStorage
+    try {
+      const localFavs = JSON.parse(localStorage.getItem("offer_fav") || "[]");
+      const localBoards = JSON.parse(localStorage.getItem("offer_board") || "{}");
+      setFavs(new Set(localFavs));
+      setBoards(localBoards);
+    } catch {}
+
+    // 登录后从数据库同步
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user;
+      if (!u) return;
+      supabase
+        .from("user_jobs")
+        .select("job_id, status")
+        .eq("user_id", u.id)
+        .then(({ data: rows, error }) => {
+          if (error || !rows) return;
+          const f = new Set<string>();
+          const b: Record<string, string> = {};
+          for (const r of rows) {
+            if (r.status === "star") f.add(r.job_id);
+            else if (r.status === "pending") b[r.job_id] = "待投";
+          }
+          setFavs(f);
+          setBoards(b);
+        });
+    });
+
+    // 监听登录状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) return;
+      supabase
+        .from("user_jobs")
+        .select("job_id, status")
+        .eq("user_id", session.user.id)
+        .then(({ data: rows }) => {
+          if (!rows) return;
+          const f = new Set<string>();
+          const b: Record<string, string> = {};
+          for (const r of rows) {
+            if (r.status === "star") f.add(r.job_id);
+            else if (r.status === "pending") b[r.job_id] = "待投";
+          }
+          setFavs(f);
+          setBoards(b);
+        });
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function toggleFav(e: React.MouseEvent, jobId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const on = !favs.has(jobId);
+    const newFavs = new Set(favs);
+    if (on) newFavs.add(jobId); else newFavs.delete(jobId);
+    setFavs(newFavs);
+    // localStorage
+    localStorage.setItem("offer_fav", JSON.stringify([...newFavs]));
+    // 数据库
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      if (on) {
+        await supabase.from("user_jobs").upsert({
+          user_id: session.user.id, job_id: jobId, status: "star",
+        }, { onConflict: "user_id,job_id,status" });
+      } else {
+        await supabase.from("user_jobs").delete()
+          .eq("user_id", session.user.id).eq("job_id", jobId).eq("status", "star");
+      }
+    }
+  }
+
+  async function toggleBoard(e: React.MouseEvent, jobId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const newBoards = { ...boards };
+    if (newBoards[jobId]) delete newBoards[jobId];
+    else newBoards[jobId] = "待投";
+    setBoards(newBoards);
+    localStorage.setItem("offer_board", JSON.stringify(newBoards));
+    // 数据库
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      if (newBoards[jobId]) {
+        await supabase.from("user_jobs").upsert({
+          user_id: session.user.id, job_id: jobId, status: "pending",
+        }, { onConflict: "user_id,job_id,status" });
+      } else {
+        await supabase.from("user_jobs").delete()
+          .eq("user_id", session.user.id).eq("job_id", jobId).eq("status", "pending");
+      }
+    }
+  }
 
   const nowQ = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("q") : null;
   useEffect(() => {
@@ -405,7 +508,14 @@ export default function HomeClient({
                 style={{ display: view === "card" ? "grid" : "none" }}
               >
                 {shown.map((j) => (
-                  <JobCard key={j.id} job={j} />
+                  <JobCard
+                    key={j.id}
+                    job={j}
+                    fav={favs.has(j.id)}
+                    board={boards[j.id] || null}
+                    onToggleFav={(e) => toggleFav(e, j.id)}
+                    onToggleBoard={(e) => toggleBoard(e, j.id)}
+                  />
                 ))}
               </div>
               <div className={"table-wrap" + (view === "table" ? " on" : "")}>
