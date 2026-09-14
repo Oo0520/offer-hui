@@ -36,6 +36,7 @@ const CHIPS = [
   { key: "all", label: "全部" },
   { key: "校招", label: "校招" },
   { key: "实习", label: "实习" },
+  { key: "招聘会", label: "招聘会" },
   { key: "宣讲会", label: "宣讲会" },
   { key: "urgent", label: "30天内截止" },
 ];
@@ -120,6 +121,7 @@ export default function HomeClient({
     m.jobType = [
       { v: "校招", n: jobs.filter((j) => j.jobType === "校招").length },
       { v: "实习", n: jobs.filter((j) => j.jobType === "实习").length },
+      { v: "招聘会", n: jobs.filter((j) => j.jobType === "招聘会").length },
       { v: "宣讲会", n: jobs.filter((j) => j.jobType === "宣讲会").length },
     ];
     return m;
@@ -139,6 +141,7 @@ export default function HomeClient({
     }
     if (chip === "校招") l = l.filter((j) => j.jobType === "校招");
     if (chip === "实习") l = l.filter((j) => j.jobType === "实习");
+    if (chip === "招聘会") l = l.filter((j) => j.jobType === "招聘会");
     if (chip === "宣讲会") l = l.filter((j) => j.jobType === "宣讲会");
     if (chip === "urgent")
       l = l.filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30);
@@ -253,7 +256,11 @@ export default function HomeClient({
           ))}
         </div>
         <div className="filter-group" ref={fgRef}>
-          {dims.map((d) => (
+          {dims.filter((d) => {
+            // 学校筛选只在招聘会/宣讲会时显示
+            if (d.key === "school") return chip === "招聘会" || chip === "宣讲会";
+            return true;
+          }).map((d) => (
             <button
               key={d.key}
               className={"filter-btn" + (openDim === d.key ? " open" : "")}
