@@ -10,44 +10,30 @@ export default function QRCode3D({ url }: { url: string }) {
     if (!ref.current) return;
 
     const qrCode = new QRCodeStyling({
-      width: 280,
-      height: 280,
+      width: 260,
+      height: 260,
       data: url,
+      margin: 8,
       dotsOptions: {
+        color: "#171e19",
         type: "rounded",
-        gradient: {
-          type: "linear",
-          rotation: 0,
-          colorStops: [
-            { offset: 0, color: "#f472b6" },
-            { offset: 0.5, color: "#ec4899" },
-            { offset: 1, color: "#be185d" },
-          ],
-        },
       },
       cornersSquareOptions: {
+        color: "#171e19",
         type: "extra-rounded",
-        gradient: {
-          type: "linear",
-          rotation: 0,
-          colorStops: [
-            { offset: 0, color: "#ec4899" },
-            { offset: 1, color: "#be185d" },
-          ],
-        },
       },
       cornersDotOptions: {
-        color: "#831843",
+        color: "#171e19",
         type: "dot",
       },
       backgroundOptions: {
-        color: "#fdf2f8",
+        color: "#ffffff",
       },
       image: "/logo.png",
       imageOptions: {
         crossOrigin: "anonymous",
-        margin: 8,
-        imageSize: 0.38,
+        margin: 6,
+        imageSize: 0.3,
         hideBackgroundDots: true,
       },
     });
@@ -60,23 +46,13 @@ export default function QRCode3D({ url }: { url: string }) {
     <div style={{
       display: "flex",
       justifyContent: "center",
-      perspective: "1000px",
+      padding: "20px 0",
     }}>
       <div
         ref={ref}
         style={{
-          borderRadius: 28,
-          boxShadow: "0 30px 70px -15px rgba(236,72,153,0.35), 0 0 0 1px rgba(244,114,182,0.15)",
-          transform: "rotateX(6deg) rotateY(-4deg)",
-          transition: "transform 0.4s ease, box-shadow 0.4s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "rotateX(0deg) rotateY(0deg) scale(1.04)";
-          e.currentTarget.style.boxShadow = "0 40px 90px -20px rgba(236,72,153,0.5), 0 0 0 1px rgba(244,114,182,0.25)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "rotateX(6deg) rotateY(-4deg)";
-          e.currentTarget.style.boxShadow = "0 30px 70px -15px rgba(236,72,153,0.35), 0 0 0 1px rgba(244,114,182,0.15)";
+          borderRadius: 20,
+          boxShadow: "0 20px 50px -15px rgba(0,0,0,0.4)",
         }}
       />
     </div>
