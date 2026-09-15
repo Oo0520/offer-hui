@@ -1,3 +1,5 @@
+import QRCode3D from "@/components/QRCode3D";
+
 export const metadata = { title: "关于 Offer派" };
 
 export default function AboutPage() {
@@ -33,14 +35,7 @@ export default function AboutPage() {
           扫码进群，一起交流求职、分享内推、反馈建议
         </p>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <iframe
-            src="http://caoryn.com/qr-tree/embed/?style=pine#payload=https%3A%2F%2Fqm.qq.com%2Fq%2Fcm28dcceEU"
-            title="QQ群二维码"
-            width="360"
-            height="430"
-            loading="lazy"
-            style={{ border: 0, borderRadius: 24, overflow: "hidden", maxWidth: "100%" }}
-          />
+          <QRCode3D url="https://qm.qq.com/q/cm28dcceEU" />
         </div>
       </div>
 
