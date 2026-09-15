@@ -10,37 +10,44 @@ export default function QRCode3D({ url }: { url: string }) {
     if (!ref.current) return;
 
     const qrCode = new QRCodeStyling({
-      width: 260,
-      height: 260,
+      width: 280,
+      height: 280,
       data: url,
       dotsOptions: {
-        color: "#0f5132",
         type: "rounded",
         gradient: {
           type: "linear",
           rotation: 0,
           colorStops: [
-            { offset: 0, color: "#1a5c3a" },
-            { offset: 1, color: "#0d3b24" },
+            { offset: 0, color: "#f472b6" },
+            { offset: 0.5, color: "#ec4899" },
+            { offset: 1, color: "#be185d" },
           ],
         },
       },
       cornersSquareOptions: {
-        color: "#0f5132",
         type: "extra-rounded",
+        gradient: {
+          type: "linear",
+          rotation: 0,
+          colorStops: [
+            { offset: 0, color: "#ec4899" },
+            { offset: 1, color: "#be185d" },
+          ],
+        },
       },
       cornersDotOptions: {
-        color: "#ca0013",
+        color: "#831843",
         type: "dot",
       },
       backgroundOptions: {
-        color: "#e8f5e9",
+        color: "#fdf2f8",
       },
       image: "/logo.png",
       imageOptions: {
         crossOrigin: "anonymous",
-        margin: 6,
-        imageSize: 0.35,
+        margin: 8,
+        imageSize: 0.38,
         hideBackgroundDots: true,
       },
     });
@@ -53,21 +60,23 @@ export default function QRCode3D({ url }: { url: string }) {
     <div style={{
       display: "flex",
       justifyContent: "center",
-      perspective: "800px",
+      perspective: "1000px",
     }}>
       <div
         ref={ref}
         style={{
-          borderRadius: 24,
-          boxShadow: "0 25px 60px -15px rgba(15,81,50,0.4), 0 0 0 1px rgba(183,198,194,0.1)",
-          transform: "rotateX(5deg) rotateY(-3deg)",
-          transition: "transform 0.3s ease",
+          borderRadius: 28,
+          boxShadow: "0 30px 70px -15px rgba(236,72,153,0.35), 0 0 0 1px rgba(244,114,182,0.15)",
+          transform: "rotateX(6deg) rotateY(-4deg)",
+          transition: "transform 0.4s ease, box-shadow 0.4s ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "rotateX(0deg) rotateY(0deg) scale(1.03)";
+          e.currentTarget.style.transform = "rotateX(0deg) rotateY(0deg) scale(1.04)";
+          e.currentTarget.style.boxShadow = "0 40px 90px -20px rgba(236,72,153,0.5), 0 0 0 1px rgba(244,114,182,0.25)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "rotateX(5deg) rotateY(-3deg)";
+          e.currentTarget.style.transform = "rotateX(6deg) rotateY(-4deg)";
+          e.currentTarget.style.boxShadow = "0 30px 70px -15px rgba(236,72,153,0.35), 0 0 0 1px rgba(244,114,182,0.15)";
         }}
       />
     </div>
