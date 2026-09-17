@@ -16,6 +16,13 @@ jobs:
     defaults:
       run:
         working-directory: apps/web
+    # CI 构建占位值：仅供 Next.js 构建期实例化 client（不部署、不真实请求）。
+    # 生产部署（Vercel）使用真实环境变量重新构建。
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_SERVICE_KEY: ci-placeholder-service-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
