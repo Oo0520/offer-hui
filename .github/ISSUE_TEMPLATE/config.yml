@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 社区交流（QQ 群）
+    url: https://qm.qq.com/q/cm28dcceEU
+    about: 产品讨论、内测交流、使用咨询，欢迎进群。
+  - name: 📖 支持与 FAQ
+    url: https://github.com/Oo0520/offer-hui/blob/main/SUPPORT.md
+    about: 使用问题与获取帮助的渠道说明。
+  - name: 🔒 安全漏洞上报
+    url: https://github.com/Oo0520/offer-hui/security/advisories/new
+    about: 请勿公开提交安全漏洞，走 Security Advisory 私密上报。

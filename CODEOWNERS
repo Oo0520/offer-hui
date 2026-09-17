@@ -1,0 +1,21 @@
+# 全局默认所有者：项目维护者
+* @Oo0520
+
+# 前端（Next.js / React / TypeScript）
+/apps/web/ @Oo0520
+
+# 爬虫与数据管道（Python）
+/apps/worker/ @Oo0520
+
+# Agent 接入（MCP Server）
+/apps/mcp/ @Oo0520
+
+# 数据库迁移（Supabase）
+/infra/ @Oo0520
+
+# 社区规范与文档（除非特别指派，默认维护者审阅）
+/CONTRIBUTING.md @Oo0520
+/CODE_OF_CONDUCT.md @Oo0520
+/SECURITY.md @Oo0520
+/SUPPORT.md @Oo0520
+/CHANGELOG.md @Oo0520
