@@ -2,6 +2,9 @@
 import { NextResponse } from "next/server";
 
 // 服务端动态生成 ICS 订阅文件，手机日历通过 URL 订阅后自动同步
+// force-dynamic：避免构建时静态预渲染（构建环境无 Supabase 凭据），
+// 改为每次请求实时生成；响应头 Cache-Control: max-age=300 承担缓存。
+export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 function escapeIcs(s: string): string {
