@@ -10,7 +10,7 @@
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase)](https://supabase.com)
 [![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python)](https://www.python.org)
-[![License](https://img.shields.io/badge/License-TODO-999999)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -310,7 +310,7 @@ TODO：贡献指南 / CODE_OF_CONDUCT。
 
 ## License
 
-**TODO** — 仓库暂无 LICENSE 文件，请与维护者确认后补充（项目公益非营利，MIT 为候选）。
+本项目采用 [MIT License](./LICENSE) 开源——可自由使用、修改与分发（含商业用途）。项目本身保持公益、非营利性质。
 
 ---
 

@@ -10,7 +10,7 @@
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase)](https://supabase.com)
 [![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python)](https://www.python.org)
-[![License](https://img.shields.io/badge/License-TODO-999999)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -310,7 +310,7 @@ TODO: contribution guidelines / CODE_OF_CONDUCT.
 
 ## License
 
-**TODO** — no LICENSE file exists in the repository yet. Please ask the maintainer to pick one (project is public-welfare / non-profit; MIT is a likely candidate).
+Released under the [MIT License](./LICENSE) — free to use, modify and distribute for any purpose, including commercial. The project itself remains public-welfare / non-profit.
 
 ---
 
