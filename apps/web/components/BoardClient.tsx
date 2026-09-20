@@ -168,10 +168,6 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         </div>
       </div>
 
-      <div style={{padding: 12, marginBottom: 12, background: "rgba(139,92,246,0.1)", borderRadius: 12, fontSize: 12, color: "#c4b5fd"}}>
-        调试: {debug || "加载中..."}
-      </div>
-
       <div className="board-stats">
         {stats.map((s) => (
           <div key={s.st} className="st glass">
