@@ -477,6 +477,7 @@ svg{display:block}
 @media (max-width:767px){
   .nav-links{display:none}
   .nav-search{display:none}
+  .user-menu-wrap{display:none}
   .hamburger{display:flex}
   .wrap{padding:0 16px}
   .sec-head{gap:8px}
