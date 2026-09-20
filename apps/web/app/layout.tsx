@@ -1,7 +1,8 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import HeroBackground from "@/components/HeroBackground";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Offer派 - 应届生求职信息聚合",
@@ -39,6 +40,7 @@ export default function RootLayout({
             <p>所有岗位均跳转官方投递入口，本站不截留简历、不收集投递信息</p>
           </div>
         </footer>
+        <SpeedInsights />
       </body>
     </html>
   );
