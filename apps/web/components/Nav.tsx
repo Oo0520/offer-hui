@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const LINKS = [
@@ -12,9 +12,6 @@ const LINKS = [
   { href: "/match", label: "AI 匹配" },
   { href: "/community", label: "社区" },
   { href: "/favorites", label: "收藏" },
-  { href: "/profile", label: "我的" },
-  { href: "/agents", label: "Agent 接入" },
-  { href: "/about", label: "关于" },
 ];
 
 const SLOGANS = ["不错过每一个Offer", "陪你拿到第一个Offer", "别慌，Offer在路上"];
@@ -29,14 +26,11 @@ function Typewriter() {
     let timeout: NodeJS.Timeout;
 
     if (!deleting && text === current) {
-      // 打完停顿 2 秒
       timeout = setTimeout(() => setDeleting(true), 2000);
     } else if (deleting && text === "") {
-      // 删完切下一句
       setDeleting(false);
       setIdx((i) => (i + 1) % SLOGANS.length);
     } else {
-      // 打字或删字
       timeout = setTimeout(() => {
         setText((t) =>
           deleting ? current.slice(0, t.length - 1) : current.slice(0, t.length + 1)
@@ -62,6 +56,8 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const [kw, setKw] = useState("");
   const [user, setUser] = useState<any>(null);
+  const [userMenu, setUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
@@ -71,8 +67,20 @@ export default function Nav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // 点击外部关闭用户下拉
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
   async function handleLogout() {
     await supabase.auth.signOut();
+    setUserMenu(false);
     router.push("/");
     router.refresh();
   }
@@ -117,30 +125,112 @@ export default function Nav() {
               placeholder="搜索公司 / 岗位"
             />
           </div>
-          {user ? (
-            <div className="nav-user-desktop">
-              <Link href="/profile" style={{
-                width: "32px", height: "32px", borderRadius: "50%",
-                background: "linear-gradient(135deg, #ca0013, #8b5cf6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontWeight: 800, fontSize: "13px",
-              }}>
+
+          {/* 我的下拉 */}
+          <div ref={userMenuRef} style={{ position: "relative" }}>
+            {user ? (
+              <button
+                onClick={() => setUserMenu(!userMenu)}
+                style={{
+                  width: "32px", height: "32px", borderRadius: "50%",
+                  background: "linear-gradient(135deg, #ca0013, #8b5cf6)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", fontWeight: 800, fontSize: "13px",
+                  border: "none", cursor: "pointer",
+                }}
+              >
                 {user.email?.[0]?.toUpperCase()}
-              </Link>
-              <button onClick={handleLogout} style={{
-                background: "none", border: "none", color: "rgba(238,235,227,0.5)",
-                fontSize: "12px", cursor: "pointer",
-              }}>退出</button>
-            </div>
-          ) : (
-            <Link href="/login" className="nav-login-desktop" style={{
-              padding: "8px 16px", background: "#ca0013", color: "#fff",
-              borderRadius: "20px", fontSize: "13px", fontWeight: 700,
-              textDecoration: "none",
-            }}>
-              登录
-            </Link>
-          )}
+              </button>
+            ) : (
+              <button
+                onClick={() => setUserMenu(!userMenu)}
+                style={{
+                  background: "none", border: "none", color: "rgba(238,235,227,0.8)",
+                  fontSize: "14px", cursor: "pointer", fontWeight: 600, padding: "8px 4px",
+                }}
+              >
+                我的
+              </button>
+            )}
+
+            {userMenu && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 10px)", right: 0,
+                background: "rgba(23,30,25,0.95)", backdropFilter: "blur(20px)",
+                border: "1px solid rgba(183,198,194,0.2)", borderRadius: "16px",
+                padding: "8px", minWidth: "180px", zIndex: 100,
+                boxShadow: "0 20px 50px -12px rgba(0,0,0,0.5)",
+              }}>
+                {user && (
+                  <div style={{
+                    padding: "8px 12px", fontSize: "12px",
+                    color: "rgba(238,235,227,0.5)", borderBottom: "1px solid rgba(183,198,194,0.15)",
+                    marginBottom: "4px",
+                  }}>
+                    {user.email}
+                  </div>
+                )}
+                {!user && (
+                  <Link
+                    href="/login"
+                    onClick={() => setUserMenu(false)}
+                    style={{
+                      display: "block", padding: "10px 12px", color: "#fff",
+                      background: "#ca0013", borderRadius: "10px", marginBottom: "4px",
+                      textDecoration: "none", fontWeight: 700, fontSize: "13px", textAlign: "center",
+                    }}
+                  >
+                    登录 / 注册
+                  </Link>
+                )}
+                {user && (
+                  <Link
+                    href="/profile"
+                    onClick={() => setUserMenu(false)}
+                    style={{
+                      display: "block", padding: "10px 12px", color: "#eeebe3",
+                      textDecoration: "none", fontSize: "14px", borderRadius: "10px",
+                    }}
+                  >
+                    👤 个人中心
+                  </Link>
+                )}
+                <Link
+                  href="/about"
+                  onClick={() => setUserMenu(false)}
+                  style={{
+                    display: "block", padding: "10px 12px", color: "#eeebe3",
+                    textDecoration: "none", fontSize: "14px", borderRadius: "10px",
+                  }}
+                >
+                  ℹ️ 关于我们
+                </Link>
+                <Link
+                  href="/agents"
+                  onClick={() => setUserMenu(false)}
+                  style={{
+                    display: "block", padding: "10px 12px", color: "#eeebe3",
+                    textDecoration: "none", fontSize: "14px", borderRadius: "10px",
+                  }}
+                >
+                  🤖 Agent 接入
+                </Link>
+                {user && (
+                  <button
+                    onClick={() => { handleLogout(); setUserMenu(false); }}
+                    style={{
+                      display: "block", width: "100%", padding: "10px 12px",
+                      background: "rgba(202,0,19,0.15)", color: "#ca0013",
+                      border: "1px solid rgba(202,0,19,0.25)", borderRadius: "10px",
+                      fontSize: "14px", fontWeight: 700, cursor: "pointer", marginTop: "4px",
+                    }}
+                  >
+                    退出登录
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -159,6 +249,16 @@ export default function Nav() {
             {l.label}
           </Link>
         ))}
+        {/* 移动端抽屉补充入口 */}
+        <Link href="/profile" className={isOn("/profile") ? "on" : ""} onClick={() => setOpen(false)}>
+          我的
+        </Link>
+        <Link href="/agents" className={isOn("/agents") ? "on" : ""} onClick={() => setOpen(false)}>
+          Agent 接入
+        </Link>
+        <Link href="/about" className={isOn("/about") ? "on" : ""} onClick={() => setOpen(false)}>
+          关于
+        </Link>
         <div style={{ marginTop: "auto", padding: "16px 0", borderTop: "1px solid rgba(183,198,194,0.15)" }}>
           {user ? (
             <>
