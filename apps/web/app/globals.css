@@ -531,3 +531,6 @@ svg{display:block}
 .confirm-actions button{padding:8px 16px;border-radius:10px;border:none;font-size:13px;cursor:pointer}
 .confirm-actions .cancel{background:rgba(255,255,255,.1);color:#eee}
 .confirm-actions .ok{background:#ca0013;color:#fff}
+.drop-trash{display:none;padding:16px;border:2px dashed rgba(202,0,19,.6);border-radius:16px;text-align:center;color:#fda4af;font-size:14px;margin-bottom:12px;background:rgba(202,0,19,.08);transition:all .2s}
+.drop-trash.show{display:block}
+.drop-trash:hover{background:rgba(202,0,19,.18);border-color:#ca0013}

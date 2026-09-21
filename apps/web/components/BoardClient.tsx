@@ -74,24 +74,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    function onDragOver(e: DragEvent) {
-      if (dragId && boardRef.current && !boardRef.current.contains(e.target as Node)) {
-        e.preventDefault();
-        e.dataTransfer!.dropEffect = "none";
-      }
-    }
-    function onDrop(e: DragEvent) {
-      if (!dragId) return;
-      if (boardRef.current && boardRef.current.contains(e.target as Node)) return;
-      e.preventDefault();
-      setConfirmRm(dragId);
-      setDragId(null);
-    }
-    window.addEventListener("dragover", onDragOver);
-    window.addEventListener("drop", onDrop);
-    return () => { window.removeEventListener("dragover", onDragOver); window.removeEventListener("drop", onDrop); };
-  }, [dragId]);
+
 
   async function setStage(id: string, st: Stage) {
     const next = { ...stages, [id]: st };
@@ -139,6 +122,19 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             从首页添加岗位
           </button>
         </div>
+      </div>
+
+      {/* 拖拽时显示的删除条 */}
+      <div
+        className={"drop-trash" + (dragId ? " show" : "")}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (dragId) { doRemove(dragId); setDragId(null); }
+        }}
+      >
+        🗑 拖到这里移除
       </div>
 
       <div className="board-stats">
@@ -194,18 +190,6 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         )}
       </div>
 
-      {confirmRm && (
-        <div className="confirm-mask" onClick={() => setConfirmRm(null)}>
-          <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
-            <h5>确认移除？</h5>
-            <p>将从求职看板删除该岗位（收藏不受影响）</p>
-            <div className="confirm-actions">
-              <button className="cancel" onClick={() => setConfirmRm(null)}>取消</button>
-              <button className="ok" onClick={() => { doRemove(confirmRm); setConfirmRm(null); }}>确认移除</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className={"toast" + (toast ? " show" : "")}>{toast}</div>
     </div>
