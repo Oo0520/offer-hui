@@ -65,6 +65,13 @@ export default function HomeClient({
   const [showToday, setShowToday] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showBackTop, setShowBackTop] = useState(false);
+  const [toast, setToast] = useState("");
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 1600);
+  }
   const PAGE_SIZE = 12;
   const fgRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -164,6 +171,7 @@ export default function HomeClient({
     const newFavs = new Set(favs);
     if (on) newFavs.add(jobId); else newFavs.delete(jobId);
     setFavs(newFavs);
+    showToast(on ? "已收藏" : "已取消收藏");
     // localStorage
     localStorage.setItem("offer_fav", JSON.stringify([...newFavs]));
     // 数据库
@@ -184,9 +192,11 @@ export default function HomeClient({
     e.preventDefault();
     e.stopPropagation();
     const newBoards = { ...boards };
-    if (newBoards[jobId]) delete newBoards[jobId];
+    const had = !!newBoards[jobId];
+    if (had) delete newBoards[jobId];
     else newBoards[jobId] = "待投";
     setBoards(newBoards);
+    showToast(had ? "已从看板移除" : "已加入待投看板");
     localStorage.setItem("offer_board", JSON.stringify(newBoards));
     // 数据库
     const { data: { session } } = await supabase.auth.getSession();
@@ -694,6 +704,7 @@ export default function HomeClient({
       </div>
 
       {/* 回到顶部 */}
+      <div className={"toast" + (toast ? " show" : "")}>{toast}</div>
       <button
         className={"back-to-top" + (showBackTop ? " show" : "")}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

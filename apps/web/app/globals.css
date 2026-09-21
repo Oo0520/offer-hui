@@ -519,3 +519,7 @@ svg{display:block}
 .site-foot{border-top:1px solid rgba(183,198,194,.12);margin-top:64px;padding:26px 0 40px;text-align:center}
 .site-foot p{font-size:11px;color:rgba(183,198,194,.55);margin-top:4px}
 .site-foot p:first-child{margin-top:0}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(23,30,25,.92);color:#eeebe3;padding:10px 20px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:9999;backdrop-filter:blur(8px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.stage-sheet button.rm{margin-top:8px;width:100%;padding:10px;border-radius:12px;background:rgba(202,0,19,.12);color:#fda4af;border:1px solid rgba(202,0,19,.3);font-size:14px;cursor:pointer}
+.stage-sheet button.rm:hover{background:rgba(202,0,19,.22)}

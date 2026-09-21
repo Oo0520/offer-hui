@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { JobView } from "@/lib/jobs";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +9,6 @@ const STAGES = ["待投", "已投", "笔试", "面试", "Offer"] as const;
 type Stage = (typeof STAGES)[number];
 const KEY = "offer_board";
 
-// 中文阶段 -> 数据库 status
 const STAGE_TO_STATUS: Record<string, string> = {
   "待投": "pending",
   "已投": "applied",
@@ -35,21 +34,21 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
   const [sheet, setSheet] = useState<JobView | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropCol, setDropCol] = useState<string | null>(null);
-  const [debug, setDebug] = useState("");
+  const [toast, setToast] = useState("");
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 1600);
+  }
 
   useEffect(() => {
-    // localStorage
     setStages(readBoard());
 
-    // 登录后从数据库同步
     supabase.auth.getSession().then(async ({ data }) => {
       const u = data.session?.user;
-      if (!u) {
-        setDebug("未登录");
-        return;
-      }
+      if (!u) return;
 
-      // 先把 localStorage 里的未同步数据上传到数据库
       const local = readBoard();
       const existing = await supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id);
       const existingMap: Record<string, string> = {};
@@ -59,7 +58,6 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           if (st) existingMap[r.job_id] = st;
         }
       }
-      // 找出 localStorage 有但数据库没有的，上传
       for (const [jobId, stage] of Object.entries(local)) {
         if (!existingMap[jobId]) {
           await supabase.from("user_jobs").upsert({
@@ -68,13 +66,8 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         }
       }
 
-      // 再从数据库读全部
       supabase.from("user_jobs").select("job_id, status").eq("user_id", u.id)
-        .then(({ data: rows, error }) => {
-          if (error) {
-            setDebug(`查询错误: ${error.message}`);
-            return;
-          }
+        .then(({ data: rows }) => {
           if (!rows) return;
           const b: Record<string, string> = {};
           for (const r of rows) {
@@ -82,11 +75,9 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             if (st) b[r.job_id] = st;
           }
           setStages(b);
-          setDebug(`同步完成: ${rows.length} 条`);
         });
     });
 
-    // 监听登录状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!session?.user) return;
       supabase.from("user_jobs").select("job_id, status").eq("user_id", session.user.id)
@@ -105,22 +96,30 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
 
   async function setStage(id: string, st: Stage) {
     const next = { ...stages, [id]: st };
-    delete next[id];
-    next[id] = st;
     localStorage.setItem(KEY, JSON.stringify(next));
     setStages(next);
 
-    // 数据库：先删掉旧状态，再写入新状态
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      // 删掉所有状态
       await supabase.from("user_jobs").delete()
         .eq("user_id", session.user.id).eq("job_id", id);
-      // 写入新状态
       await supabase.from("user_jobs").upsert({
         user_id: session.user.id, job_id: id, status: STAGE_TO_STATUS[st],
       }, { onConflict: "user_id,job_id,status" });
     }
+  }
+
+  async function removeJob(id: string) {
+    const rest = { ...stages };
+    delete rest[id];
+    setStages(rest);
+    localStorage.setItem(KEY, JSON.stringify(rest));
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await supabase.from("user_jobs").delete()
+        .eq("user_id", session.user.id).eq("job_id", id);
+    }
+    showToast("已移除");
   }
 
   const cols = useMemo(() => {
@@ -139,12 +138,8 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
     [jobs, stages]
   );
 
-  function openSheet(j: JobView) {
-    setSheet(j);
-  }
-  function closeSheet() {
-    setSheet(null);
-  }
+  function openSheet(j: JobView) { setSheet(j); }
+  function closeSheet() { setSheet(null); }
 
   return (
     <div className="wrap">
@@ -154,7 +149,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           <p>已投 / 待投 / 笔试 / 面试 / Offer 全流程进度管理，桌面拖拽、移动端点选改状态。</p>
           <div className="tags-row">
             <span>拖拽卡片到目标阶段</span>
-            <span>移动端点击卡片改状态</span>
+            <span>拖到看板区域外移除</span>
             <span>登录后自动云端同步</span>
           </div>
         </div>
@@ -177,18 +172,30 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         ))}
       </div>
 
-      <div className="board">
+      <div
+        className="board"
+        onDragOver={(e) => { e.preventDefault(); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (dragId) {
+            removeJob(dragId);
+            setDragId(null);
+          }
+        }}
+      >
         {cols.map(({ st, list }) => (
           <div
             key={st}
             className={"board-col glass" + (dropCol === st ? " drop" : "")}
             onDragOver={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               setDropCol(st);
             }}
             onDragLeave={() => setDropCol(null)}
             onDrop={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               setDropCol(null);
               if (dragId) setStage(dragId, st as Stage);
             }}
@@ -259,10 +266,20 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
                   {(stages[sheet.id] || "待投") === st ? " · 当前" : ""}
                 </button>
               ))}
+              <button
+                className="rm"
+                onClick={() => {
+                  removeJob(sheet.id);
+                  closeSheet();
+                }}
+              >
+                移除该岗位
+              </button>
             </div>
           </>
         )}
       </div>
+      <div className={"toast" + (toast ? " show" : "")}>{toast}</div>
     </div>
   );
 }
