@@ -28,6 +28,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropCol, setDropCol] = useState<string | null>(null);
   const [toast, setToast] = useState("");
+  const [showGuide, setShowGuide] = useState(false);
   const [confirmRm, setConfirmRm] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -40,6 +41,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
 
   useEffect(() => {
     setStages(readBoard());
+    if (!localStorage.getItem("offer_board_guide_seen")) setShowGuide(true);
     supabase.auth.getSession().then(async ({ data }) => {
       const u = data.session?.user;
       if (!u) return;
@@ -152,7 +154,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             <h5>{st}<span className="cnt">{list.length}</span></h5>
             {list.length === 0 ? (
               <div style={{ fontSize: 11, color: "rgba(183,198,194,.4)", textAlign: "center", padding: "22px 0", lineHeight: 1.6 }}>
-                {st === "待投" ? "去首页点「+ 待投」\n添加岗位到看板" : "暂无岗位"}
+                {st === "待投" ? "去首页点「+ 待投」添加到看板" : "📥 把岗位拖到这里"}
               </div>
             ) : (
               list.map((j) => (
@@ -190,6 +192,19 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         )}
       </div>
 
+
+      {/* 首次访问引导 */}
+      {showGuide && (
+        <div className="guide-mask" onClick={() => { localStorage.setItem("offer_board_guide_seen", "1"); setShowGuide(false); }}>
+          <div className="guide-box" onClick={(e) => e.stopPropagation()}>
+            <h5>💡 怎么用求职看板？</h5>
+            <div className="guide-item"><b>拖拽卡片</b>到下方 5 列，自动改阶段（待投/已投/笔试/面试/Offer）</div>
+            <div className="guide-item"><b>拖到顶部垃圾桶</b>可移除该岗位</div>
+            <div className="guide-item">点卡片可手动选阶段，登录后自动云端同步</div>
+            <button className="guide-ok" onClick={() => { localStorage.setItem("offer_board_guide_seen", "1"); setShowGuide(false); }}>我知道了</button>
+          </div>
+        </div>
+      )}
 
       <div className={"toast" + (toast ? " show" : "")}>{toast}</div>
     </div>

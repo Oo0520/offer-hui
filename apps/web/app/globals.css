@@ -534,3 +534,10 @@ svg{display:block}
 .drop-trash{display:none;padding:16px;border:2px dashed rgba(202,0,19,.6);border-radius:16px;text-align:center;color:#fda4af;font-size:14px;margin-bottom:12px;background:rgba(202,0,19,.08);transition:all .2s}
 .drop-trash.show{display:block}
 .drop-trash:hover{background:rgba(202,0,19,.18);border-color:#ca0013}
+.guide-mask{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center}
+.guide-box{background:#1a2027;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:24px;width:90%;max-width:380px}
+.guide-box h5{margin:0 0 14px;font-size:16px;color:#fff}
+.guide-item{font-size:13px;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:10px}
+.guide-item b{color:#fff}
+.guide-ok{margin-top:14px;width:100%;padding:11px;border-radius:12px;border:none;background:#ca0013;color:#fff;font-size:14px;cursor:pointer}
+.guide-ok:hover{background:#e0001a}
