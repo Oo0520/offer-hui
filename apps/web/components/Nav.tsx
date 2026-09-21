@@ -126,8 +126,8 @@ export default function Nav() {
             />
           </div>
 
-          {/* 我的下拉 */}
-          <div ref={userMenuRef} style={{ position: "relative" }}>
+          {/* 我的下拉（桌面端显示，手机端走抽屉菜单） */}
+          <div ref={userMenuRef} className="user-menu-wrap" style={{ position: "relative" }}>
             {user ? (
               <button
                 onClick={() => setUserMenu(!userMenu)}
