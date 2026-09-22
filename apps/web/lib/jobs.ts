@@ -172,7 +172,7 @@ async function _fetchAllJobsRaw(): Promise<JobView[]> {
 }
 
 export const fetchAllJobs = unstable_cache(_fetchAllJobsRaw, ["all-jobs"], {
-  revalidate: 60,
+  revalidate: false,
   tags: ["jobs"],
 });
 

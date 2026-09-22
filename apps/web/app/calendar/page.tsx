@@ -3,8 +3,8 @@ import { fetchAllJobs } from "@/lib/jobs";
 
 export const metadata = { title: "校招日历 · Offer派" };
 
-// 依赖实时数据（Supabase），禁止构建期静态预渲染
-export const dynamic = "force-dynamic";
+// build 时静态预渲染
+export const dynamic = "force-static";
 
 export default async function CalendarPage() {
   const jobs = await fetchAllJobs();

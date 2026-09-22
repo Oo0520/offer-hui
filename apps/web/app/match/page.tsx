@@ -3,8 +3,8 @@ import { fetchAllJobs } from "@/lib/jobs";
 
 export const metadata = { title: "AI 匹配 · Offer派" };
 
-// 依赖实时数据（Supabase），禁止构建期静态预渲染
-export const dynamic = "force-dynamic";
+// build 时静态预渲染
+export const dynamic = "force-static";
 
 export default async function MatchPage() {
   const jobs = await fetchAllJobs();
