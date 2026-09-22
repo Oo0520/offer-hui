@@ -288,6 +288,7 @@ export default function HomeClient({
     if (chip === "实习") l = l.filter((j) => j.jobType === "实习");
     if (chip === "招聘会") l = l.filter((j) => j.jobType === "招聘会");
     if (chip === "宣讲会") l = l.filter((j) => j.jobType === "宣讲会");
+    if (chip === "招聘公告") l = l.filter((j) => j.jobType === "招聘公告");
     if (chip === "urgent")
       l = l.filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30);
     if (q.trim()) {
