@@ -150,7 +150,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           <div key={st} className={"board-col glass" + (dropCol === st ? " drop" : "")}
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropCol(st); }}
             onDragLeave={() => setDropCol(null)}
-            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDropCol(null); if (dragId) setStage(dragId, st as Stage); }}>
+            onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDropCol(null); if (dragId) { setStage(dragId, st as Stage); setDragId(null); } }}>
             <h5>{st}<span className="cnt">{list.length}</span></h5>
             {list.length === 0 ? (
               <div style={{ fontSize: 11, color: "rgba(183,198,194,.4)", textAlign: "center", padding: "22px 0", lineHeight: 1.6 }}>
