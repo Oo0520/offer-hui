@@ -161,8 +161,17 @@ async function _fetchAllJobsRaw(): Promise<JobView[]> {
     params.set("limit", String(PAGE_SIZE));
     params.set("offset", String(offset));
     const url = `${URL}/rest/v1/jobs?${params.toString()}`;
-    const res = await fetch(url, { headers: AUTH_HEADERS });
-    if (!res.ok) throw new Error(`Supabase 查询失败 ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    let res: Response;
+    try {
+      res = await fetch(url, { headers: AUTH_HEADERS });
+    } catch (e) {
+      console.warn(`[jobs] Supabase fetch failed, fallback to empty:`, (e as Error).message);
+      return [];
+    }
+    if (!res.ok) {
+      console.warn(`[jobs] Supabase returned ${res.status}, fallback to empty`);
+      return [];
+    }
     const rows = (await res.json()) as JobRow[];
     all.push(...rows);
     if (rows.length < PAGE_SIZE) break;
