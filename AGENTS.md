@@ -1,7 +1,7 @@
 # AGENTS.md — Offer派 项目协作文档
 
 > 本文件供后续 agent 快速接手本项目使用。阅读顺序：架构 → 快速开始 → 后端数据 → 前端修改 → 陷阱 → 协作约定。
-> 最后更新：2026-09-24（迁移到 Vercel + offerpiai.cn 已生效）
+> 最后更新：2026-09-27（日历订阅 URL 修复、/api/revalidate 按需失效缓存、安卓日历订阅实测自动同步）
 
 ## 1. 项目架构速览
 
@@ -44,14 +44,13 @@ offer-hui/
 **数据流**：
 
 ```
-豆包定时任务（每天 12:00 北京，跑在本地 Windows）
+豆包定时任务（每天 02:00 北京，跑在本地 Windows）
   → python crawl-fjut.py + crawl-fjrclh.py 增量抓
   → upsert content_hash 去重 → Supabase jobs 表
-  → git 空 commit + push main → Vercel 重新 build
+  → 调用 GET /api/revalidate?secret=<ADMIN_TOKEN> → 立即失效 jobs 缓存（无需重新 build）
                                                                   ↓
-Next.js build 时 fetchAllJobs() 全量拉取 → force-static 静态生成 / /calendar /match /favorites /board
-                                                                  ↓
-用户浏览器 → 静态 HTML（岗位数据打包进 JS bundle）
+用户访问（/ /calendar /match /favorites /board 为 force-static，ISR 按需重新生成）
+  → fetchAllJobs() 全量拉取最新数据
 用户登录态操作（收藏/看板）→ 浏览器端 supabase-js anon key → RLS → user_jobs 表
 ```
 
@@ -63,7 +62,7 @@ Next.js build 时 fetchAllJobs() 全量拉取 → force-static 静态生成 / /c
 |---|---|---|
 | `apps/web/.env.local` | `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY` | 浏览器端 Supabase（auth + user_jobs） |
 | 同上 | `SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 服务端 jobs.ts 全量拉取（**无 NEXT_PUBLIC_ 前缀，不能暴露浏览器**） |
-| 同上 | `ADMIN_TOKEN` | /api/offerp/* 手动录入后台 |
+| 同上 | `ADMIN_TOKEN` | /api/offerp/* 手动录入后台 + `/api/revalidate` 数据刷新鉴权 |
 | `apps/worker/.env` | `DATABASE_URL`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY`、`USER_AGENT`、`REQUEST_DELAY` | 爬虫入库 |
 
 **Vercel 部署时必须在 Project Settings → Environment Variables 配齐 4 个 Supabase 环境变量**（两个 URL + 两个 KEY），否则 build 报 `supabaseUrl is required`。Secrets 已配：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY`。
@@ -122,7 +121,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 | `fj99` | 福建就业网 | POST + md5 签名 | `run_fj99.py` |
 | `campus2027` / `open_jobs` / `wechat` | 开源社区 / 公众号 | 历史导入 | `import_*.py` |
 
-**新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后会自动 git 空 commit push main 触发 Vercel 重新部署。
+**新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
 
 ### 3.3 数据层（lib/jobs.ts）
 
@@ -177,9 +176,9 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 ## 5. 已知陷阱（踩过的坑，别再踩）
 
 1. **globals.css 必须 UTF-8 无 BOM**，否则 build 失败。
-2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 12:00 跑爬虫 upsert 到 Supabase，然后 push main 触发 Vercel 重新 build 拉新数据。
+2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 02:00 跑爬虫 upsert 到 Supabase，然后**调用 `/api/revalidate?secret=<ADMIN_TOKEN>` 按需失效缓存**（接口内部 `revalidateTag("jobs", {expire:0})` + `revalidatePath` 各静态页），300ms 内全球生效，无需重新 build。
 3. **SERVICE_KEY 绝不能加 NEXT_PUBLIC_ 前缀**，否则暴露浏览器。
-4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai，跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完自动 push 触发 Vercel redeploy。
+4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
 5. **PowerShell 中文编码**：读含中文的 .py/.md 文件用 `[System.IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)`，不要用 Get-Content 管道（默认 ANSI 会乱码）。
 6. **git commit 格式**：`[YYYY-MM-DD HH:mm] type: 描述`，方便时间轴回溯。
 7. **端口占用**：改完代码重启前先杀 3000 端口旧进程（`Get-NetTCPConnection :3000 | Stop-Process`），否则旧进程占着端口跑老代码。
@@ -206,13 +205,14 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - 求职看板 5 列（待投/已投/笔试/面试/Offer），拖拽换阶段，拖出看板移除，toast 反馈，首次引导
 - 收藏（♥ 切换，toast）
 - Supabase Auth 邮箱注册登录，跨设备同步收藏+看板
-- 校招日历 + ICS 订阅
+- 校招日历 + ICS 订阅（订阅 URL 用固定 https，iPhone/安卓 URL 订阅均实测**自动同步**，含增删）
 - 打字机 slogan（Offer派·不错过每一个Offer / 陪你拿到第一个Offer / 别慌，Offer在路上）
 - 首页动态背景（粒子 logo + 液体光斑 + 网格 + 鼠标光晕，仅桌面端）
 - MCP server（Agent 接入 /agents 页）
 - 手动录入后台 /offerp（ADMIN_TOKEN）
 - **Vercel CI/CD**（push main 自动部署，正式域名 https://www.offerpiai.cn）
-- **豆包定时任务爬虫**（每天 12:00 北京自动跑增量 + push 触发 redeploy）
+- **豆包定时任务爬虫**（每天 02:00 北京自动跑增量 + `/api/revalidate` 失效缓存）
+- **`/api/revalidate` 按需失效缓存**（修复「爬虫已入库但网站不更新」：unstable_cache 跨部署持久，需主动失效）
 
 **🔄 待完善**：
 - 爬虫依赖本地 Windows 开机 + 豆包在线；电脑关机/豆包没开就不跑
