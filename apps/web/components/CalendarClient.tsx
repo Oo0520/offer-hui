@@ -13,9 +13,10 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
   const [ym, setYm] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [sel, setSel] = useState<string | null>(todayStr);
   const [showSub, setShowSub] = useState(false);
+  // 订阅 URL 直接用 https：iOS/安卓日历均原生支持，避免 webcal/webcals 协议兼容问题
   const subUrl =
     typeof window !== "undefined"
-      ? window.location.origin.replace(/^http/, "webcal") + "/api/calendar.ics"
+      ? window.location.origin + "/api/calendar.ics"
       : "";
   const [copied, setCopied] = useState(false);
 
@@ -138,7 +139,7 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
           <div className="sub-tips">
             <p><b>iPhone：</b>设置 → 日历 → 账户 → 添加账户 → 其他 → 添加已订阅日历 → 粘贴 URL</p>
             <p><b>安卓（华为/小米/OPPO）：</b>日历 App → 订阅/添加日历 → 通过 URL 订阅 → 粘贴 URL</p>
-            <p style={{ color: "rgba(183,198,194,.55)" }}>URL 订阅会自动同步新岗位；本地 localhost 手机访问不到，部署到公网后即可使用。</p>
+            <p style={{ color: "rgba(183,198,194,.55)" }}>URL 订阅后会自动同步新岗位；如粘贴后提示无法连接，请确认复制的是完整 https 地址。</p>
           </div>
         </div>
       )}
