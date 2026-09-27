@@ -139,7 +139,7 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
           <div className="sub-tips">
             <p><b>iPhone：</b>设置 → 日历 → 账户 → 添加账户 → 其他 → 添加已订阅日历 → 粘贴 URL</p>
             <p><b>安卓（OPPO/华为/小米）：</b>日历 App → 日程同步与导入 → 通过 URL 导入 → 粘贴 URL（其他品牌入口名称略有差异，核心是"通过 URL 导入/订阅"）</p>
-            <p style={{ color: "rgba(183,198,194,.55)" }}>订阅后会自动同步（新增与删除的岗位都会更新，无需重新导入）；如粘贴后提示无法连接，请确认复制的是完整 https 地址。</p>
+            <p style={{ color: "rgba(183,198,194,.55)" }}>URL 订阅后会自动同步新岗位；如粘贴后提示无法连接，请确认复制的是完整 https 地址。</p>
           </div>
         </div>
       )}
