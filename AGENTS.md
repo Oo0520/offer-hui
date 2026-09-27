@@ -1,7 +1,7 @@
 # AGENTS.md — Offer派 项目协作文档
 
 > 本文件供后续 agent 快速接手本项目使用。阅读顺序：架构 → 快速开始 → 后端数据 → 前端修改 → 陷阱 → 协作约定。
-> 最后更新：2026-09-24
+> 最后更新：2026-09-24（迁移到 Vercel + offerpiai.cn 已生效）
 
 ## 1. 项目架构速览
 
@@ -15,8 +15,8 @@
 | 数据库 / Auth | Supabase（Postgres + Auth + pgvector） | 云端 project `sqmgjxazzpcfjutzscyu` |
 | 爬虫 | Python（Scrapling / curl_cffi / httpx） | `apps/worker/` |
 | MCP | Python MCP server | `apps/mcp/` |
-| 部署 | 腾讯云 EdgeOne Pages（CI 自动部署 GitHub main） | https://offer-hui.edgeone.dev/ |
-| 自定义域名 | offerpiai.cn（已绑 CNAME，未 ICP 备案，国内手机访问被重置；电脑走代理可开） | — |
+| 部署 | **Vercel**（GitHub main 自动部署） | https://offerpai.vercel.app/ |
+| 正式域名 | **https://www.offerpiai.cn**（apex 自动 308 跳 www，DNS 在腾讯云 DNSPod） | — |
 
 **目录结构**：
 
@@ -27,21 +27,27 @@ offer-hui/
 │   │   ├── app/             # about/agents/board/calendar/community/favorites/login/match/offerp/profile + api/
 │   │   ├── components/       # Nav/HomeClient/BoardClient/JobCard/...
 │   │   └── lib/             # jobs.ts（数据层）/supabase.ts（浏览器端 auth）/ratelimit.ts
-│   ├── worker/              # Python 爬虫 + APScheduler
-│   │   ├── crawl_fjut.py    # 福建理工（Scrapling StealthyFetcher，5 板块）
-│   │   ├── crawl_fjrclh.py  # 福州大学（HTML 解析）
-│   │   ├── scheduler.py     # 凌晨 2:00 定时跑增量
+│   ├── worker/              # Python 爬虫依赖 + 历史脚本
+│   │   ├── requirements.txt # scrapling[fetchers] / curl_cffi / patchright
 │   │   └── cli.py / clean_data.py / migrate.py
 │   └── mcp/                 # MCP server.py（给 Agent 调用）
-├── infra/supabase/migrations/  # SQL 迁移（注意：user_jobs 表实际已建但未写入迁移文件，见 §5）
-├── design-doc/
-└── cloudflared.exe          # 内网穿透（临时）
+├── .github/workflows/
+│   └── ci.yml               # web build + worker test（push main / PR 触发）
+├── infra/supabase/migrations/  # SQL 迁移
+└── design-doc/
+
+# 注意：实际每日跑的爬虫脚本在仓库外：
+#   E:\AIMemory\DaoBao\crawl-fjut.py
+#   E:\AIMemory\DaoBao\crawl-fjrclh.py
 ```
 
 **数据流**：
 
 ```
-worker(本地 Windows, 凌晨2点) → upsert content_hash 去重 → Supabase jobs 表
+豆包定时任务（每天 12:00 北京，跑在本地 Windows）
+  → python crawl-fjut.py + crawl-fjrclh.py 增量抓
+  → upsert content_hash 去重 → Supabase jobs 表
+  → git 空 commit + push main → Vercel 重新 build
                                                                   ↓
 Next.js build 时 fetchAllJobs() 全量拉取 → force-static 静态生成 / /calendar /match /favorites /board
                                                                   ↓
@@ -60,7 +66,9 @@ Next.js build 时 fetchAllJobs() 全量拉取 → force-static 静态生成 / /c
 | 同上 | `ADMIN_TOKEN` | /api/offerp/* 手动录入后台 |
 | `apps/worker/.env` | `DATABASE_URL`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY`、`USER_AGENT`、`REQUEST_DELAY` | 爬虫入库 |
 
-**EdgeOne Pages 部署时必须在控制台配齐 4 个 Supabase 环境变量**（两个 URL + 两个 KEY），否则 build 报 `supabaseUrl is required`。
+**Vercel 部署时必须在 Project Settings → Environment Variables 配齐 4 个 Supabase 环境变量**（两个 URL + 两个 KEY），否则 build 报 `supabaseUrl is required`。Secrets 已配：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY`。
+
+> ⚠️ EdgeOne 已删除（未备案 .cn 域名国内手机打不开，2026-09-24 迁到 Vercel）。不要再提 EdgeOne。
 
 ### 常用命令
 
@@ -71,18 +79,17 @@ npm run dev        # 开发（3000）
 npm run build      # 生产构建（必须零错误）
 npm start
 
-# 爬虫
-cd apps/worker
-python scheduler.py --once    # 立即跑一次
-python scheduler.py           # 常驻，凌晨 2 点自动跑
-
-# 内网穿透（临时）
-.\cloudflared.exe tunnel --url http://localhost:3000
+# 爬虫（本地手动跑一次调试；线上由豆包定时任务每天 12:00 自动跑）
+# 脚本在仓库外：
+cd E:\AIMemory\DaoBao
+offer-hui\apps\worker\.venv\Scripts\python.exe crawl-fjut.py
+offer-hui\apps\worker\.venv\Scripts\python.exe crawl-fjrclh.py
 
 # git（本地备份，时间戳格式）
 git add -A
 git commit -m "[2026-09-24 21:30] feat: 描述"
 # 不主动 push，用户说"上传"才 push 到 https://github.com/Oo0520/offer-hui
+# push main 后 Vercel 自动部署，GitHub Actions 跑 CI（web build + worker test）
 ```
 
 ## 3. 后端与数据
@@ -110,12 +117,12 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 
 | source 键 | 数据源 | 抓取方式 | 文件 |
 |---|---|---|---|
-| `fjut` | 福建理工大学就业网 | Scrapling StealthyFetcher，5 板块（全职/实习/宣讲会/招聘会/招聘公告） | `crawl_fjut.py` |
-| `fjrclh` | 福州大学就业网 | HTML 解析 | `crawl_fjrclh.py` |
+| `fjut` | 福建理工大学就业网 | Scrapling StealthyFetcher，5 板块（全职/实习/宣讲会/招聘会/招聘公告） | `E:\AIMemory\DaoBao\crawl-fjut.py`（在豆包定时任务里跑） |
+| `fjrclh` | 福州大学就业网 | httpx API + 增量 | `E:\AIMemory\DaoBao\crawl-fjrclh.py` |
 | `fj99` | 福建就业网 | POST + md5 签名 | `run_fj99.py` |
 | `campus2027` / `open_jobs` / `wechat` | 开源社区 / 公众号 | 历史导入 | `import_*.py` |
 
-**新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在 scheduler.py 注册定时任务。
+**新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后会自动 git 空 commit push main 触发 Vercel 重新部署。
 
 ### 3.3 数据层（lib/jobs.ts）
 
@@ -170,14 +177,15 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 ## 5. 已知陷阱（踩过的坑，别再踩）
 
 1. **globals.css 必须 UTF-8 无 BOM**，否则 build 失败。
-2. **EdgeOne Edge runtime 不支持 unstable_cache 动态 revalidate**：所以 / 等页面改成 force-static，revalidate: false。数据更新后要 push 到 GitHub 触发 EdgeOne 重新部署才能看到新岗位。**不要加 force-dynamic 到静态页**。
+2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 12:00 跑爬虫 upsert 到 Supabase，然后 push main 触发 Vercel 重新 build 拉新数据。
 3. **SERVICE_KEY 绝不能加 NEXT_PUBLIC_ 前缀**，否则暴露浏览器。
-4. **worker 爬虫跑在本地 Windows**：依赖电脑开机。scheduler.py 是 APScheduler 常驻进程，关电脑就停。长期要迁云。
+4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai，跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完自动 push 触发 Vercel redeploy。
 5. **PowerShell 中文编码**：读含中文的 .py/.md 文件用 `[System.IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)`，不要用 Get-Content 管道（默认 ANSI 会乱码）。
 6. **git commit 格式**：`[YYYY-MM-DD HH:mm] type: 描述`，方便时间轴回溯。
 7. **端口占用**：改完代码重启前先杀 3000 端口旧进程（`Get-NetTCPConnection :3000 | Stop-Process`），否则旧进程占着端口跑老代码。
-8. **EdgeOne 部署环境变量**：4 个 Supabase 变量必须配全，少一个 build 就挂。
+8. **Vercel 环境变量**：4 个 Supabase 变量必须配全，少一个 build 就挂。CI 里用 placeholder URL（`https://placeholder.supabase.co`）做 build 降级，见 `apps/web/lib/jobs.ts` 里 `_fetchAllJobsRaw` 的 try/catch。
 9. **user_jobs 表 RLS**：新环境建表后必须加 `using (auth.uid() = user_id)` 的 RLS 策略，否则 anon key 能读全表。
+10. **PR 流程**：不直接 push main，走分支 + PR；用户说"合并"才合。
 
 ## 6. 设计资产
 
@@ -203,13 +211,12 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - 首页动态背景（粒子 logo + 液体光斑 + 网格 + 鼠标光晕，仅桌面端）
 - MCP server（Agent 接入 /agents 页）
 - 手动录入后台 /offerp（ADMIN_TOKEN）
-- EdgeOne Pages CI/CD（push main 自动部署）
+- **Vercel CI/CD**（push main 自动部署，正式域名 https://www.offerpiai.cn）
+- **豆包定时任务爬虫**（每天 12:00 北京自动跑增量 + push 触发 redeploy）
 
 **🔄 待完善**：
-- offerpiai.cn 域名未 ICP 备案，国内手机访问被重置
-- EdgeOne 默认域名 401 密码保护未关
-- fjrclh 爬虫反爬（API 403 / Scrapling 422），靠历史数据
-- worker 跑本地，未上云
+- 爬虫依赖本地 Windows 开机 + 豆包在线；电脑关机/豆包没开就不跑
+- GitHub Actions 里的 `crawl.yml` 是历史残留，实际不用（境外 runner 访问 fjut.jysd.com 超时）
 
 **📋 规划中**：
 - 邮件提醒 / Web Push
@@ -220,6 +227,6 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 
 1. **git**：本地 commit 带时间戳，不主动 push；用户说"上传/发 PR"才 push，且**走分支 + PR，不直接合并 main**。
 2. **流程**：新功能先给方案让用户确认再动手。
-3. **交付**：前端改完 `npm run build` 零错误；改完执行重启脚本并把内网穿透/部署地址发给用户。
-4. **设计红线**：深色 Sophisticated Playful 风格；跳转官方入口、不截留简历。
+3. **交付**：前端改完 `npm run build` 零错误；改完 Git 提交到分支 PR 并把 Vercel 部署临时地址发给用户。
+4. **设计红线**：深色 Sophisticated Playful 风格。
 5. **沟通**：中文，极简无废话。
