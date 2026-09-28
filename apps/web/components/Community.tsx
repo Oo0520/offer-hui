@@ -1,107 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Post = {
-  tab: "salary" | "interview" | "referral";
-  av: string;
+  id: string;
   title: string;
-  badges: { t: string; c: string }[];
-  tags: string[];
-  sum: string;
-  like: number;
-  cmt: number;
-  reward?: number;
+  content: string;
+  tag: string | null;
+  company: string | null;
+  reward: boolean;
+  created_at: string;
+  tab: "salary" | "interview" | "referral";
+  author: string;
 };
-
-const POSTS: Post[] = [
-  {
-    tab: "salary",
-    av: "C",
-    title: "【薪资爆料】互联网大厂算法岗 2027 届总包",
-    badges: [
-      { t: "华中科大·CS", c: "gd" },
-      { t: "2027届", c: "" },
-      { t: "北京", c: "" },
-    ],
-    tags: ["算法", "校招"],
-    sum: "双一流硕士，算法岗总包 35w+，含签字费与股票。已核实 offer 截图，供参考。",
-    like: 132,
-    cmt: 47,
-  },
-  {
-    tab: "interview",
-    av: "Z",
-    title: "【面经】国企科研院所一面面经分享",
-    badges: [
-      { t: "北航·航天", c: "gd" },
-      { t: "2027届", c: "" },
-      { t: "贵阳", c: "" },
-    ],
-    tags: ["央企", "科研"],
-    sum: "一面技术面 40 分钟：项目深挖 + 专业基础 + 保密协议说明。二面 HR 面，整体氛围轻松。",
-    like: 98,
-    cmt: 33,
-  },
-  {
-    tab: "referral",
-    av: "L",
-    title: "【内推】软件大厂内推码 · 免简历筛选",
-    badges: [
-      { t: "北邮·软工", c: "gd" },
-      { t: "2027届", c: "" },
-      { t: "北京", c: "" },
-    ],
-    tags: ["内推码"],
-    sum: "内推码直达 HR 免简历筛选，附官方内推链接。投递后评论区留言返内推截图。",
-    like: 216,
-    cmt: 90,
-    reward: 50,
-  },
-  {
-    tab: "salary",
-    av: "W",
-    title: "【薪资爆料】银行总行管培 base 披露",
-    badges: [
-      { t: "央财·金融", c: "gd" },
-      { t: "2027届", c: "" },
-      { t: "北京", c: "" },
-    ],
-    tags: ["银行", "管培"],
-    sum: "总行管培 base 约 25w，另加年终与房补。轮岗两年后定岗。信息来源：在职员工。",
-    like: 158,
-    cmt: 54,
-  },
-  {
-    tab: "interview",
-    av: "M",
-    title: "【面经】船舶研究所面试流程复盘",
-    badges: [
-      { t: "上交·船舶", c: "gd" },
-      { t: "硕士", c: "rd" },
-      { t: "上海", c: "" },
-    ],
-    tags: ["央企", "科研"],
-    sum: "专业面 30 分钟：设计规范 + 项目细节，后 1v1 谈话。整体看重科研经历与稳定性。",
-    like: 87,
-    cmt: 26,
-  },
-  {
-    tab: "referral",
-    av: "Q",
-    title: "【内推】芯片公司内推 · IC 岗位优先",
-    badges: [
-      { t: "东南·微电子", c: "gd" },
-      { t: "2027届", c: "" },
-      { t: "南京", c: "" },
-    ],
-    tags: ["内推码"],
-    sum: "IC 岗位优先处理，48h 内反馈。私信联系获取内推码，附岗位清单。",
-    like: 175,
-    cmt: 66,
-    reward: 30,
-  },
-];
 
 const TABS = [
   { key: "all", label: "全部" },
@@ -110,9 +22,115 @@ const TABS = [
   { key: "referral", label: "内推码" },
 ];
 
+function tabOf(tag: string | null): Post["tab"] {
+  const t = tag || "";
+  if (t.includes("薪资") || t.includes("爆料") || t.includes("薪酬")) return "salary";
+  if (t.includes("内推") || t.includes("内推码")) return "referral";
+  return "interview";
+}
+
 export default function Community() {
   const [tab, setTab] = useState("all");
-  const list = tab === "all" ? POSTS : POSTS.filter((p) => p.tab === tab);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  // 发帖表单
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [tag, setTag] = useState("");
+  const [company, setCompany] = useState("");
+  const [reward, setReward] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  // 管理审核
+  const [adminSecret, setAdminSecret] = useState("");
+  const [adminMode, setAdminMode] = useState(false);
+  const [pendingList, setPendingList] = useState<Post[]>([]);
+
+  function loadPosts() {
+    supabase
+      .from("posts")
+      .select("id, title, content, tag, company, reward, created_at, author_id")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setPosts(
+            data.map((p) => ({
+              ...p,
+              tab: tabOf(p.tag),
+              author: p.author_id?.slice(0, 4) || "匿名",
+            }))
+          );
+        }
+        setLoading(false);
+      });
+  }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
+    loadPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function submitPost() {
+    if (!user || !title.trim() || !content.trim()) return;
+    setSubmitting(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const t = data.session?.access_token;
+      if (!t) return;
+      const res = await fetch("/api/community/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ title: title.trim(), content: content.trim(), tag: tag.trim() || null, company: company.trim() || null, reward }),
+      });
+      if (res.ok) {
+        alert("发布成功，内容已进入审核队列，通过后公开显示。");
+        setTitle(""); setContent(""); setTag(""); setCompany(""); setReward(false);
+        setShowForm(false);
+      } else {
+        const e = await res.json().catch(() => ({}));
+        alert("发布失败：" + (e.error || res.status));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function loadPending() {
+    if (!adminSecret.trim()) return;
+    const res = await fetch(`/api/admin/posts?secret=${encodeURIComponent(adminSecret.trim())}`);
+    if (!res.ok) {
+      alert("密钥无效或未授权");
+      return;
+    }
+    const j = await res.json();
+    setPendingList(
+      j.posts.map((p: any) => ({
+        ...p,
+        tab: tabOf(p.tag),
+        author: p.author_id?.slice(0, 4) || "匿名",
+      }))
+    );
+  }
+
+  async function review(id: string, action: "approve" | "reject") {
+    const res = await fetch(`/api/admin/posts?secret=${encodeURIComponent(adminSecret.trim())}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action }),
+    });
+    if (res.ok) {
+      setPendingList((list) => list.filter((p) => p.id !== id));
+      if (action === "approve") loadPosts();
+    } else {
+      alert("操作失败");
+    }
+  }
+
+  const list = tab === "all" ? posts : posts.filter((p) => p.tab === tab);
 
   return (
     <div className="wrap">
@@ -120,22 +138,113 @@ export default function Community() {
         <div>
           <h1 className="h-display">求职社区</h1>
           <p>
-            薪资爆料 · 面经分享 · 内推码互助，身份标签（大学/专业/届别）严格审核。
-            MVP 为演示内容，正式版接入账号体系与内容审核。
+            薪资爆料 · 面经分享 · 内推码互助。发帖进入审核队列，通过后公开显示。
           </p>
         </div>
         <div className="orbital">
-          <button
-            className="inner"
-            onClick={() => alert("发布需先完成身份核验（大学/专业/届别），正式版开放。")}
-          >
+          <button className="inner" onClick={() => (user ? setShowForm(!showForm) : alert("请先登录后再发布"))}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
             </svg>
-            发布帖子
+            {showForm ? "收起" : "发布帖子"}
+          </button>
+          <button
+            className="inner"
+            style={{ marginTop: 8 }}
+            onClick={() => setAdminMode(!adminMode)}
+          >
+            {adminMode ? "关闭审核" : "审核入口"}
           </button>
         </div>
       </div>
+
+      {showForm && user && (
+        <div className="sub-panel glass" style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="标题（≤80字），如：【面经】xx公司一面"
+              style={{ padding: "10px 14px", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#eeebe3", fontSize: 13.5 }}
+            />
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="正文（≤2000字）：内容真实、可核实，禁止广告与违规信息"
+              rows={4}
+              style={{ padding: "10px 14px", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#eeebe3", fontSize: 13.5, resize: "vertical" }}
+            />
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input
+                value={tag}
+                onChange={(e) => setTag(e.target.value)}
+                placeholder="标签（薪资/面经/内推…）"
+                style={{ flex: 1, minWidth: 140, padding: "8px 12px", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#eeebe3", fontSize: 12.5 }}
+              />
+              <input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="公司（可选）"
+                style={{ flex: 1, minWidth: 140, padding: "8px 12px", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#eeebe3", fontSize: 12.5 }}
+              />
+              <label style={{ fontSize: 12, color: "rgba(238,235,227,.75)", display: "flex", alignItems: "center", gap: 6 }}>
+                <input type="checkbox" checked={reward} onChange={(e) => setReward(e.target.checked)} />
+                悬赏帖
+              </label>
+            </div>
+            <button
+              onClick={submitPost}
+              disabled={submitting}
+              style={{ padding: 12, background: "#ca0013", color: "#fff", border: "none", borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}
+            >
+              {submitting ? "提交中…" : "提交（等待审核）"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {adminMode && (
+        <div className="sub-panel glass" style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              type="password"
+              value={adminSecret}
+              onChange={(e) => setAdminSecret(e.target.value)}
+              placeholder="管理密钥（ADMIN_TOKEN）"
+              style={{ flex: 1, minWidth: 160, padding: "8px 12px", background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, color: "#eeebe3", fontSize: 12.5 }}
+            />
+            <button
+              onClick={loadPending}
+              style={{ padding: "9px 16px", background: "rgba(255,255,255,.08)", border: "1px solid rgba(183,198,194,.3)", borderRadius: 10, fontSize: 12.5, fontWeight: 700, color: "#eeebe3", cursor: "pointer" }}
+            >
+              加载待审
+            </button>
+          </div>
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+            {pendingList.length === 0 ? (
+              <p style={{ color: "rgba(183,198,194,.6)", fontSize: 12.5 }}>暂无待审帖子</p>
+            ) : (
+              pendingList.map((p) => (
+                <div key={p.id} style={{ border: "1px solid rgba(183,198,194,.2)", borderRadius: 12, padding: 12 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#eeebe3" }}>{p.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(183,198,194,.7)", margin: "6px 0" }}>{p.content.slice(0, 200)}</div>
+                  <div style={{ fontSize: 11, color: "rgba(183,198,194,.5)" }}>
+                    {p.author} · {p.tag || "无标签"}{p.company ? " · " + p.company : ""} · {p.created_at?.slice(0, 10)}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button onClick={() => review(p.id, "approve")} style={{ padding: "6px 14px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      通过
+                    </button>
+                    <button onClick={() => review(p.id, "reject")} style={{ padding: "6px 14px", background: "rgba(202,0,19,.8)", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      驳回
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="comm-main">
         <div className="promo-banner glass">
@@ -146,14 +255,8 @@ export default function Community() {
           </div>
           <div>
             <h4>内推广场 · 悬赏招募</h4>
-            <p>发内推码 / 面经被采纳，最高可得 ¥50 悬赏 · 发布需通过身份审核</p>
+            <p>发内推码 / 面经被采纳，最高可得 ¥50 悬赏 · 发布需通过内容审核</p>
           </div>
-          <span className="go">
-            查看规则
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-              <path d="M7 17 17 7M9 7h8v8" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
         </div>
 
         <div className="comm-tabs">
@@ -165,68 +268,44 @@ export default function Community() {
         </div>
 
         <div>
-          {list.map((p, i) => (
-            <div key={i} className="post-card glass">
-              <div className="p-av">{p.av}</div>
-              <div className="p-main">
-                <div className="p-title">{p.title}</div>
-                <div className="p-meta">
-                  {p.badges.map((b, j) => (
-                    <span key={j} className={"id-badge " + b.c}>
-                      {b.t}
-                    </span>
-                  ))}
-                  {p.tags.map((t, j) => (
-                    <span
-                      key={j}
-                      style={{
-                        fontSize: 9.5,
-                        fontWeight: 800,
-                        padding: "2px 9px",
-                        borderRadius: 7,
-                        background: "rgba(183,198,194,.1)",
-                        border: "1px solid rgba(183,198,194,.24)",
-                        color: "var(--graygreen)",
-                      }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                  {p.reward ? (
-                    <span
-                      style={{
-                        fontSize: 9.5,
-                        fontWeight: 800,
-                        padding: "2px 9px",
-                        borderRadius: 7,
-                        background: "rgba(202,0,19,.14)",
-                        border: "1px solid rgba(202,0,19,.35)",
-                        color: "#fda4af",
-                      }}
-                    >
-                      悬赏 ¥{p.reward}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="p-sum">{p.sum}</div>
-                <div className="p-foot">
-                  <span>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 21s-7-6.1-7-11a4.5 4.5 0 0 1 8.5-2 4.5 4.5 0 0 1 5.5 2c0 4.9-7 11-7 11Z" stroke="#b7c6c2" strokeWidth="2" strokeLinejoin="round" />
-                    </svg>
-                    {p.like}
-                  </span>
-                  <span>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                      <path d="M21 12a8 8 0 0 1-8 8H4l2-4a8 8 0 1 1 15-4Z" stroke="#b7c6c2" strokeWidth="2" strokeLinejoin="round" />
-                    </svg>
-                    {p.cmt}
-                  </span>
-                  <span>身份已核验</span>
+          {loading ? (
+            <p style={{ padding: "30px 0", textAlign: "center", color: "rgba(183,198,194,.6)", fontSize: 12.5 }}>加载中…</p>
+          ) : list.length === 0 ? (
+            <p style={{ padding: "30px 0", textAlign: "center", color: "rgba(183,198,194,.6)", fontSize: 12.5 }}>
+              {tab === "all" ? "还没有已审核的帖子，来发第一帖吧。" : "该分类暂无内容。"}
+            </p>
+          ) : (
+            list.map((p) => (
+              <div key={p.id} className="post-card glass">
+                <div className="p-av">{p.author.slice(0, 1).toUpperCase()}</div>
+                <div className="p-main">
+                  <div className="p-title">{p.title}</div>
+                  <div className="p-meta">
+                    {p.tag && (
+                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: "2px 9px", borderRadius: 7, background: "rgba(183,198,194,.1)", border: "1px solid rgba(183,198,194,.24)", color: "var(--graygreen)" }}>
+                        {p.tag}
+                      </span>
+                    )}
+                    {p.company && (
+                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: "2px 9px", borderRadius: 7, background: "rgba(183,198,194,.1)", border: "1px solid rgba(183,198,194,.24)", color: "var(--graygreen)" }}>
+                        {p.company}
+                      </span>
+                    )}
+                    {p.reward && (
+                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: "2px 9px", borderRadius: 7, background: "rgba(202,0,19,.14)", border: "1px solid rgba(202,0,19,.35)", color: "#fda4af" }}>
+                        悬赏帖
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-sum">{p.content}</div>
+                  <div className="p-foot">
+                    <span>{p.created_at?.slice(0, 10)}</span>
+                    <span>已审核</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
