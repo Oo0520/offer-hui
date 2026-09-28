@@ -133,6 +133,12 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - 备份：`crawl-fjut.py.bak-20260928-concurrent`（改造前）、`crawl-fjrclh.py.bak-20260927`（逐条版）。
 - fjrclh 为 API 抓取（全量约 40s），未并发化，无必要。
 
+**前端性能阈值基线（2026-09-29 实测，目标 5 验收，数据量 2620 条）**：
+- **5 个静态页首屏 HTML 体积**：`/` 1740 KB、`/calendar` 1708 KB、`/match` 1708 KB、`/favorites` 1706 KB、`/board` 1707 KB（全量岗位打包进每页 RSC payload）；**gzip 传输均 ~190 KB**，TTFB+下载 0.4s。
+- **DOMContentLoaded 172-392ms、loadEventEnd 220-393ms**；页面资源 58 个共 834KB；LCP 在无头浏览器未能稳定捕获（文本为主页面，近似 DCL）。
+- **筛选耗时：2620 条组合 filter 单次 0.2-0.5ms**（纯 JS 内存计算，非瓶颈）。
+- **阈值规则（评审通过，本期不实现）**：数据量 **> 5000 条**时，将筛选/分页从浏览器端全量 filter 切换为服务端 PostgREST 参数化查询（`/api/v1/jobs` 加 city/industry/degree/job_type 参数 + limit/offset 分页），首屏 RSC 只带前 N 条 + 计数；切换前先跑一次本基线对比。
+
 **新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
 
 ### 3.3 数据层（lib/jobs.ts）
