@@ -1,11 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { JobView } from "@/lib/jobs";
+import { dimOptions } from "@/lib/jobs";
+import { supabase } from "@/lib/supabase";
 
 function pad(n: number) {
   return n < 10 ? "0" + n : "" + n;
 }
+
+type PersonalFilters = {
+  cities: string[];
+  industries: string[];
+  job_types: string[];
+  cohort: string;
+};
+
+const JOB_TYPES = ["校招", "实习", "招聘会", "宣讲会", "招聘公告"];
 
 export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
   const now = new Date();
@@ -20,12 +31,87 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
       : "";
   const [copied, setCopied] = useState(false);
 
-  function copyUrl() {
-    if (!subUrl) return;
-    navigator.clipboard.writeText(subUrl).then(() => {
+  // ---- 个性化订阅 ----
+  const [user, setUser] = useState<any>(null);
+  const [mySub, setMySub] = useState<string | null>(null); // 个性化订阅 URL
+  const [filters, setFilters] = useState<PersonalFilters>({
+    cities: [],
+    industries: [],
+    job_types: [],
+    cohort: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const cityOpts = useMemo(() => dimOptions(jobs, "city").slice(0, 12), [jobs]);
+  const industryOpts = useMemo(() => dimOptions(jobs, "industry").slice(0, 15), [jobs]);
+  const cohortOpts = useMemo(() => dimOptions(jobs, "cohort"), [jobs]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const u = data.session?.user || null;
+      setUser(u);
+      if (u) {
+        supabase.auth.getSession().then(async ({ data: s2 }) => {
+          const t = s2.session?.access_token;
+          if (!t) return;
+          const res = await fetch("/api/subscription", {
+            headers: { Authorization: `Bearer ${t}` },
+          });
+          if (res.ok) {
+            const j = await res.json();
+            setMySub(j.url);
+            if (j.filters) {
+              setFilters({
+                cities: j.filters.cities || [],
+                industries: j.filters.industries || [],
+                job_types: j.filters.job_types || [],
+                cohort: j.filters.cohort || "",
+              });
+            }
+          }
+        });
+      }
+    });
+  }, []);
+
+  function toggle(arr: string[], v: string): string[] {
+    return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+  }
+
+  async function savePersonalSub() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const t = data.session?.access_token;
+      if (!t) return;
+      const res = await fetch("/api/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ filters }),
+      });
+      if (res.ok) {
+        const j = await res.json();
+        setMySub(j.url);
+      } else {
+        const e = await res.json().catch(() => ({}));
+        alert("生成失败：" + (e.error || res.status));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function copyText(s: string) {
+    navigator.clipboard.writeText(s).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  function copyUrl() {
+    if (!subUrl) return;
+    copyText(subUrl);
   }
 
   // date -> jobs
@@ -125,7 +211,7 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
       {showSub && (
         <div className="sub-panel glass">
           <div className="sub-row">
-            <span className="sub-label">订阅 URL（手机日历填这个）</span>
+            <span className="sub-label">公共订阅 URL（全岗位，手机日历填这个）</span>
             <code className="sub-url">{subUrl}</code>
             <button className="sub-copy" onClick={copyUrl}>
               {copied ? "已复制" : "复制"}
@@ -140,6 +226,92 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
             <p><b>iPhone：</b>设置 → 日历 → 账户 → 添加账户 → 其他 → 添加已订阅日历 → 粘贴 URL</p>
             <p><b>安卓（OPPO/华为/小米）：</b>日历 App → 日程同步与导入 → 通过 URL 导入 → 粘贴 URL（其他品牌入口名称略有差异，核心是"通过 URL 导入/订阅"）</p>
             <p style={{ color: "rgba(183,198,194,.55)" }}>URL 订阅后会自动同步新岗位；如粘贴后提示无法连接，请确认复制的是完整 https 地址。</p>
+          </div>
+
+          <div style={{ borderTop: "1px solid rgba(183,198,194,.15)", marginTop: 14, paddingTop: 14 }}>
+            <div className="sub-label" style={{ fontWeight: 700, marginBottom: 8 }}>
+              个性化订阅（仅推送你筛选的岗位）
+            </div>
+            {!user ? (
+              <p style={{ color: "rgba(183,198,194,.7)", fontSize: 12.5 }}>
+                登录后可配置筛选条件，生成专属订阅 URL。
+              </p>
+            ) : (
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12.5 }}>
+                  <div>
+                    <span style={{ color: "rgba(183,198,194,.7)", marginRight: 6 }}>城市</span>
+                    <span className="chip-row">
+                      {cityOpts.map((c) => (
+                        <button
+                          key={c}
+                          className={"chip" + (filters.cities.includes(c) ? " on" : "")}
+                          onClick={() => setFilters((f) => ({ ...f, cities: toggle(f.cities, c) }))}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: "rgba(183,198,194,.7)", marginRight: 6 }}>行业</span>
+                    <span className="chip-row">
+                      {industryOpts.map((x) => (
+                        <button
+                          key={x}
+                          className={"chip" + (filters.industries.includes(x) ? " on" : "")}
+                          onClick={() => setFilters((f) => ({ ...f, industries: toggle(f.industries, x) }))}
+                        >
+                          {x}
+                        </button>
+                      ))}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: "rgba(183,198,194,.7)", marginRight: 6 }}>类型</span>
+                    <span className="chip-row">
+                      {JOB_TYPES.map((t) => (
+                        <button
+                          key={t}
+                          className={"chip" + (filters.job_types.includes(t) ? " on" : "")}
+                          onClick={() => setFilters((f) => ({ ...f, job_types: toggle(f.job_types, t) }))}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: "rgba(183,198,194,.7)", marginRight: 6 }}>届别</span>
+                    <select
+                      className="chip-select"
+                      value={filters.cohort}
+                      onChange={(e) => setFilters((f) => ({ ...f, cohort: e.target.value }))}
+                    >
+                      <option value="">不限</option>
+                      {cohortOpts.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="sub-actions" style={{ marginTop: 10 }}>
+                  <button className="sub-btn" onClick={savePersonalSub} disabled={saving}>
+                    {saving ? "生成中…" : mySub ? "更新我的订阅 URL" : "生成个性化订阅 URL"}
+                  </button>
+                  {mySub && (
+                    <button className="sub-btn" onClick={() => copyText(mySub)}>
+                      复制我的订阅 URL
+                    </button>
+                  )}
+                </div>
+                {mySub && (
+                  <div className="sub-row" style={{ marginTop: 8 }}>
+                    <code className="sub-url" style={{ fontSize: 11 }}>{mySub}</code>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
