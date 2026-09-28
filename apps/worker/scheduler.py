@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 """定时任务调度器：每天定时抓取 → 入库 → 写监控表。
 
-用法：
+⚠️ 备用方案，不启用（2026-09-28 决策）：
+生产调度 = 豆包定时任务「Offer派每日数据抓取刷新」（cron 0 12 * * * Asia/Shanghai，
+跑在本地 Windows），调用仓库外脚本 E:\AIMemory\DaoBao\crawl-fjut.py / crawl-fjrclh.py。
+本文件保留仅作参考/备用，勿作为生产入口启动。
+
+用法（备用）：
     python scheduler.py            # 启动常驻调度（默认每天 02:00 爬取）
     python scheduler.py --now      # 立即执行一次后继续调度
     python scheduler.py --once     # 立即执行一次后退出（供测试/计划任务）

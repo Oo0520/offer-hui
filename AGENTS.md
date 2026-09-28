@@ -121,6 +121,12 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 | `fj99` | 福建就业网 | POST + md5 签名 | `run_fj99.py` |
 | `campus2027` / `open_jobs` / `wechat` | 开源社区 / 公众号 | 历史导入 | `import_*.py` |
 
+**数据源收口决策（2026-09-28 已确认）**：
+- 生产实际只跑 **仓库外** `E:\AIMemory\DaoBao\crawl-fjut.py` + `crawl-fjrclh.py`（豆包定时任务 12:00 调用）。仓库内 `apps/worker/crawl_fjut.py` / `crawl_fjrclh.py` / `crawl_fair.py` 为旧副本，**已删除**，勿再以仓库内副本为准。
+- **hit / pku / ncss / feishu 四个源已停用**：`apps/worker/app/sources/` 下对应文件（hit.py / pku.py / ncss.py / feishu.py）**已删除**，无代码引用；库内历史数据保留不更新。
+- **scheduler.py 标注「备用，不启用」**：生产调度 = 豆包定时任务，不是 scheduler.py。
+- `run_fj99.py` 等仓库内脚本仅按需手动执行，不进定时任务。
+
 **新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
 
 ### 3.3 数据层（lib/jobs.ts）
