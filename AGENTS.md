@@ -44,7 +44,7 @@ offer-hui/
 **数据流**：
 
 ```
-豆包定时任务（每天 02:00 北京，跑在本地 Windows）
+豆包定时任务（每天 12:00 北京，跑在本地 Windows）
   → python crawl-fjut.py + crawl-fjrclh.py 增量抓
   → upsert content_hash 去重 → Supabase jobs 表
   → 调用 GET /api/revalidate?secret=<ADMIN_TOKEN> → 立即失效 jobs 缓存（无需重新 build）
@@ -121,7 +121,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 | `fj99` | 福建就业网 | POST + md5 签名 | `run_fj99.py` |
 | `campus2027` / `open_jobs` / `wechat` | 开源社区 / 公众号 | 历史导入 | `import_*.py` |
 
-**新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
+**新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai，跑在本地 Windows，2026-09-28 用户确认）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
 
 ### 3.3 数据层（lib/jobs.ts）
 
@@ -176,15 +176,16 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 ## 5. 已知陷阱（踩过的坑，别再踩）
 
 1. **globals.css 必须 UTF-8 无 BOM**，否则 build 失败。
-2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 02:00 跑爬虫 upsert 到 Supabase，然后**调用 `/api/revalidate?secret=<ADMIN_TOKEN>` 按需失效缓存**（接口内部 `revalidateTag("jobs", {expire:0})` + `revalidatePath` 各静态页），300ms 内全球生效，无需重新 build。
+2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 12:00 跑爬虫 upsert 到 Supabase，然后**调用 `/api/revalidate?secret=<ADMIN_TOKEN>` 按需失效缓存**（接口内部 `revalidateTag("jobs", {expire:0})` + `revalidatePath` 各静态页），300ms 内全球生效，无需重新 build。
 3. **SERVICE_KEY 绝不能加 NEXT_PUBLIC_ 前缀**，否则暴露浏览器。
-4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
+4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai（2026-09-28 用户确认），跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
 5. **PowerShell 中文编码**：读含中文的 .py/.md 文件用 `[System.IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)`，不要用 Get-Content 管道（默认 ANSI 会乱码）。
 6. **git commit 格式**：`[YYYY-MM-DD HH:mm] type: 描述`，方便时间轴回溯。
 7. **端口占用**：改完代码重启前先杀 3000 端口旧进程（`Get-NetTCPConnection :3000 | Stop-Process`），否则旧进程占着端口跑老代码。
 8. **Vercel 环境变量**：4 个 Supabase 变量必须配全，少一个 build 就挂。CI 里用 placeholder URL（`https://placeholder.supabase.co`）做 build 降级，见 `apps/web/lib/jobs.ts` 里 `_fetchAllJobsRaw` 的 try/catch。
 9. **user_jobs 表 RLS**：新环境建表后必须加 `using (auth.uid() = user_id)` 的 RLS 策略，否则 anon key 能读全表。
 10. **PR 流程**：不直接 push main，走分支 + PR；用户说"合并"才合。
+11. **仓库外爬虫脚本（`E:\AIMemory\DaoBao\crawl-fjut.py` / `crawl-fjrclh.py`）与 `models.py` 的 hash 口径必须一致**：content_hash 用 SHA1 + `json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)`（十键 payload：title/company/city/industry/degree/salary[min,max]/salary_text/deadline/apply/tags，None 归一为 ""/[]/0，posted_at 不进 hash）。改任一侧的归一逻辑都会导致全量误判「变更」。另注意：① PostgREST 批量 upsert 用 `POST /jobs?on_conflict=source,external_id` + `Prefer: resolution=merge-duplicates`，`tags` 为 jsonb NOT NULL，Python 侧 None 必须兜底 `[]`，否则 400；② 脚本 SERVICE_KEY 已改为环境变量优先、硬编码回退，勿再加回纯硬编码；③ fjrclh 源站 WAF 拦 python 默认 UA，httpx 必须带浏览器 User-Agent；④ **fjut 详情页 HTML 解析前必须剥离 base64/渲染数据**：页面内联大量 base64（图片/统计像素/压缩 JS），其中随机出现「数字K」，且存在 <200 字符的短碎片，任何「全页搜数字K」式 salary 匹配都会命中随机值 → content_hash 抖动。jysd 页面**根本没有结构化薪资区**，fjut 源 salary_text 恒 None（2026-09-28 诊断实锤，七跑验证幂等 `变更:0, 跳过:348`）；诊断同类抖动的方法：一次性脚本抓单页，打印各正则命中与库里值对比，跨两次抓取看哪个字段漂移。
 
 ## 6. 设计资产
 
@@ -211,7 +212,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - MCP server（Agent 接入 /agents 页）
 - 手动录入后台 /offerp（ADMIN_TOKEN）
 - **Vercel CI/CD**（push main 自动部署，正式域名 https://www.offerpiai.cn）
-- **豆包定时任务爬虫**（每天 02:00 北京自动跑增量 + `/api/revalidate` 失效缓存）
+- **豆包定时任务爬虫**（每天 12:00 北京自动跑增量 + `/api/revalidate` 失效缓存）
 - **`/api/revalidate` 按需失效缓存**（修复「爬虫已入库但网站不更新」：unstable_cache 跨部署持久，需主动失效）
 
 **🔄 待完善**：
