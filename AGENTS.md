@@ -127,6 +127,12 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - **scheduler.py 标注「备用，不启用」**：生产调度 = 豆包定时任务，不是 scheduler.py。
 - `run_fj99.py` 等仓库内脚本仅按需手动执行，不进定时任务。
 
+**爬虫性能基线（2026-09-29 实测，目标 4 验收）**：
+- **写入**：批量 upsert/PATCH 对比逐条，20 条同批实测 **0.88s vs 16.85s（快 19.1 倍）**，往返次数降 20 倍。
+- **全量时长**：fjut 详情页并发化（线程池 5，每线程独立 StealthyFetcher）后 **1031s → 232s（降 77.5%）**；幂等不回归：`新增:0 变更:0 跳过:348 失败:0`。
+- 备份：`crawl-fjut.py.bak-20260928-concurrent`（改造前）、`crawl-fjrclh.py.bak-20260927`（逐条版）。
+- fjrclh 为 API 抓取（全量约 40s），未并发化，无必要。
+
 **新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
 
 ### 3.3 数据层（lib/jobs.ts）
