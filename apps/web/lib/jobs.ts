@@ -1,6 +1,8 @@
 // 岗位数据层：Supabase REST 拉取 + 展示字段映射
 // 服务端使用（密钥不暴露浏览器），客户端组件接收映射后的 JobView[]
 import { unstable_cache } from "next/cache";
+import { CITY_PROVINCES } from "./cityTree";
+import { INDUSTRY_LIST } from "./industryList";
 
 export type JobRow = {
   id: string;
@@ -13,6 +15,7 @@ export type JobRow = {
   city: string | null;
   province: string | null;
   industry: string | null;
+  company_type: string | null;
   job_type: string | null;
   degree: string | null;
   cohort: string | null;
@@ -39,6 +42,7 @@ export type JobView = {
   company: string;
   city: string;
   industry: string;
+  companyType: string;
   jobType: "校招" | "实习" | "招聘会" | "宣讲会" | "招聘公告";
   degree: string;
   cohort: string;
@@ -127,6 +131,7 @@ export function toView(r: JobRow): JobView {
     company,
     city: r.city || "全国",
     industry,
+    companyType: r.company_type || "",
     jobType,
     degree: r.degree || "学历不限",
     cohort: r.cohort || "",
@@ -147,7 +152,7 @@ export function toView(r: JobRow): JobView {
 
 // 全量拉取（unstable_cache 共享缓存，所有页面 60s 内只打一次 Supabase）
 const RAW_FETCH_FIELDS =
-  "id,source,source_url,external_id,title,city,industry,job_type,degree,cohort,salary_min,salary_max,salary_text,deadline_at,posted_at,apply_url,companies(name)";
+  "id,source,source_url,external_id,title,city,industry,company_type,job_type,degree,cohort,salary_min,salary_max,salary_text,deadline_at,posted_at,apply_url,companies(name)";
 
 // PostgREST 服务端单请求上限 1000 行（db-max-rows），数据超 1000 需分页循环拉取
 const PAGE_SIZE = 1000;
@@ -196,18 +201,17 @@ export function degreeLevel(degree: string | null | undefined): number {
   return 0;
 }
 
-// 筛选器选项 → 最低层级
+// 学历筛选（向下兼容）：选项 = 用户学历，显示该学历能投的岗位（岗位要求层级 <= 用户层级，含不限）
 export const DEGREE_FILTER_LEVEL: Record<string, number> = {
-  "专科及以上": 1,
-  "本科及以上": 2,
-  "硕士及以上": 3,
-  "博士及以上": 4,
+  "专科": 1,
+  "本科": 2,
+  "硕士": 3,
 };
 
 // 筛选维度选项（按出现次数降序）
-export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree"): string[] {
+export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree" | "companyType"): string[] {
   if (key === "degree") {
-    return ["专科及以上", "本科及以上", "硕士及以上", "博士及以上"];
+    return ["专科", "本科", "硕士"];
   }
   const m = new Map<string, number>();
   for (const j of jobs) {
@@ -218,11 +222,62 @@ export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" 
   return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
 }
 
+// 公司性质标准列表（与 normalize.py _COMPANY_TYPES 一致，前端显示完整列表）
+export const COMPANY_TYPE_LIST = ["外企/合资", "国企/央企", "民企/私企", "上市公司/500强"];
+
+// 完整城市选项：全部标准城市 + 计数（无岗位的城市计数 0）。含"全国"与库内海外兜底值。
+export function cityOptions(jobs: JobView[]): { v: string; n: number }[] {
+  const cnt = new Map<string, number>();
+  for (const j of jobs) {
+    if (!j.city) continue;
+    cnt.set(j.city, (cnt.get(j.city) || 0) + 1);
+  }
+  const out: { v: string; n: number }[] = [];
+  if (cnt.has("全国")) out.push({ v: "全国", n: cnt.get("全国")! });
+  const seen = new Set<string>();
+  for (const cities of Object.values(CITY_PROVINCES)) {
+    for (const c of cities) {
+      seen.add(c);
+      out.push({ v: c, n: cnt.get(c) || 0 });
+    }
+  }
+  // 库内不在标准树里的值（海外等）追加兜底
+  for (const [c, n] of cnt) {
+    if (c !== "全国" && !seen.has(c)) out.push({ v: c, n });
+  }
+  return out;
+}
+
+// 完整行业选项：标准 19 类 + 计数（无岗位的类目计数 0）+ 库内兜底值
+export function industryOptions(jobs: JobView[]): { v: string; n: number }[] {
+  const cnt = new Map<string, number>();
+  for (const j of jobs) {
+    if (!j.industry) continue;
+    cnt.set(j.industry, (cnt.get(j.industry) || 0) + 1);
+  }
+  const out = INDUSTRY_LIST.map((v) => ({ v, n: cnt.get(v) || 0 }));
+  for (const [c, n] of cnt) {
+    if (!INDUSTRY_LIST.includes(c)) out.push({ v: c, n });
+  }
+  return out;
+}
+
+// 完整公司性质选项：标准 4 类 + 计数（无数据的计数 0）
+export function companyTypeOptions(jobs: JobView[]): { v: string; n: number }[] {
+  const cnt = new Map<string, number>();
+  for (const j of jobs) {
+    if (!j.companyType) continue;
+    cnt.set(j.companyType, (cnt.get(j.companyType) || 0) + 1);
+  }
+  return COMPANY_TYPE_LIST.map((v) => ({ v, n: cnt.get(v) || 0 }));
+}
+
 export type JobFilter = {
   q?: string;
   jobType?: string; // "校招" | "实习"
   city?: string;
   industry?: string;
+  companyType?: string;
   cohort?: string;
   degree?: string;
 };
@@ -232,10 +287,12 @@ export function filterJobs(jobs: JobView[], f: JobFilter): JobView[] {
     if (f.jobType && j.jobType !== f.jobType) return false;
     if (f.city && j.city !== f.city) return false;
     if (f.industry && j.industry !== f.industry) return false;
+    if (f.companyType && j.companyType !== f.companyType) return false;
     if (f.cohort && j.cohort !== f.cohort) return false;
     if (f.degree && f.degree !== "不限") {
-      const minLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;
-      if (degreeLevel(j.degree) < minLevel) return false;
+      // 向下兼容：岗位要求层级 <= 我的学历层级（学历不限 level=0 恒满足）
+      const myLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;
+      if (degreeLevel(j.degree) > myLevel) return false;
     }
     if (f.q) {
       const q = f.q.trim().toLowerCase();
