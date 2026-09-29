@@ -199,18 +199,17 @@ export function degreeLevel(degree: string | null | undefined): number {
   return 0;
 }
 
-// 筛选器选项 → 最低层级
+// 学历筛选（向下兼容）：选项 = 用户学历，显示该学历能投的岗位（岗位要求层级 <= 用户层级，含不限）
 export const DEGREE_FILTER_LEVEL: Record<string, number> = {
-  "专科及以上": 1,
-  "本科及以上": 2,
-  "硕士及以上": 3,
-  "博士及以上": 4,
+  "专科": 1,
+  "本科": 2,
+  "硕士": 3,
 };
 
 // 筛选维度选项（按出现次数降序）
 export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree" | "companyType"): string[] {
   if (key === "degree") {
-    return ["专科及以上", "本科及以上", "硕士及以上", "博士及以上"];
+    return ["专科", "本科", "硕士"];
   }
   const m = new Map<string, number>();
   for (const j of jobs) {
@@ -239,8 +238,9 @@ export function filterJobs(jobs: JobView[], f: JobFilter): JobView[] {
     if (f.companyType && j.companyType !== f.companyType) return false;
     if (f.cohort && j.cohort !== f.cohort) return false;
     if (f.degree && f.degree !== "不限") {
-      const minLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;
-      if (degreeLevel(j.degree) < minLevel) return false;
+      // 向下兼容：岗位要求层级 <= 我的学历层级（学历不限 level=0 恒满足）
+      const myLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;
+      if (degreeLevel(j.degree) > myLevel) return false;
     }
     if (f.q) {
       const q = f.q.trim().toLowerCase();

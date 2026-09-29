@@ -17,7 +17,7 @@ export type JobListParams = {
   industry?: string;
   company_type?: string;
   cohort?: string;
-  degree?: string; // 不限|专科及以上|本科及以上|硕士及以上
+  degree?: string; // 专科|本科|硕士（向下兼容：显示该学历能投的岗位，含不限）
   sort?: SortMode;
   page?: number;
   page_size?: number;

@@ -262,7 +262,7 @@ export default function HomeClient({
         v,
         n:
           d.key === "degree"
-            ? jobs.filter((j) => degreeLevel(j.degree) >= (DEGREE_FILTER_LEVEL[v] ?? 0)).length
+            ? jobs.filter((j) => degreeLevel(j.degree) <= (DEGREE_FILTER_LEVEL[v] ?? 0)).length
             : jobs.filter((j) => (j as any)[d.key] === v).length,
       }));
     }
@@ -286,8 +286,9 @@ export default function HomeClient({
     if (f("cohort").length) l = l.filter((j) => f("cohort").includes(j.cohort));
     if (f("school").length) l = l.filter((j) => f("school").includes(j.source));
     if (f("degree").length) {
-      const minLevel = Math.min(...f("degree").map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
-      l = l.filter((j) => degreeLevel(j.degree) >= minLevel);
+      // 向下兼容：多选时取最高学历作为我的学历，显示岗位要求层级 <= 我的层级
+      const myLevel = Math.max(...f("degree").map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
+      l = l.filter((j) => degreeLevel(j.degree) <= myLevel);
     }
     if (chip === "校招") l = l.filter((j) => j.jobType === "校招");
     if (chip === "实习") l = l.filter((j) => j.jobType === "实习");
