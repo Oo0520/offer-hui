@@ -121,6 +121,24 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 | `fj99` | 福建就业网 | POST + md5 签名 | `run_fj99.py` |
 | `campus2027` / `open_jobs` / `wechat` | 开源社区 / 公众号 | 历史导入 | `import_*.py` |
 
+**数据源收口决策（2026-09-28 已确认）**：
+- 生产实际只跑 **仓库外** `E:\AIMemory\DaoBao\crawl-fjut.py` + `crawl-fjrclh.py`（豆包定时任务 12:00 调用）。仓库内 `apps/worker/crawl_fjut.py` / `crawl_fjrclh.py` / `crawl_fair.py` 为旧副本，**已删除**，勿再以仓库内副本为准。
+- **hit / pku / ncss / feishu 四个源已停用**：`apps/worker/app/sources/` 下对应文件（hit.py / pku.py / ncss.py / feishu.py）**已删除**，无代码引用；库内历史数据保留不更新。
+- **scheduler.py 标注「备用，不启用」**：生产调度 = 豆包定时任务，不是 scheduler.py。
+- `run_fj99.py` 等仓库内脚本仅按需手动执行，不进定时任务。
+
+**爬虫性能基线（2026-09-29 实测，目标 4 验收）**：
+- **写入**：批量 upsert/PATCH 对比逐条，20 条同批实测 **0.88s vs 16.85s（快 19.1 倍）**，往返次数降 20 倍。
+- **全量时长**：fjut 详情页并发化（线程池 5，每线程独立 StealthyFetcher）后 **1031s → 232s（降 77.5%）**；幂等不回归：`新增:0 变更:0 跳过:348 失败:0`。
+- 备份：`crawl-fjut.py.bak-20260928-concurrent`（改造前）、`crawl-fjrclh.py.bak-20260927`（逐条版）。
+- fjrclh 为 API 抓取（全量约 40s），未并发化，无必要。
+
+**前端性能阈值基线（2026-09-29 实测，目标 5 验收，数据量 2620 条）**：
+- **5 个静态页首屏 HTML 体积**：`/` 1740 KB、`/calendar` 1708 KB、`/match` 1708 KB、`/favorites` 1706 KB、`/board` 1707 KB（全量岗位打包进每页 RSC payload）；**gzip 传输均 ~190 KB**，TTFB+下载 0.4s。
+- **DOMContentLoaded 172-392ms、loadEventEnd 220-393ms**；页面资源 58 个共 834KB；LCP 在无头浏览器未能稳定捕获（文本为主页面，近似 DCL）。
+- **筛选耗时：2620 条组合 filter 单次 0.2-0.5ms**（纯 JS 内存计算，非瓶颈）。
+- **阈值规则（评审通过，本期不实现）**：数据量 **> 5000 条**时，将筛选/分页从浏览器端全量 filter 切换为服务端 PostgREST 参数化查询（`/api/v1/jobs` 加 city/industry/degree/job_type 参数 + limit/offset 分页），首屏 RSC 只带前 N 条 + 计数；切换前先跑一次本基线对比。
+
 **新数据源接入**：写独立脚本 → upsert 到 jobs 表 → 在豆包定时任务里加一步（任务标题「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai，跑在本地 Windows，2026-09-28 用户确认）。爬虫跑完后调用 `GET https://www.offerpiai.cn/api/revalidate?secret=<ADMIN_TOKEN>` 立即失效缓存（无需 git push / 重新 build）。
 
 ### 3.3 数据层（lib/jobs.ts）
