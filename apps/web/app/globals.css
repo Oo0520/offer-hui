@@ -105,6 +105,7 @@ svg{display:block}
 .chip-row .chip{flex:none;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);border-radius:9999px;padding:5px 12px;color:rgba(238,235,227,.7);transition:all .2s;cursor:pointer}
 .chip-row .chip:hover{border-color:rgba(183,198,194,.55);color:var(--white)}
 .chip-row .chip.on{background:var(--red);border-color:var(--red);color:#fff}
+.chip-row .chip em.chip-n{font-style:normal;font-size:10px;margin-left:4px;opacity:.65}
 .chip-select{background:#171e19;border:1px solid rgba(183,198,194,.3);border-radius:9999px;padding:5px 12px;font-size:11.5px;font-weight:700;color:rgba(238,235,227,.8)}
 .filter-group{display:flex;gap:8px;flex-wrap:wrap;position:relative}
 .filter-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.24);border-radius:9999px;padding:8px 15px;font-size:12px;font-weight:800;color:rgba(238,235,227,.75);transition:all .2s}

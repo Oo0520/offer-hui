@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { JobView } from "@/lib/jobs";
-import { dimOptions } from "@/lib/jobs";
+import { dimOptions, cityOptions, industryOptions, companyTypeOptions } from "@/lib/jobs";
 import CityFilterPanel from "./CityFilterPanel";
 import { supabase } from "@/lib/supabase";
 
@@ -45,9 +45,9 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
   });
   const [saving, setSaving] = useState(false);
 
-  const cityOpts = useMemo(() => dimOptions(jobs, "city").map((v) => ({ v, n: jobs.filter((j) => j.city === v).length })), [jobs]);
-  const industryOpts = useMemo(() => dimOptions(jobs, "industry").slice(0, 15), [jobs]);
-  const companyTypeOpts = useMemo(() => dimOptions(jobs, "companyType"), [jobs]);
+  const cityOpts = useMemo(() => cityOptions(jobs), [jobs]);
+  const industryOpts = useMemo(() => industryOptions(jobs), [jobs]);
+  const companyTypeOpts = useMemo(() => companyTypeOptions(jobs), [jobs]);
   const cohortOpts = useMemo(() => dimOptions(jobs, "cohort"), [jobs]);
 
   useEffect(() => {
@@ -255,13 +255,14 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
                   <div>
                     <span style={{ color: "rgba(183,198,194,.7)", marginRight: 6 }}>行业</span>
                     <span className="chip-row">
-                      {industryOpts.map((x) => (
+                      {industryOpts.map((o) => (
                         <button
-                          key={x}
-                          className={"chip" + (filters.industries.includes(x) ? " on" : "")}
-                          onClick={() => setFilters((f) => ({ ...f, industries: toggle(f.industries, x) }))}
+                          key={o.v}
+                          className={"chip" + (filters.industries.includes(o.v) ? " on" : "")}
+                          onClick={() => setFilters((f) => ({ ...f, industries: toggle(f.industries, o.v) }))}
                         >
-                          {x}
+                          {o.v}
+                          {o.n > 0 && <em className="chip-n">{o.n}</em>}
                         </button>
                       ))}
                     </span>
@@ -269,13 +270,14 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
                   <div>
                     <span style={{ color: "rgba(183,198,194,.7)", marginRight: 6 }}>公司性质</span>
                     <span className="chip-row">
-                      {companyTypeOpts.map((x) => (
+                      {companyTypeOpts.map((o) => (
                         <button
-                          key={x}
-                          className={"chip" + (filters.company_types.includes(x) ? " on" : "")}
-                          onClick={() => setFilters((f) => ({ ...f, company_types: toggle(f.company_types, x) }))}
+                          key={o.v}
+                          className={"chip" + (filters.company_types.includes(o.v) ? " on" : "")}
+                          onClick={() => setFilters((f) => ({ ...f, company_types: toggle(f.company_types, o.v) }))}
                         >
-                          {x}
+                          {o.v}
+                          {o.n > 0 && <em className="chip-n">{o.n}</em>}
                         </button>
                       ))}
                     </span>

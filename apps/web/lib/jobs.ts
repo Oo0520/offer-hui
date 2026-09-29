@@ -1,6 +1,8 @@
 // 岗位数据层：Supabase REST 拉取 + 展示字段映射
 // 服务端使用（密钥不暴露浏览器），客户端组件接收映射后的 JobView[]
 import { unstable_cache } from "next/cache";
+import { CITY_PROVINCES } from "./cityTree";
+import { INDUSTRY_LIST } from "./industryList";
 
 export type JobRow = {
   id: string;
@@ -218,6 +220,56 @@ export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" 
     m.set(v, (m.get(v) || 0) + 1);
   }
   return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+}
+
+// 公司性质标准列表（与 normalize.py _COMPANY_TYPES 一致，前端显示完整列表）
+export const COMPANY_TYPE_LIST = ["外企/合资", "国企/央企", "民企/私企", "上市公司/500强"];
+
+// 完整城市选项：全部标准城市 + 计数（无岗位的城市计数 0）。含"全国"与库内海外兜底值。
+export function cityOptions(jobs: JobView[]): { v: string; n: number }[] {
+  const cnt = new Map<string, number>();
+  for (const j of jobs) {
+    if (!j.city) continue;
+    cnt.set(j.city, (cnt.get(j.city) || 0) + 1);
+  }
+  const out: { v: string; n: number }[] = [];
+  if (cnt.has("全国")) out.push({ v: "全国", n: cnt.get("全国")! });
+  const seen = new Set<string>();
+  for (const cities of Object.values(CITY_PROVINCES)) {
+    for (const c of cities) {
+      seen.add(c);
+      out.push({ v: c, n: cnt.get(c) || 0 });
+    }
+  }
+  // 库内不在标准树里的值（海外等）追加兜底
+  for (const [c, n] of cnt) {
+    if (c !== "全国" && !seen.has(c)) out.push({ v: c, n });
+  }
+  return out;
+}
+
+// 完整行业选项：标准 19 类 + 计数（无岗位的类目计数 0）+ 库内兜底值
+export function industryOptions(jobs: JobView[]): { v: string; n: number }[] {
+  const cnt = new Map<string, number>();
+  for (const j of jobs) {
+    if (!j.industry) continue;
+    cnt.set(j.industry, (cnt.get(j.industry) || 0) + 1);
+  }
+  const out = INDUSTRY_LIST.map((v) => ({ v, n: cnt.get(v) || 0 }));
+  for (const [c, n] of cnt) {
+    if (!INDUSTRY_LIST.includes(c)) out.push({ v: c, n });
+  }
+  return out;
+}
+
+// 完整公司性质选项：标准 4 类 + 计数（无数据的计数 0）
+export function companyTypeOptions(jobs: JobView[]): { v: string; n: number }[] {
+  const cnt = new Map<string, number>();
+  for (const j of jobs) {
+    if (!j.companyType) continue;
+    cnt.set(j.companyType, (cnt.get(j.companyType) || 0) + 1);
+  }
+  return COMPANY_TYPE_LIST.map((v) => ({ v, n: cnt.get(v) || 0 }));
 }
 
 export type JobFilter = {

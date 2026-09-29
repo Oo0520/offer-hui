@@ -13,6 +13,11 @@ import {
 import JobCard from "./JobCard";
 import JobTable from "./JobTable";
 import CityFilterPanel from "./CityFilterPanel";
+import {
+  cityOptions,
+  industryOptions,
+  companyTypeOptions,
+} from "@/lib/jobs";
 import { supabase } from "@/lib/supabase";
 
 
@@ -256,6 +261,18 @@ export default function HomeClient({
           m2.set(j.source, (m2.get(j.source) || 0) + 1);
         }
         m.school = [...m2.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
+        continue;
+      }
+      if (d.key === "city") {
+        m.city = cityOptions(jobs);
+        continue;
+      }
+      if (d.key === "industry") {
+        m.industry = industryOptions(jobs);
+        continue;
+      }
+      if (d.key === "companyType") {
+        m.companyType = companyTypeOptions(jobs);
         continue;
       }
       m[d.key] = dimOptions(jobs, d.key as "city").map((v) => ({
