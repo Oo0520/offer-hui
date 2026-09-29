@@ -194,6 +194,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
     - **"安全公司"关键词在政府类目会吞掉"安全公司&软件公司&云服务"这类 IT 岗**，已移到"互联网/AI/IT"。
     - jysd 详情页薪资正则已删除（页面无结构化薪资区，只会命中 base64 碎片抖动 hash）；fjrclh 是 API 结构化数据不受影响。
     - 前端 `dimOptions`（lib/jobs.ts）直接 distinct 库值，数据标准化后筛选面板自动规范，无需改前端逻辑。
+    - **前端交互（2026-09-29 追加）**：城市筛选改三级联动（`components/CityFilterPanel.tsx`，数据 `lib/cityTree.ts` 由 `scripts/gen-citytree.py` 从 pcas.json 生成，全国/热门 + 省份折叠展开）；公司性质拆独立维度（jobs 表新增 company_type 列，迁移见 `infra/supabase/migrations/202609290003_company_type.sql`，`normalize_company_type()` 归一化，industries.json 已移除"外企/合资""国企/央企"类目）。订阅面板（CalendarClient）与首页共用 CityFilterPanel；subscriptions.filters 含 company_types，ICS 服务端同步过滤。
 
 ## 6. 设计资产
 
@@ -223,6 +224,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - **豆包定时任务爬虫**（每天 02:00 北京自动跑增量 + `/api/revalidate` 失效缓存）
 - **`/api/revalidate` 按需失效缓存**（修复「爬虫已入库但网站不更新」：unstable_cache 跨部署持久，需主动失效）
 - **城市/行业数据标准化**（民政部 pcas.json + GB/T4754 骨架行业树 + 别名表；存量清洗 city 277→156 / industry 69→19；爬虫入库前归一化；前端筛选自动规范，无英文/无重复/无拼接脏值）
+- **前端筛选交互升级**（城市「全国>省>市」三级联动；公司性质独立维度 company_type，外企/合资 460 条迁移）
 
 **🔄 待完善**：
 - 爬虫依赖本地 Windows 开机 + 豆包在线；电脑关机/豆包没开就不跑

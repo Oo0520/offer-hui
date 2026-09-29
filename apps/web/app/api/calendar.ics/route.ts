@@ -19,6 +19,7 @@ const AUTH_HEADERS = {
 export type SubFilters = {
   cities?: string[];
   industries?: string[];
+  company_types?: string[];
   job_types?: string[];
   cohort?: string;
 };
@@ -44,17 +45,19 @@ async function fetchSubFilters(token: string): Promise<SubFilters | null> {
   }
 }
 
-// 与前端 filterJobs 同语义的筛选（城市/行业/类型精确匹配，届别相等匹配）
+// 与前端 filterJobs 同语义的筛选（城市/行业/性质/类型精确匹配，届别相等匹配）
 function applySubFilters(jobs: JobView[], f: SubFilters): JobView[] {
   if (!f) return jobs;
   const cities = f.cities || [];
   const industries = f.industries || [];
+  const companyTypes = f.company_types || [];
   const jobTypes = f.job_types || [];
   const cohort = f.cohort || "";
-  if (!cities.length && !industries.length && !jobTypes.length && !cohort) return jobs;
+  if (!cities.length && !industries.length && !companyTypes.length && !jobTypes.length && !cohort) return jobs;
   return jobs.filter((j) => {
     if (cities.length && !cities.includes(j.city)) return false;
     if (industries.length && !industries.includes(j.industry)) return false;
+    if (companyTypes.length && !companyTypes.includes(j.companyType)) return false;
     if (jobTypes.length && !jobTypes.includes(j.jobType)) return false;
     if (cohort && j.cohort !== cohort) return false;
     return true;

@@ -13,6 +13,7 @@ export type JobRow = {
   city: string | null;
   province: string | null;
   industry: string | null;
+  company_type: string | null;
   job_type: string | null;
   degree: string | null;
   cohort: string | null;
@@ -39,6 +40,7 @@ export type JobView = {
   company: string;
   city: string;
   industry: string;
+  companyType: string;
   jobType: "校招" | "实习" | "招聘会" | "宣讲会" | "招聘公告";
   degree: string;
   cohort: string;
@@ -127,6 +129,7 @@ export function toView(r: JobRow): JobView {
     company,
     city: r.city || "全国",
     industry,
+    companyType: r.company_type || "",
     jobType,
     degree: r.degree || "学历不限",
     cohort: r.cohort || "",
@@ -147,7 +150,7 @@ export function toView(r: JobRow): JobView {
 
 // 全量拉取（unstable_cache 共享缓存，所有页面 60s 内只打一次 Supabase）
 const RAW_FETCH_FIELDS =
-  "id,source,source_url,external_id,title,city,industry,job_type,degree,cohort,salary_min,salary_max,salary_text,deadline_at,posted_at,apply_url,companies(name)";
+  "id,source,source_url,external_id,title,city,industry,company_type,job_type,degree,cohort,salary_min,salary_max,salary_text,deadline_at,posted_at,apply_url,companies(name)";
 
 // PostgREST 服务端单请求上限 1000 行（db-max-rows），数据超 1000 需分页循环拉取
 const PAGE_SIZE = 1000;
@@ -205,7 +208,7 @@ export const DEGREE_FILTER_LEVEL: Record<string, number> = {
 };
 
 // 筛选维度选项（按出现次数降序）
-export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree"): string[] {
+export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree" | "companyType"): string[] {
   if (key === "degree") {
     return ["专科及以上", "本科及以上", "硕士及以上", "博士及以上"];
   }
@@ -223,6 +226,7 @@ export type JobFilter = {
   jobType?: string; // "校招" | "实习"
   city?: string;
   industry?: string;
+  companyType?: string;
   cohort?: string;
   degree?: string;
 };
@@ -232,6 +236,7 @@ export function filterJobs(jobs: JobView[], f: JobFilter): JobView[] {
     if (f.jobType && j.jobType !== f.jobType) return false;
     if (f.city && j.city !== f.city) return false;
     if (f.industry && j.industry !== f.industry) return false;
+    if (f.companyType && j.companyType !== f.companyType) return false;
     if (f.cohort && j.cohort !== f.cohort) return false;
     if (f.degree && f.degree !== "不限") {
       const minLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;

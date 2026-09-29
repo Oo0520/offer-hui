@@ -12,6 +12,7 @@ import {
 } from "@/lib/jobs";
 import JobCard from "./JobCard";
 import JobTable from "./JobTable";
+import CityFilterPanel from "./CityFilterPanel";
 import { supabase } from "@/lib/supabase";
 
 
@@ -21,12 +22,13 @@ export type HomeStats = {
   due30: number;
 };
 
-type Dim = "city" | "industry" | "jobType" | "cohort" | "degree" | "school";
+type Dim = "city" | "industry" | "companyType" | "jobType" | "cohort" | "degree" | "school";
 type FState = Record<Dim, string[]>;
 
 const DIMS: { key: Dim; label: string }[] = [
   { key: "city", label: "城市" },
   { key: "industry", label: "行业" },
+  { key: "companyType", label: "公司性质" },
   { key: "jobType", label: "招聘类型" },
   { key: "cohort", label: "届别" },
   { key: "degree", label: "学历" },
@@ -54,6 +56,7 @@ export default function HomeClient({
   const [filters, setFilters] = useState<FState>({
     city: [],
     industry: [],
+    companyType: [],
     jobType: [],
     cohort: [],
     degree: [],
@@ -237,6 +240,7 @@ export default function HomeClient({
     const m: Record<Dim, { v: string; n: number }[]> = {
       city: [],
       industry: [],
+      companyType: [],
       jobType: [],
       cohort: [],
       degree: [],
@@ -278,6 +282,7 @@ export default function HomeClient({
     if (f("jobType").length) l = l.filter((j) => f("jobType").includes(j.jobType));
     if (f("city").length) l = l.filter((j) => f("city").includes(j.city));
     if (f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
+    if (f("companyType").length) l = l.filter((j) => f("companyType").includes(j.companyType));
     if (f("cohort").length) l = l.filter((j) => f("cohort").includes(j.cohort));
     if (f("school").length) l = l.filter((j) => f("school").includes(j.source));
     if (f("degree").length) {
@@ -426,14 +431,14 @@ export default function HomeClient({
               className="filter-btn"
               style={{ borderColor: "rgba(202,0,19,.5)", color: "#fda4af" }}
               onClick={() =>
-                setFilters({ city: [], industry: [], jobType: [], cohort: [], degree: [], school: [] })
+                setFilters({ city: [], industry: [], companyType: [], jobType: [], cohort: [], degree: [], school: [] })
               }
             >
               清除
             </button>
           )}
           <div className={"filter-panel" + (openDim ? " open" : "")}>
-            {openDim && <FilterOptions dim={openDim} opts={dimOpts[openDim]} filters={filters} toggleDim={toggleDim} clearDim={clearDim} setCurrentPage={setCurrentPage} />}
+            {openDim && <FilterOptions dim={openDim} opts={dimOpts[openDim]} filters={filters} toggleDim={toggleDim} clearDim={clearDim} setCurrentPage={setCurrentPage} onCityChange={(next) => { setFilters((f) => ({ ...f, city: next })); setCurrentPage(1); }} />}
           </div>
         </div>
       </div>
@@ -535,7 +540,7 @@ export default function HomeClient({
                 onClick={() => {
                   setChip("all");
                   setQ("");
-                  setFilters({ city: [], industry: [], jobType: [], cohort: [], degree: [], school: [] });
+                  setFilters({ city: [], industry: [], companyType: [], jobType: [], cohort: [], degree: [], school: [] });
                   setCurrentPage(1);
                 }}
               >
@@ -719,10 +724,6 @@ export default function HomeClient({
   );
 }
 
-// 城市分组配置
-const HOT_CITIES = ["北京", "上海", "广州", "深圳", "杭州", "南京", "苏州", "武汉", "西安", "成都", "天津", "重庆", "香港"];
-const FUJIAN_CITIES = ["福州", "厦门", "泉州", "漳州", "莆田", "宁德", "龙岩", "福清"];
-
 function FilterOptions({
   dim,
   opts,
@@ -730,6 +731,7 @@ function FilterOptions({
   toggleDim,
   clearDim,
   setCurrentPage,
+  onCityChange,
 }: {
   dim: Dim;
   opts: { v: string; n: number }[];
@@ -737,6 +739,7 @@ function FilterOptions({
   toggleDim: (d: Dim, v: string) => void;
   clearDim: (d: Dim) => void;
   setCurrentPage: (n: number) => void;
+  onCityChange: (next: string[]) => void;
 }) {
   const renderOpt = (o: { v: string; n: number }) => (
     <div
@@ -757,39 +760,15 @@ function FilterOptions({
     </div>
   );
 
-  // 城市维度分组
+// 城市筛选：三级联动面板（全国/热门 + 省份两级）
   if (dim === "city") {
-    const all = opts;
-    const nationwide = all.filter((o) => o.v === "全国");
-    const hot = all.filter((o) => HOT_CITIES.includes(o.v));
-    const fujian = all.filter((o) => FUJIAN_CITIES.includes(o.v));
-    const other = all.filter((o) => o.v !== "全国" && !HOT_CITIES.includes(o.v) && !FUJIAN_CITIES.includes(o.v));
     return (
       <>
-        {nationwide.length > 0 && (
-          <>
-            <div className="f-group">全国</div>
-            {nationwide.map(renderOpt)}
-          </>
-        )}
-        {hot.length > 0 && (
-          <>
-            <div className="f-group">热门城市</div>
-            {hot.map(renderOpt)}
-          </>
-        )}
-        {fujian.length > 0 && (
-          <>
-            <div className="f-group">福建本地</div>
-            {fujian.map(renderOpt)}
-          </>
-        )}
-        {other.length > 0 && (
-          <>
-            <div className="f-group">其他城市</div>
-            {other.map(renderOpt)}
-          </>
-        )}
+        <CityFilterPanel
+          opts={opts}
+          value={filters.city}
+          onChange={onCityChange}
+        />
         {filters[dim].length > 0 && (
           <button className="f-clear" onClick={() => clearDim(dim)}>清空该维度</button>
         )}

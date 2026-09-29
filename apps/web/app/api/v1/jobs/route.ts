@@ -15,6 +15,7 @@ export type JobListParams = {
   job_type?: string; // 校招|实习|招聘会
   city?: string;
   industry?: string;
+  company_type?: string;
   cohort?: string;
   degree?: string; // 不限|专科及以上|本科及以上|硕士及以上
   sort?: SortMode;
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
       jobType: sp.get("job_type") || undefined,
       city: sp.get("city") || undefined,
       industry: sp.get("industry") || undefined,
+      companyType: sp.get("company_type") || undefined,
       cohort: sp.get("cohort") || undefined,
       degree: sp.get("degree") || undefined,
     });

@@ -24,6 +24,7 @@ function sanitizeFilters(raw: unknown): SubFilters {
   return {
     cities: pick("cities"),
     industries: pick("industries"),
+    company_types: pick("company_types"),
     job_types: pick("job_types"),
     cohort,
   };
