@@ -178,13 +178,22 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 1. **globals.css 必须 UTF-8 无 BOM**，否则 build 失败。
 2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 02:00 跑爬虫 upsert 到 Supabase，然后**调用 `/api/revalidate?secret=<ADMIN_TOKEN>` 按需失效缓存**（接口内部 `revalidateTag("jobs", {expire:0})` + `revalidatePath` 各静态页），300ms 内全球生效，无需重新 build。
 3. **SERVICE_KEY 绝不能加 NEXT_PUBLIC_ 前缀**，否则暴露浏览器。
-4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 2 * * *` Asia/Shanghai，跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
+4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai（每天 12:00），跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
 5. **PowerShell 中文编码**：读含中文的 .py/.md 文件用 `[System.IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)`，不要用 Get-Content 管道（默认 ANSI 会乱码）。
 6. **git commit 格式**：`[YYYY-MM-DD HH:mm] type: 描述`，方便时间轴回溯。
 7. **端口占用**：改完代码重启前先杀 3000 端口旧进程（`Get-NetTCPConnection :3000 | Stop-Process`），否则旧进程占着端口跑老代码。
 8. **Vercel 环境变量**：4 个 Supabase 变量必须配全，少一个 build 就挂。CI 里用 placeholder URL（`https://placeholder.supabase.co`）做 build 降级，见 `apps/web/lib/jobs.ts` 里 `_fetchAllJobsRaw` 的 try/catch。
 9. **user_jobs 表 RLS**：新环境建表后必须加 `using (auth.uid() = user_id)` 的 RLS 策略，否则 anon key 能读全表。
 10. **PR 流程**：不直接 push main，走分支 + PR；用户说"合并"才合。
+11. **城市/行业标准化（2026-09-29 落地）**：
+    - 标准数据在 `infra/classify/`：`pcas.json`（民政部行政区划，省→市→区三级，来源 modood/Administrative-divisions-of-China）、`industries.json`（21 类目 + 关键词映射，含英文关键词）、`city_aliases.json`（英文/脏变体→标准中文）。
+    - 归一化函数在仓库外 `E:\AIMemory\DaoBao\normalize.py`（`normalize_city` / `normalize_industry`），两个生产爬虫已接入（city 入库前归一化）。
+    - 存量清洗结果：2620 条中 city 601 条、industry 1663 条改写；city distinct 277→156、industry 69→19。
+    - **pcas.json 重庆市下有分组键"县"**，加载时必须跳过（`city_short in ("县","区","旗")`），否则单字"县"混入城市集导致脏值。
+    - **同名多义区县**（鼓楼/台江/新兴等全国多个）用 `_district_name_count` 统计次数，>1 的不建区县→市索引，避免归错市（曾把福州鼓楼区归到开封）。
+    - **"安全公司"关键词在政府类目会吞掉"安全公司&软件公司&云服务"这类 IT 岗**，已移到"互联网/AI/IT"。
+    - jysd 详情页薪资正则已删除（页面无结构化薪资区，只会命中 base64 碎片抖动 hash）；fjrclh 是 API 结构化数据不受影响。
+    - 前端 `dimOptions`（lib/jobs.ts）直接 distinct 库值，数据标准化后筛选面板自动规范，无需改前端逻辑。
 
 ## 6. 设计资产
 
@@ -213,6 +222,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 - **Vercel CI/CD**（push main 自动部署，正式域名 https://www.offerpiai.cn）
 - **豆包定时任务爬虫**（每天 02:00 北京自动跑增量 + `/api/revalidate` 失效缓存）
 - **`/api/revalidate` 按需失效缓存**（修复「爬虫已入库但网站不更新」：unstable_cache 跨部署持久，需主动失效）
+- **城市/行业数据标准化**（民政部 pcas.json + GB/T4754 骨架行业树 + 别名表；存量清洗 city 277→156 / industry 69→19；爬虫入库前归一化；前端筛选自动规范，无英文/无重复/无拼接脏值）
 
 **🔄 待完善**：
 - 爬虫依赖本地 Windows 开机 + 豆包在线；电脑关机/豆包没开就不跑
