@@ -291,7 +291,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
               </svg>
-              ＋手动录入
+              手动录入
             </button>
           </div>
         </div>
