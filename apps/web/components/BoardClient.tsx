@@ -56,6 +56,67 @@ type BoardCard =
   | { key: string; isCustom: false; job: JobView }
   | { key: string; isCustom: true; custom: CustomJob };
 
+// 自绘深色日历（原生日历弹层白底无法适配深色主题）
+function CalendarPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const now = new Date();
+  const [viewY, setViewY] = useState(now.getFullYear());
+  const [viewM, setViewM] = useState(now.getMonth());
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const firstDow = new Date(viewY, viewM, 1).getDay();
+  const daysInMonth = new Date(viewY, viewM + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  const wd = ["日", "一", "二", "三", "四", "五", "六"];
+  const iso = (d: number) => `${viewY}-${String(viewM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const prevM = () => { if (viewM === 0) { setViewY(viewY - 1); setViewM(11); } else setViewM(viewM - 1); };
+  const nextM = () => { if (viewM === 11) { setViewY(viewY + 1); setViewM(0); } else setViewM(viewM + 1); };
+
+  return (
+    <div className="cal" ref={ref}>
+      <div className="cal-head" onClick={() => setOpen((o) => !o)}>
+        <span className={value ? "" : "ph"}>{value || "招满为止"}</span>
+        <span className="fancy-caret">▾</span>
+      </div>
+      {open && (
+        <div className="cal-panel">
+          <div className="cal-nav">
+            <button type="button" onClick={prevM}>‹</button>
+            <span>{viewY}年{viewM + 1}月</span>
+            <button type="button" onClick={nextM}>›</button>
+          </div>
+          <div className="cal-grid">
+            {wd.map((w) => <div key={w} className="cal-wd">{w}</div>)}
+            {cells.map((d, i) =>
+              d === null ? <div key={i} /> : (
+                <div
+                  key={i}
+                  className={"cal-day" + (value === iso(d) ? " sel" : "")}
+                  onClick={() => { onChange(iso(d)); setOpen(false); }}
+                >{d}</div>
+              )
+            )}
+          </div>
+          <div className="cal-foot">
+            <button type="button" onClick={() => { onChange(""); setOpen(false); }}>清除</button>
+            <button type="button" onClick={() => { const t = new Date(); onChange(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`); setOpen(false); }}>今天</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // 自绘深色下拉（替代原生 select，对齐网站风格）
 function FancySelect({ value, onChange, options, placeholder }: {
   value: string;
@@ -521,7 +582,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           </label>
           <label>
             <span>投递截止时间（空=招满为止）</span>
-            <input type="date" value={form.deadline_at} onChange={(e) => setForm({ ...form, deadline_at: e.target.value })} />
+            <CalendarPicker value={form.deadline_at} onChange={(v) => setForm({ ...form, deadline_at: v })} />
           </label>
           <label>
             <span>投递链接 *</span>
