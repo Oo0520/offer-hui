@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { JobView } from "@/lib/jobs";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -56,20 +57,18 @@ type BoardCard =
   | { key: string; isCustom: false; job: JobView }
   | { key: string; isCustom: true; custom: CustomJob };
 
-// 自绘深色日历（原生日历弹层白底无法适配深色主题）
+// 自绘深色日历弹窗（居中遮罩式，手机/桌面统一适配）
 function CalendarPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement | null>(null);
   const now = new Date();
   const [viewY, setViewY] = useState(now.getFullYear());
   const [viewM, setViewM] = useState(now.getMonth());
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = ""; document.removeEventListener("keydown", onKey); };
   }, [open]);
 
   // 每次打开固定定位到「今天所在月」
@@ -89,39 +88,48 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
   const iso = (d: number) => `${viewY}-${String(viewM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
   const prevM = () => { if (viewM === 0) { setViewY(viewY - 1); setViewM(11); } else setViewM(viewM - 1); };
   const nextM = () => { if (viewM === 11) { setViewY(viewY + 1); setViewM(0); } else setViewM(viewM + 1); };
+  const pickToday = () => {
+    const t = new Date();
+    onChange(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`);
+    setOpen(false);
+  };
 
   return (
-    <div className="cal" ref={ref}>
-      <div className="cal-head" onClick={open ? () => setOpen(false) : openPicker}>
+    <>
+      <div className="pk-head" onClick={open ? () => setOpen(false) : openPicker}>
         <span className={value ? "" : "ph"}>{value || "招满为止"}</span>
         <span className="fancy-caret">▾</span>
       </div>
-      {open && (
-        <div className="cal-panel">
-          <div className="cal-nav">
-            <button type="button" onClick={prevM}>‹</button>
-            <span>{viewY}年{viewM + 1}月</span>
-            <button type="button" onClick={nextM}>›</button>
+      {open && createPortal(
+        <div className="pk-mask" onClick={() => setOpen(false)}>
+          <div className="pk-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="pk-title">选择截止日期</div>
+            <div className="pk-nav">
+              <button type="button" onClick={prevM}>‹</button>
+              <span>{viewY}年{viewM + 1}月</span>
+              <button type="button" onClick={nextM}>›</button>
+            </div>
+            <div className="pk-grid">
+              {wd.map((w) => <div key={w} className="pk-wd">{w}</div>)}
+              {cells.map((d, i) =>
+                d === null ? <div key={i} /> : (
+                  <div
+                    key={i}
+                    className={"pk-day" + (value === iso(d) ? " sel" : "")}
+                    onClick={() => { onChange(iso(d)); setOpen(false); }}
+                  >{d}</div>
+                )
+              )}
+            </div>
+            <div className="pk-foot">
+              <button type="button" onClick={() => { onChange(""); setOpen(false); }}>清除</button>
+              <button type="button" onClick={pickToday}>今天</button>
+            </div>
           </div>
-          <div className="cal-grid">
-            {wd.map((w) => <div key={w} className="cal-wd">{w}</div>)}
-            {cells.map((d, i) =>
-              d === null ? <div key={i} /> : (
-                <div
-                  key={i}
-                  className={"cal-day" + (value === iso(d) ? " sel" : "")}
-                  onClick={() => { onChange(iso(d)); setOpen(false); }}
-                >{d}</div>
-              )
-            )}
-          </div>
-          <div className="cal-foot">
-            <button type="button" onClick={() => { onChange(""); setOpen(false); }}>清除</button>
-            <button type="button" onClick={() => { const t = new Date(); onChange(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`); setOpen(false); }}>今天</button>
-          </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
