@@ -224,7 +224,7 @@ fastmcp ≥ 2.0（Streamable HTTP）+ psycopg + python-dotenv；复用 `apps/wor
 
 爬虫入库完成 → `GET /api/revalidate?secret=<ADMIN_TOKEN>`（实现见 `apps/web/app/api/revalidate/route.ts`）→ 接口内部执行 `revalidateTag("jobs", { expire: 0 })` 失效 `fetchAllJobs` 的 unstable_cache + `revalidatePath` 失效 `/`、`/calendar`、`/match`、`/favorites`、`/board` 五个静态页 → 下次访问时页面按需重新生成，`fetchAllJobs()` 重新从 PostgREST 分页（每页 1000）拉取**全量**岗位 → 约 300ms 生效。
 
-> **历史方案（已废弃）**：此前为「爬虫跑完 → git 空 commit push main → 触发 Vercel 全量重新 build」。PR #29（2026-09-27 20:48 合并）改为按需失效后，git push 仅在**代码变更**时触发构建。改版动机：修复「爬虫已入库但网站不更新」（unstable_cache 跨部署持久，不主动失效就一直返回旧数据）。
+> **历史方案（已废弃）**：早期数据刷新靠「爬虫入库后推送空改动 → 触发平台全量重建」。PR #29（2026-09-27 20:48 合并）改为按需失效后，git push 仅在**代码变更**时触发构建。改版动机：修复「爬虫已入库但网站不更新」（unstable_cache 跨部署持久，不主动失效就一直返回旧数据）。
 
 ### 5.4 检索展示
 
@@ -343,7 +343,7 @@ apps/mcp/server.py：仅依赖 worker/.env 的 DATABASE_URL，与 worker 代码�
 
 ### 可扩展点（与瓶颈一一对应）
 
-1. ~~改 ISR / revalidateTag~~ **已落地**（PR #29，`/api/revalidate`）：数据更新不再依赖空 commit 触发 build。
+1. ~~改 ISR / revalidateTag~~ **已落地**（PR #29，`/api/revalidate`）：数据更新走按需失效，不再依赖推送触发平台重建。
 2. 数据量超阈值后把筛选/分页下沉服务端：PostgREST 过滤参数、Postgres 全文检索，或直接启用 pgvector 语义检索 + HNSW 索引。
 3. 抓取改 `asyncio.gather` 按源并发（批量写入与 mark_expired 批量化已于 2026-09-27 随生产链路改造落地——走 PostgREST upsert 而非 psycopg COPY）。
 4. 调度外移：GitHub Actions cron / 云函数定时器跑爬虫（需解决出口 IP 与反爬），或至少加跑失败告警（如读 crawl_runs 推送）。
