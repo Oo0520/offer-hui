@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { INDUSTRY_LIST } from "@/lib/industryList";
 
 type Row = {
   id: string;
@@ -36,28 +37,14 @@ type SubRow = {
   stage: string;
   submit_status: string;
   published_job_id: string | null;
+  industry: string | null;
+  degree: string | null;
   created_at: string;
 };
 
 const TOKEN_KEY = "offerp_admin_token";
 
 const DEGREES = ["不限", "专科及以上", "本科及以上", "硕士及以上", "博士研究生"];
-const INDUSTRIES = [
-  "互联网",
-  "软件/信息技术",
-  "芯片/半导体",
-  "人工智能",
-  "汽车/新能源",
-  "工程建设",
-  "银行/金融",
-  "能源/电力",
-  "制造/工业",
-  "快消/零售",
-  "教育/科研",
-  "医疗/生物",
-  "传媒/文化",
-  "其他",
-];
 const SOURCE_TYPES = ["企业官网", "企业公众号", "高校就业网", "国家24365", "社区数据", "其他"];
 
 const empty = {
@@ -68,7 +55,7 @@ const empty = {
   cohort: "2027届",
   city: "",
   location: "",
-  industry: "互联网",
+  industry: "互联网/AI/IT",
   deadline_at: "",
   apply_url: "",
   source_url: "",
@@ -85,6 +72,8 @@ export default function OfferPAdmin() {
   const [rows, setRows] = useState<Row[]>([]);
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [subFilter, setSubFilter] = useState("pending");
+  const [subRecruit, setSubRecruit] = useState("");
+  const [subCohort, setSubCohort] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [subMsg, setSubMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -317,7 +306,7 @@ export default function OfferPAdmin() {
             </Label>
             <Label t="行业">
               <select style={input} value={form.industry} onChange={(e) => set("industry", e.target.value)}>
-                {INDUSTRIES.map((d) => (
+                {INDUSTRY_LIST.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
@@ -420,13 +409,27 @@ export default function OfferPAdmin() {
               ))}
             </span>
           </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <select value={subRecruit} onChange={(e) => setSubRecruit(e.target.value)} style={subSelect}>
+              <option value="">招聘类型：全部</option>
+              {["实习", "秋招", "春招", "校招"].map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <select value={subCohort} onChange={(e) => setSubCohort(e.target.value)} style={subSelect}>
+              <option value="">届别：全部</option>
+              {["2027届", "2026届", "2025届", "不限"].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <span style={{ color: "#8a8f98", fontSize: 12 }}>
+              {subs.filter((s) => (!subRecruit || s.recruit_type === subRecruit) && (!subCohort || s.cohort === subCohort)).length}
+              {" / "}{subs.length} 条
+            </span>
+          </div>
           {subLoading ? (
             <div style={{ color: "#8a8f98", fontSize: 13, padding: "12px 0" }}>加载中…</div>
           ) : subs.length === 0 ? (
             <div style={{ color: "#8a8f98", fontSize: 13, padding: "12px 0" }}>当前没有投稿</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {subs.map((s) => (
+              {subs.filter((s) => (!subRecruit || s.recruit_type === subRecruit) && (!subCohort || s.cohort === subCohort)).map((s) => (
                 <div key={s.id} style={rowCard}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>
@@ -437,6 +440,9 @@ export default function OfferPAdmin() {
                     </div>
                     <div style={{ color: "#8a8f98", fontSize: 12, marginTop: 3, wordBreak: "break-all" }}>
                       {s.email} · {s.company_type || "未填类型"} · {s.cohort || "未填届别"} · {s.city || "全国"}
+                    </div>
+                    <div style={{ color: "#8a8f98", fontSize: 12, marginTop: 2, wordBreak: "break-all" }}>
+                      {s.industry || "未分类"} · {s.degree || "学历不限"}
                       {s.deadline_at ? ` · 截止 ${s.deadline_at}` : " · 招满为止"}
                     </div>
                     {s.note && <div style={{ color: "#b7c6c2", fontSize: 12, marginTop: 2 }}>备注：{s.note}</div>}
@@ -621,4 +627,13 @@ const filtOff: React.CSSProperties = {
   background: "transparent",
   color: "#8a8f98",
   cursor: "pointer",
+};
+const subSelect: React.CSSProperties = {
+  fontSize: 12,
+  padding: "5px 10px",
+  borderRadius: 8,
+  border: "1px solid rgba(183,198,194,.25)",
+  background: "rgba(255,255,255,.04)",
+  color: "#b7c6c2",
+  outline: "none",
 };

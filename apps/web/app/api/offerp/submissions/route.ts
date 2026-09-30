@@ -41,6 +41,8 @@ type CustomRow = {
   stage: string;
   submit_status: string;
   published_job_id: string | null;
+  industry: string | null;
+  degree: string | null;
   created_at: string;
 };
 
@@ -128,10 +130,10 @@ export async function POST(req: NextRequest) {
     title: row.title,
     description: row.note || null,
     city: row.city || null,
-    industry: null,
+    industry: row.industry || null,
     company_type: row.company_type || null,
     job_type: jobType,
-    degree: "",
+    degree: row.degree || "",
     cohort: row.cohort || null,
     salary_min: 0,
     salary_max: 0,

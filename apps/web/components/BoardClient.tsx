@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { JobView } from "@/lib/jobs";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { INDUSTRY_LIST } from "@/lib/industryList";
+import { CITY_PROVINCES, PROVINCE_ORDER } from "@/lib/cityTree";
 
 const STAGES = ["待投", "已投", "笔试", "面试", "已挂", "Offer"] as const;
 type Stage = (typeof STAGES)[number];
@@ -22,6 +24,7 @@ const STATUS_TO_STAGE: Record<string, string> = Object.fromEntries(
 const COMPANY_TYPES = ["外企/合资", "国企/央企", "民企/私企", "上市公司/500强"];
 const RECRUIT_TYPES = ["实习", "秋招", "春招", "校招"];
 const COHORTS = ["2027届", "2026届", "2025届", "不限"];
+const DEGREE_OPTIONS = ["不限", "专科", "本科", "硕士", "博士"];
 
 const SUBMIT_LABEL: Record<string, string> = {
   private: "未投稿",
@@ -44,6 +47,8 @@ type CustomJob = {
   stage: string;
   submit_status: string;
   published_job_id: string | null;
+  industry: string | null;
+  degree: string | null;
   created_at: string;
 };
 
@@ -61,12 +66,14 @@ const emptyForm = {
   company_type: COMPANY_TYPES[1],
   recruit_type: RECRUIT_TYPES[3],
   cohort: COHORTS[0],
-  city: "",
+  city: "全国",
   deadline_at: "",
   apply_url: "",
   note: "",
   stage: "待投" as Stage,
   submit: true,
+  industry: "",
+  degree: "不限",
 };
 
 export default function BoardClient({ jobs }: { jobs: JobView[] }) {
@@ -216,10 +223,12 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         company_type: form.company_type,
         recruit_type: form.recruit_type,
         cohort: form.cohort,
-        city: form.city.trim() || null,
+        city: form.city === "全国" ? "全国" : (form.city.trim() || null),
         deadline_at: form.deadline_at || null,
         apply_url: form.apply_url.trim(),
         note: form.note.trim() || null,
+        industry: form.industry || null,
+        degree: form.degree || "",
         stage: STAGE_TO_STATUS[form.stage],
         submit_status: form.submit ? "pending" : "private",
       })
@@ -436,8 +445,28 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             </select>
           </label>
           <label>
+            <span>行业（未分类可不选）</span>
+            <select value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })}>
+              <option value="">未分类</option>
+              {INDUSTRY_LIST.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>学历要求</span>
+            <select value={form.degree} onChange={(e) => setForm({ ...form, degree: e.target.value })}>
+              {DEGREE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label>
             <span>工作地点</span>
-            <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="如：福州" />
+            <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
+              <option value="全国">全国</option>
+              {PROVINCE_ORDER.filter((p) => CITY_PROVINCES[p]).map((p) => (
+                <optgroup key={p} label={p}>
+                  {CITY_PROVINCES[p].map((c) => <option key={c} value={c}>{c}</option>)}
+                </optgroup>
+              ))}
+            </select>
           </label>
           <label>
             <span>投递截止时间（空=招满为止）</span>
