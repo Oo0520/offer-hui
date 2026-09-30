@@ -1,7 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { JobView } from "@/lib/jobs";
+import {
+  AIConfig,
+  AIMatchItem,
+  callAI,
+  clearConfig,
+  loadConfig,
+  normalizeBaseUrl,
+  parseResumeFile,
+  ruleEngine,
+  SAMPLE_RESUME,
+  saveConfig,
+} from "@/lib/aiMatch";
 
 type MatchResult = {
   job: JobView;
@@ -9,82 +21,129 @@ type MatchResult = {
   reasons: string[];
 };
 
-// MVP 规则引擎画像（正式版将接入简历解析 + pgvector + LLM 理由）
-const PROFILE = {
-  cohort: "2027届",
-  degree: "本科及以上",
-  industries: [
-    "信息传输、软件和信息技术服务业",
-    "互联网/电子商务",
-    "计算机软件",
-    "计算机服务（系统/数据/维护/安全）",
-    "电子技术/半导体/集成电路",
-  ],
-  cities: ["北京", "上海", "深圳", "杭州", "广州", "南京", "全国"],
-  keywords: ["软件", "算法", "研发", "开发", "工程师", "数据分析", "IC", "嵌入式", "AI", "前端", "后端", "测试"],
-};
-
-function score(job: JobView): { score: number; reasons: string[] } {
-  let s = 0;
-  const reasons: string[] = [];
-  if (job.cohort && job.cohort === PROFILE.cohort) {
-    s += 35;
-    reasons.push(`届别匹配（${job.cohort}）`);
-  }
-  if (job.degree && (job.degree.includes("本科") || job.degree.includes("不限"))) {
-    s += 20;
-    reasons.push(`学历要求符合（${job.degree}）`);
-  }
-  if (PROFILE.industries.some((i) => job.industry.includes(i) || i.includes(job.industry))) {
-    s += 25;
-    reasons.push(`行业方向契合（${job.industry}）`);
-  }
-  if (PROFILE.cities.includes(job.city)) {
-    s += 15;
-    reasons.push(`意向城市匹配（${job.city}）`);
-  }
-  const kwHit = PROFILE.keywords.filter((k) => job.title.includes(k));
-  if (kwHit.length) {
-    s += 10 * Math.min(kwHit.length, 2);
-    reasons.push(`岗位方向命中（${kwHit.join("/")}）`);
-  }
-  return { score: Math.min(s, 100), reasons };
-}
+type Mode = "rule" | "ai";
 
 export default function MatchClient({ jobs }: { jobs: JobView[] }) {
   const [fileName, setFileName] = useState<string | null>(null);
+  const [resumeText, setResumeText] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "running" | "done">("idle");
   const [results, setResults] = useState<MatchResult[]>([]);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("rule");
+  const [showSettings, setShowSettings] = useState(false);
+  const [configDraft, setConfigDraft] = useState<AIConfig>({
+    baseUrl: "https://api.deepseek.com/v1",
+    apiKey: "",
+    model: "deepseek-chat",
+  });
+  const [configSaved, setConfigSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function applyFile(name: string) {
-    setFileName(name);
+  useEffect(() => {
+    const c = loadConfig();
+    if (c) {
+      setConfigDraft(c);
+      setConfigSaved(true);
+    }
+  }, []);
+
+  const applyFile = useCallback(async (file: File) => {
+    setFileName(file.name);
     setStatus("idle");
     setResults([]);
+    setErrMsg(null);
+    try {
+      const text = await parseResumeFile(file);
+      setResumeText(text);
+    } catch (e) {
+      setResumeText(null);
+      setErrMsg((e as Error).message);
+    }
+  }, []);
+
+  function saveSettings() {
+    const baseUrl = normalizeBaseUrl(configDraft.baseUrl);
+    if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+      setErrMsg("BaseURL 需要以 http:// 或 https:// 开头");
+      return;
+    }
+    if (!configDraft.apiKey.trim()) {
+      setErrMsg("请填写 API Key");
+      return;
+    }
+    if (!configDraft.model.trim()) {
+      setErrMsg("请填写模型名");
+      return;
+    }
+    const c = { ...configDraft, baseUrl, apiKey: configDraft.apiKey.trim(), model: configDraft.model.trim() };
+    saveConfig(c);
+    setConfigSaved(true);
+    setErrMsg(null);
   }
 
-  function runMatch(name?: string) {
+  function clearSettings() {
+    clearConfig();
+    setConfigSaved(false);
+    setConfigDraft({ baseUrl: "https://api.deepseek.com/v1", apiKey: "", model: "deepseek-chat" });
+    setErrMsg(null);
+  }
+
+  // 规则引擎结果
+  function runRule() {
+    const scored = ruleEngine(jobs, 6);
+    setResults(scored);
+    setMode("rule");
+    setStatus("done");
+    if (!scored.length) setErrMsg("未找到匹配度 ≥ 30% 的岗位，试试放宽画像后重试");
+  }
+
+  async function runMatch(name?: string) {
     const fn = name ?? fileName;
     if (!fn) {
       alert("请先上传简历，或点击「使用示例简历」体验。");
       return;
     }
-    if (name) setFileName(name);
+    if (name) {
+      setFileName(name);
+      setResumeText(SAMPLE_RESUME);
+    }
+    setErrMsg(null);
     setStatus("running");
-    // 模拟解析耗时
-    setTimeout(() => {
-      const scored = jobs
-        .map((j) => ({ job: j, score: 0, reasons: [] as string[] }))
-        .map((r) => {
-          const { score: sc, reasons } = score(r.job);
-          return { ...r, score: sc, reasons };
-        })
-        .filter((r) => r.score >= 30)
-        .sort((a, b) => b.score - a.score || (a.job.deadlineDays ?? 999) - (b.job.deadlineDays ?? 999))
-        .slice(0, 6);
-      setResults(scored);
-      setStatus("done");
-    }, 800);
+
+    const config = loadConfig();
+    const text = name ? SAMPLE_RESUME : resumeText;
+
+    // 有配置 + 有简历文本 → AI 路径
+    if (config && text) {
+      const pool = ruleEngine(jobs, 15); // 规则初筛候选池，避免全量发 LLM
+      if (pool.length) {
+        try {
+          const items = await callAI(config, text, pool.map((r) => r.job));
+          const byId = new Map(pool.map((r) => [r.job.id, r.job]));
+          const merged = items
+            .map((it: AIMatchItem) => ({ job: byId.get(it.id), score: it.score, reasons: it.reasons }))
+            .filter((r): r is MatchResult => !!r.job)
+            .sort((a, b) => b.score - a.score || (a.job.deadlineDays ?? 999) - (b.job.deadlineDays ?? 999))
+            .slice(0, 6);
+          if (merged.length) {
+            setResults(merged);
+            setMode("ai");
+            setStatus("done");
+            return;
+          }
+          setErrMsg("模型未返回有效岗位结果，已降级为规则匹配");
+        } catch (e) {
+          const ae = e as { kind?: string; message?: string };
+          setErrMsg(`AI 匹配失败（${ae.kind ?? "error"}）：${ae.message ?? "未知错误"}。已自动降级为规则匹配。`);
+        }
+      } else {
+        setErrMsg("规则初筛未找到候选岗位，已降级为规则匹配");
+      }
+    } else if (!config && text) {
+      setErrMsg("未配置 AI 模型，本次使用本地规则匹配。可展开右侧「AI 设置」填入你的 API Key 获得更智能的匹配。");
+    }
+
+    runRule();
   }
 
   return (
@@ -97,8 +156,8 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
           </p>
           <div className="tags-row">
             <span>五维匹配</span>
-            <span>本机处理不上传</span>
-            <span>匹配理由一目了然</span>
+            <span>简历本机解析</span>
+            <span>支持自定义大模型 API</span>
           </div>
         </div>
       </div>
@@ -114,13 +173,19 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
               </div>
               <div>
                 <h4>{fileName}</h4>
-                <p>已载入 · 可以开始匹配（本机处理，不上传服务器）</p>
+                <p>
+                  {resumeText
+                    ? `已解析 ${resumeText.length} 字 · 仅本机处理，不上传我方服务器${configSaved ? "" : "（未配置 AI 时将用规则匹配）"}`
+                    : errMsg ?? "解析失败，可重新上传"}
+                </p>
               </div>
               <button
                 onClick={() => {
                   setFileName(null);
+                  setResumeText(null);
                   setResults([]);
                   setStatus("idle");
+                  setErrMsg(null);
                 }}
               >
                 重新上传
@@ -133,7 +198,7 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                if (e.dataTransfer.files.length) applyFile(e.dataTransfer.files[0].name);
+                if (e.dataTransfer.files.length) applyFile(e.dataTransfer.files[0]);
               }}
             >
               <div className="u-ic">
@@ -142,10 +207,9 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
                 </svg>
               </div>
               <h4>上传简历（PDF / Word）</h4>
-              <p>点击选择文件，或拖拽到此处 · 简历仅用于本次匹配，不存入数据库</p>
+              <p>点击选择文件，或拖拽到此处 · 简历仅在本机解析，不存入数据库</p>
               <div className="formats">
                 <span>PDF</span>
-                <span>DOC</span>
                 <span>DOCX</span>
                 <span>≤ 5MB</span>
               </div>
@@ -154,19 +218,31 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
                 type="file"
                 accept=".pdf,.doc,.docx"
                 style={{ display: "none" }}
-                onChange={(e) => e.target.files?.[0] && applyFile(e.target.files[0].name)}
+                onChange={(e) => e.target.files?.[0] && applyFile(e.target.files[0])}
               />
             </div>
           )}
 
           <div style={{ marginTop: 16 }} className="orbital">
-            <button className="inner" onClick={() => runMatch()}>
+            <button className="inner" onClick={() => runMatch()} disabled={status === "running"}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2m-8.4 8.4-2.2 2.2" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
               </svg>
               {status === "running" ? "匹配中…" : "开始匹配"}
             </button>
           </div>
+
+          {errMsg && (
+            <div className="ai-note glass" style={{ color: "rgba(248,113,113,.95)", marginBottom: 12 }}>
+              {errMsg}
+            </div>
+          )}
+
+          {mode === "ai" && status === "done" && (
+            <div className="ai-note glass" style={{ marginBottom: 12 }}>
+              ✦ 本次匹配由你配置的 AI 模型完成（{configDraft.model}）
+            </div>
+          )}
 
           <div className="cost-note glass">
             <h5>
@@ -196,12 +272,12 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
           <div className="match-list">
             {status === "running" && (
               <div className="match-card glass" style={{ justifyContent: "center", color: "rgba(183,198,194,.7)", fontSize: 13 }}>
-                正在解析简历并检索岗位…
+                正在解析简历并匹配岗位…
               </div>
             )}
             {status === "done" && results.length === 0 && (
               <div className="match-card glass" style={{ justifyContent: "center", color: "rgba(183,198,194,.7)", fontSize: 13 }}>
-                未找到匹配度 ≥ 30% 的岗位，试试放宽画像（点击「使用示例简历」）后重试
+                未找到匹配岗位，试试「使用示例简历」或调整 AI 配置后重试
               </div>
             )}
             {results.map((r) => (
@@ -250,12 +326,70 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
 
         <div className="match-side">
           <div className="panel glass">
+            <h4
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+              onClick={() => setShowSettings((s) => !s)}
+            >
+              <span className="dot"></span>AI 设置
+              <span style={{ fontSize: 11, color: "rgba(183,198,194,.6)" }}>
+                {configSaved ? `已配置 · ${configDraft.model}` : "未配置"}
+                {showSettings ? " ▾" : " ▸"}
+              </span>
+            </h4>
+            {showSettings && (
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: "rgba(183,198,194,.7)" }}>BaseURL（OpenAI 兼容）</label>
+                  <input
+                    className="ai-input"
+                    value={configDraft.baseUrl}
+                    onChange={(e) => setConfigDraft({ ...configDraft, baseUrl: e.target.value })}
+                    placeholder="https://api.deepseek.com/v1"
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "rgba(183,198,194,.7)" }}>API Key</label>
+                  <input
+                    className="ai-input"
+                    type="password"
+                    value={configDraft.apiKey}
+                    onChange={(e) => setConfigDraft({ ...configDraft, apiKey: e.target.value })}
+                    placeholder="sk-…"
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "rgba(183,198,194,.7)" }}>模型</label>
+                  <input
+                    className="ai-input"
+                    value={configDraft.model}
+                    onChange={(e) => setConfigDraft({ ...configDraft, model: e.target.value })}
+                    placeholder="deepseek-chat"
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="ai-btn primary" onClick={saveSettings}>
+                    保存
+                  </button>
+                  {configSaved && (
+                    <button className="ai-btn" onClick={clearSettings}>
+                      清除
+                    </button>
+                  )}
+                </div>
+                <p style={{ fontSize: 11, color: "rgba(183,198,194,.55)", lineHeight: 1.7, marginTop: 2 }}>
+                  支持任意 OpenAI 兼容接口（DeepSeek / 硅基流动 / Kimi / 通义等）。Key 仅存于本浏览器、直连你自己的 API，不上传我方服务器。未配置时自动使用本地规则匹配。
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="panel glass">
             <h4>
               <span className="dot"></span>匹配说明
             </h4>
             <p style={{ fontSize: 12, color: "rgba(183,198,194,.75)", lineHeight: 1.8 }}>
-              匹配基于 <b style={{ color: "#c4b5fd" }}>届别、学历、行业、城市、岗位方向</b>{" "}
-              五维评分，分数越高越契合。所有处理在本机完成，简历不会上传服务器。
+              上传简历后本机解析内容；已配置 AI 时由你的模型逐岗位评分并给理由，未配置时按{" "}
+              <b style={{ color: "#c4b5fd" }}>届别、学历、行业、城市、岗位方向</b> 五维规则评分。
+              简历内容不会上传我方服务器。
             </p>
           </div>
           <div className="panel glass">
@@ -276,10 +410,7 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
                 fontWeight: 800,
                 color: "var(--offwhite)",
               }}
-              onClick={() => {
-                applyFile("示例简历.pdf");
-                runMatch("示例简历.pdf");
-              }}
+              onClick={() => runMatch("示例简历.pdf")}
             >
               使用示例简历
             </button>

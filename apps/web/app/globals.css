@@ -558,3 +558,12 @@ svg{display:block}
 .guide-item b{color:#fff}
 .guide-ok{margin-top:14px;width:100%;padding:11px;border-radius:12px;border:none;background:#ca0013;color:#fff;font-size:14px;cursor:pointer}
 .guide-ok:hover{background:#e0001a}
+/* AI 匹配自定义模型 */
+.ai-input{width:100%;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(183,198,194,.28);color:var(--offwhite);font-size:12.5px;outline:none;transition:border-color .2s}
+.ai-input:focus{border-color:var(--violet,#8b5cf6)}
+.ai-input::placeholder{color:rgba(183,198,194,.4)}
+.ai-btn{padding:8px 18px;border-radius:9999px;border:1px solid rgba(183,198,194,.3);background:rgba(255,255,255,.06);color:var(--offwhite);font-size:12px;font-weight:800;cursor:pointer}
+.ai-btn.primary{background:var(--violet,#8b5cf6);border-color:var(--violet,#8b5cf6);color:#fff}
+.ai-btn.primary:hover{background:#9d6ff7}
+.ai-btn:hover{background:rgba(255,255,255,.12)}
+.ai-note{font-size:11.5px;line-height:1.7;padding:10px 14px;border-radius:12px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);color:rgba(196,181,253,.95)}
