@@ -12,7 +12,19 @@
 ```bash
 pip install -r requirements.txt
 ```
-（Python 3.10+；scrapling + httpx）
+（Python 3.10+；scrapling + httpx + curl_cffi/patchright/msgspec/browserforge——scrapling 0.4.x 的 StealthyFetcher 运行时依赖，0.4.15 未在包元数据声明，需显式安装）
+
+### chromium 浏览器（fjut 的 StealthyFetcher 必需）
+patchright 需 chromium 内核，首次安装：
+```bash
+export PLAYWRIGHT_BROWSERS_PATH=/home/user/.cache/ms-playwright   # 云电脑用户目录（无 sudo 环境必须指定，默认 /opt 只读）
+python3 -m patchright install chromium
+```
+运行时**必须**带上同一个环境变量，否则 patchright 回落到系统默认只读路径报 `Executable doesn't exist`：
+```bash
+export PLAYWRIGHT_BROWSERS_PATH=/home/user/.cache/ms-playwright
+python crawl-fjut.py
+```
 
 ## 运行
 ```bash
