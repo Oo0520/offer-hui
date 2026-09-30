@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { INDUSTRY_LIST } from "@/lib/industryList";
+import { supabase } from "@/lib/supabase";
 
 type Row = {
   id: string;
@@ -42,7 +43,7 @@ type SubRow = {
   created_at: string;
 };
 
-const TOKEN_KEY = "offerp_admin_token";
+const TOKEN_KEY = "offerp_admin_token"; // 已废弃（改用账号密码登录），保留常量避免遗漏引用
 
 const DEGREES = ["不限", "专科及以上", "本科及以上", "硕士及以上", "博士研究生"];
 const SOURCE_TYPES = ["企业官网", "企业公众号", "高校就业网", "国家24365", "社区数据", "其他"];
@@ -65,8 +66,9 @@ const empty = {
 };
 
 export default function OfferPAdmin() {
-  const [token, setToken] = useState("");
-  const [authed, setAuthed] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [sess, setSess] = useState<{ accessToken: string; email: string } | null>(null);
   const [tab, setTab] = useState<"jobs" | "subs">("jobs");
   const [form, setForm] = useState(empty);
   const [rows, setRows] = useState<Row[]>([]);
@@ -80,20 +82,43 @@ export default function OfferPAdmin() {
   const [subLoading, setSubLoading] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
+  // 初始化：恢复已有登录 session 并校验管理员身份
   useEffect(() => {
-    const t = localStorage.getItem(TOKEN_KEY);
-    if (t) {
-      setToken(t);
-      setAuthed(true);
-      loadRows(t);
-      loadSubs(t, "pending");
-    }
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const t = data.session?.access_token;
+      if (!t) return;
+      const ok = await verifyAdmin(t);
+      if (ok) {
+        loadRows();
+        loadSubs("pending");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadRows(t: string) {
+  async function verifyAdmin(t: string): Promise<boolean> {
+    try {
+      const r = await fetch("/api/offerp/verify", {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!r.ok) return false;
+      const j = await r.json();
+      if (j.ok) {
+        setSess({ accessToken: t, email: j.email });
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  async function loadRows() {
+    if (!sess) return;
     try {
       const r = await fetch("/api/offerp/jobs", {
-        headers: { "x-admin-token": t },
+        headers: { Authorization: `Bearer ${sess.accessToken}` },
       });
       if (r.ok) setRows(await r.json());
     } catch {
@@ -101,11 +126,12 @@ export default function OfferPAdmin() {
     }
   }
 
-  async function loadSubs(t: string, status: string) {
+  async function loadSubs(status: string) {
+    if (!sess) return;
     setSubLoading(true);
     try {
       const r = await fetch(`/api/offerp/submissions?status=${status}`, {
-        headers: { "x-admin-token": t },
+        headers: { Authorization: `Bearer ${sess.accessToken}` },
       });
       if (r.ok) {
         const j = await r.json();
@@ -119,17 +145,18 @@ export default function OfferPAdmin() {
   }
 
   async function decideSub(id: string, action: "approve" | "reject") {
+    if (!sess) return;
     setSubMsg(null);
     try {
       const r = await fetch("/api/offerp/submissions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-token": token },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sess.accessToken}` },
         body: JSON.stringify({ action, id }),
       });
       const j = await r.json();
       if (r.ok) {
         setSubMsg({ ok: true, text: action === "approve" ? "已通过并上架" : "已驳回" });
-        loadSubs(token, subFilter);
+        loadSubs(subFilter);
       } else {
         setSubMsg({ ok: false, text: j.error || "操作失败" });
       }
@@ -139,18 +166,34 @@ export default function OfferPAdmin() {
   }
 
   async function doLogin() {
-    const r = await fetch("/api/offerp/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
-    if (r.ok) {
-      localStorage.setItem(TOKEN_KEY, token);
-      setAuthed(true);
+    setMsg(null);
+    if (!email.trim() || !password) {
+      setMsg({ ok: false, text: "请输入邮箱和密码" });
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) {
+        setMsg({ ok: false, text: "登录失败：" + (error.message || "账号或密码错误") });
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
+      const t = data.session?.access_token;
+      if (!t) {
+        setMsg({ ok: false, text: "登录态获取失败，请重试" });
+        return;
+      }
+      const ok = await verifyAdmin(t);
+      if (!ok) {
+        await supabase.auth.signOut();
+        setMsg({ ok: false, text: "该账号不是管理员，无权限进入后台" });
+        return;
+      }
       setMsg({ ok: true, text: "欢迎回来" });
-      loadRows(token);
-    } else {
-      setMsg({ ok: false, text: "口令错误" });
+      loadRows();
+      loadSubs("pending");
+    } catch {
+      setMsg({ ok: false, text: "网络错误" });
     }
   }
 
@@ -159,6 +202,7 @@ export default function OfferPAdmin() {
   }
 
   async function submit() {
+    if (!sess) return;
     setMsg(null);
     setLoading(true);
     try {
@@ -166,7 +210,7 @@ export default function OfferPAdmin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-token": token,
+          Authorization: `Bearer ${sess.accessToken}`,
         },
         body: JSON.stringify(form),
       });
@@ -174,7 +218,7 @@ export default function OfferPAdmin() {
       if (r.ok) {
         setMsg({ ok: true, text: `已保存：${form.company_name} · ${form.title}` });
         setForm(empty);
-        loadRows(token);
+        loadRows();
       } else {
         setMsg({ ok: false, text: j.error || "保存失败" });
       }
@@ -186,10 +230,11 @@ export default function OfferPAdmin() {
   }
 
   async function del(id: string) {
+    if (!sess) return;
     if (!confirm("确认删除该岗位？")) return;
     const r = await fetch(`/api/offerp/jobs?id=${id}`, {
       method: "DELETE",
-      headers: { "x-admin-token": token },
+      headers: { Authorization: `Bearer ${sess.accessToken}` },
     });
     if (r.ok) {
       setRows((rs) => rs.filter((x) => x.id !== id));
@@ -211,24 +256,31 @@ export default function OfferPAdmin() {
     return bySrc;
   }, [rows]);
 
-  if (!authed) {
+  if (!sess) {
     return (
       <div style={wrap}>
         <div style={{ maxWidth: 360, width: "100%" }}>
           <div style={title}>Offer派 · 数据管理</div>
           <div style={{ margin: "8px 0 20px", color: "#8a8f98", fontSize: 13 }}>
-            输入管理口令后录入岗位
+            使用管理员账号登录后进入后台
           </div>
           <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && doLogin()}
-            placeholder="管理口令"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="管理员邮箱"
             style={input}
           />
-          <button onClick={doLogin} style={btnPrimary}>
-            进入
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && doLogin()}
+            placeholder="密码"
+            style={{ ...input, marginTop: 10 }}
+          />
+          <button onClick={doLogin} style={{ ...btnPrimary, marginTop: 14 }}>
+            登录
           </button>
           {msg && <Msg m={msg} />}
         </div>
@@ -244,12 +296,13 @@ export default function OfferPAdmin() {
             <div style={title}>Offer派 · 数据管理</div>
             <div style={{ color: "#8a8f98", fontSize: 13, marginTop: 2 }}>
               {tab === "jobs" ? "手动录入岗位，提交即上架（来源显示「手动录入」）" : "审核用户投稿，通过后上架到网站（来源显示「用户投稿」）"}
+              <span style={{ marginLeft: 8, color: "#67e8f9" }}>{sess.email}</span>
             </div>
           </div>
           <button
-            onClick={() => {
-              localStorage.removeItem(TOKEN_KEY);
-              setAuthed(false);
+            onClick={async () => {
+              await supabase.auth.signOut();
+              setSess(null);
             }}
             style={btnGhost}
           >
@@ -266,7 +319,7 @@ export default function OfferPAdmin() {
             岗位管理
           </button>
           <button
-            onClick={() => { setTab("subs"); loadSubs(token, subFilter); }}
+            onClick={() => { setTab("subs"); loadSubs(subFilter); }}
             style={tab === "subs" ? tabOn : tabOff}
           >
             用户投稿{pendingCount > 0 ? ` (${pendingCount})` : ""}
@@ -401,7 +454,7 @@ export default function OfferPAdmin() {
               {(["pending", "published", "rejected", "private"] as const).map((s) => (
                 <button
                   key={s}
-                  onClick={() => { setSubFilter(s); loadSubs(token, s); }}
+                  onClick={() => { setSubFilter(s); loadSubs(s); }}
                   style={subFilter === s ? filtOn : filtOff}
                 >
                   {s === "pending" ? "待审核" : s === "published" ? "已上架" : s === "rejected" ? "被驳回" : "仅私有"}

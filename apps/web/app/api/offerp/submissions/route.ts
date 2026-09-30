@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { getAdminUser } from "@/lib/admin-auth";
 
 const URL = process.env.SUPABASE_URL!;
 const KEY = process.env.SUPABASE_SERVICE_KEY!;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 
 const HEADERS = {
   apikey: KEY,
@@ -12,7 +12,7 @@ const HEADERS = {
 };
 
 function authed(req: NextRequest): boolean {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
+  return false; // 不再使用口令；下方改为 session 校验
 }
 
 async function rest(path: string, init?: RequestInit): Promise<Response> {
@@ -64,7 +64,7 @@ async function emailOf(userId: string): Promise<string> {
 
 // GET /api/offerp/submissions → 待审核投稿列表（含已处理，便于核对）
 export async function GET(req: NextRequest) {
-  if (!authed(req)) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await getAdminUser(req))) return NextResponse.json({ error: "未授权" }, { status: 401 });
   const status = req.nextUrl.searchParams.get("status") || "pending";
   const res = await rest(
     `user_custom_jobs?submit_status=eq.${status}&order=created_at.desc&limit=200`
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/offerp/submissions  { action: "approve" | "reject", id }
 export async function POST(req: NextRequest) {
-  if (!authed(req)) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await getAdminUser(req))) return NextResponse.json({ error: "未授权" }, { status: 401 });
   let body: { action?: string; id?: string };
   try {
     body = await req.json();
