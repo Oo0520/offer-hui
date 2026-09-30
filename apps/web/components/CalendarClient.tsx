@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { JobView } from "@/lib/jobs";
 import { dimOptions, cityOptions, industryOptions, companyTypeOptions } from "@/lib/jobs";
 import CityFilterPanel from "./CityFilterPanel";
@@ -45,16 +45,60 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
   });
   const [saving, setSaving] = useState(false);
 
+  // ---- 待投看板（与首页/求职看板共用 user_jobs pending）----
+  const [boards, setBoards] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2200);
+  }
+
   const cityOpts = useMemo(() => cityOptions(jobs), [jobs]);
   const industryOpts = useMemo(() => industryOptions(jobs), [jobs]);
   const companyTypeOpts = useMemo(() => companyTypeOptions(jobs), [jobs]);
   const cohortOpts = useMemo(() => dimOptions(jobs, "cohort"), [jobs]);
 
   useEffect(() => {
+    // 先读 localStorage（未登录也可用，登录后自动上传）
+    let localBoards: Record<string, string> = {};
+    try {
+      localBoards = JSON.parse(localStorage.getItem("offer_board") || "{}");
+    } catch {}
+    setBoards(localBoards);
+
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user || null;
       setUser(u);
       if (u) {
+        // 上传本地未同步的待投 → 数据库
+        supabase
+          .from("user_jobs")
+          .select("job_id, status")
+          .eq("user_id", u.id)
+          .then(async ({ data: existing }) => {
+            const ex = new Set((existing || []).map((r) => r.job_id + "_" + r.status));
+            for (const jobId of Object.keys(localBoards)) {
+              if (!ex.has(jobId + "_pending")) {
+                await supabase.from("user_jobs").upsert(
+                  { user_id: u.id, job_id: jobId, status: "pending" },
+                  { onConflict: "user_id,job_id,status" }
+                );
+              }
+            }
+            // 读库合并（本地优先，避免未上传数据丢失）
+            supabase
+              .from("user_jobs")
+              .select("job_id, status")
+              .eq("user_id", u.id)
+              .then(({ data: rows }) => {
+                if (!rows) return;
+                const b: Record<string, string> = { ...localBoards };
+                for (const r of rows) if (r.status === "pending") b[r.job_id] = "待投";
+                setBoards(b);
+              });
+          });
         supabase.auth.getSession().then(async ({ data: s2 }) => {
           const t = s2.session?.access_token;
           if (!t) return;
@@ -112,6 +156,31 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  // 加入/移出待投看板：未登录存本地 localStorage，登录后同步 user_jobs（与首页一致）
+  async function toggleBoard(e: React.MouseEvent, jobId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const had = !!boards[jobId];
+    const next = { ...boards };
+    if (had) delete next[jobId];
+    else next[jobId] = "待投";
+    setBoards(next);
+    showToast(had ? "已从看板移除" : "已加入待投看板");
+    localStorage.setItem("offer_board", JSON.stringify(next));
+    const { data } = await supabase.auth.getSession();
+    const uid = data.session?.user?.id;
+    if (uid) {
+      if (had) {
+        await supabase.from("user_jobs").delete().eq("user_id", uid).eq("job_id", jobId).eq("status", "pending");
+      } else {
+        await supabase.from("user_jobs").upsert(
+          { user_id: uid, job_id: jobId, status: "pending" },
+          { onConflict: "user_id,job_id,status" }
+        );
+      }
+    }
   }
 
   function copyUrl() {
@@ -388,34 +457,40 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
               </div>
             ) : (
               selJobs.map((j) => (
-                <a
-                  key={j.id}
-                  className="dl-item"
-                  href={j.applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="ic" style={{ background: j.bg }}>
-                    {j.lg}
-                  </span>
-                  <div>
-                    <div className="tt">{j.title}</div>
-                    <div className="cp">
-                      {j.company} · {j.city} · {j.jobType} · {j.cohort || "届别未标注"}
+                <div key={j.id} className="dl-item">
+                  <a className="dl-main" href={j.applyUrl} target="_blank" rel="noopener noreferrer">
+                    <span className="ic" style={{ background: j.bg }}>
+                      {j.lg}
+                    </span>
+                    <div>
+                      <div className="tt">{j.title}</div>
+                      <div className="cp">
+                        {j.company} · {j.city} · {j.jobType} · {j.cohort || "届别未标注"}
+                      </div>
                     </div>
+                  </a>
+                  <div className="dl-ops">
+                    <button
+                      className={"dl-board" + (boards[j.id] ? " on" : "")}
+                      onClick={(e) => toggleBoard(e, j.id)}
+                    >
+                      {boards[j.id] ? "已加入" : "加入待投"}
+                    </button>
+                    <a className="go" href={j.applyUrl} target="_blank" rel="noopener noreferrer">
+                      官方投递
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                        <path d="M7 17 17 7M9 7h8v8" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </a>
                   </div>
-                  <span className="go">
-                    官方投递
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                      <path d="M7 17 17 7M9 7h8v8" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </a>
+                </div>
               ))
             )}
           </div>
         </div>
       </div>
+
+      {toast && <div className="toast show">{toast}</div>}
     </div>
   );
 }

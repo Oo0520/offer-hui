@@ -80,6 +80,7 @@ export const SOURCE_NAME: Record<string, string> = {
   campus2027: "Campus2027社区",
   open_jobs: "open-jobs数据",
   wechat: "企业公众号",
+  user_submit: "用户投稿",
 };
 
 const GRADS = [

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { INDUSTRY_LIST } from "@/lib/industryList";
 
 type Row = {
   id: string;
@@ -20,25 +21,30 @@ type Row = {
   companies?: { name?: string } | null;
 };
 
+type SubRow = {
+  id: string;
+  user_id: string;
+  email: string;
+  company: string;
+  title: string;
+  company_type: string | null;
+  recruit_type: string | null;
+  cohort: string | null;
+  city: string | null;
+  deadline_at: string | null;
+  apply_url: string;
+  note: string | null;
+  stage: string;
+  submit_status: string;
+  published_job_id: string | null;
+  industry: string | null;
+  degree: string | null;
+  created_at: string;
+};
+
 const TOKEN_KEY = "offerp_admin_token";
 
 const DEGREES = ["不限", "专科及以上", "本科及以上", "硕士及以上", "博士研究生"];
-const INDUSTRIES = [
-  "互联网",
-  "软件/信息技术",
-  "芯片/半导体",
-  "人工智能",
-  "汽车/新能源",
-  "工程建设",
-  "银行/金融",
-  "能源/电力",
-  "制造/工业",
-  "快消/零售",
-  "教育/科研",
-  "医疗/生物",
-  "传媒/文化",
-  "其他",
-];
 const SOURCE_TYPES = ["企业官网", "企业公众号", "高校就业网", "国家24365", "社区数据", "其他"];
 
 const empty = {
@@ -49,7 +55,7 @@ const empty = {
   cohort: "2027届",
   city: "",
   location: "",
-  industry: "互联网",
+  industry: "互联网/AI/IT",
   deadline_at: "",
   apply_url: "",
   source_url: "",
@@ -61,10 +67,18 @@ const empty = {
 export default function OfferPAdmin() {
   const [token, setToken] = useState("");
   const [authed, setAuthed] = useState(false);
+  const [tab, setTab] = useState<"jobs" | "subs">("jobs");
   const [form, setForm] = useState(empty);
   const [rows, setRows] = useState<Row[]>([]);
+  const [subs, setSubs] = useState<SubRow[]>([]);
+  const [subFilter, setSubFilter] = useState("pending");
+  const [subRecruit, setSubRecruit] = useState("");
+  const [subCohort, setSubCohort] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [subMsg, setSubMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [subLoading, setSubLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     const t = localStorage.getItem(TOKEN_KEY);
@@ -72,6 +86,7 @@ export default function OfferPAdmin() {
       setToken(t);
       setAuthed(true);
       loadRows(t);
+      loadSubs(t, "pending");
     }
   }, []);
 
@@ -83,6 +98,43 @@ export default function OfferPAdmin() {
       if (r.ok) setRows(await r.json());
     } catch {
       /* ignore */
+    }
+  }
+
+  async function loadSubs(t: string, status: string) {
+    setSubLoading(true);
+    try {
+      const r = await fetch(`/api/offerp/submissions?status=${status}`, {
+        headers: { "x-admin-token": t },
+      });
+      if (r.ok) {
+        const j = await r.json();
+        setSubs(j);
+        if (status === "pending") setPendingCount(j.length);
+      }
+    } catch {
+      /* ignore */
+    }
+    setSubLoading(false);
+  }
+
+  async function decideSub(id: string, action: "approve" | "reject") {
+    setSubMsg(null);
+    try {
+      const r = await fetch("/api/offerp/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-token": token },
+        body: JSON.stringify({ action, id }),
+      });
+      const j = await r.json();
+      if (r.ok) {
+        setSubMsg({ ok: true, text: action === "approve" ? "已通过并上架" : "已驳回" });
+        loadSubs(token, subFilter);
+      } else {
+        setSubMsg({ ok: false, text: j.error || "操作失败" });
+      }
+    } catch {
+      setSubMsg({ ok: false, text: "网络错误" });
     }
   }
 
@@ -191,7 +243,7 @@ export default function OfferPAdmin() {
           <div>
             <div style={title}>Offer派 · 数据管理</div>
             <div style={{ color: "#8a8f98", fontSize: 13, marginTop: 2 }}>
-              手动录入岗位，提交即上架（来源显示"手动录入"）
+              {tab === "jobs" ? "手动录入岗位，提交即上架（来源显示「手动录入」）" : "审核用户投稿，通过后上架到网站（来源显示「用户投稿」）"}
             </div>
           </div>
           <button
@@ -205,6 +257,24 @@ export default function OfferPAdmin() {
           </button>
         </div>
 
+        {/* Tab 切换 */}
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+          <button
+            onClick={() => setTab("jobs")}
+            style={tab === "jobs" ? tabOn : tabOff}
+          >
+            岗位管理
+          </button>
+          <button
+            onClick={() => { setTab("subs"); loadSubs(token, subFilter); }}
+            style={tab === "subs" ? tabOn : tabOff}
+          >
+            用户投稿{pendingCount > 0 ? ` (${pendingCount})` : ""}
+          </button>
+        </div>
+
+        {tab === "jobs" ? (
+          <>
         {msg && <Msg m={msg} />}
 
         {/* 录入表单 */}
@@ -236,7 +306,7 @@ export default function OfferPAdmin() {
             </Label>
             <Label t="行业">
               <select style={input} value={form.industry} onChange={(e) => set("industry", e.target.value)}>
-                {INDUSTRIES.map((d) => (
+                {INDUSTRY_LIST.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
@@ -319,6 +389,83 @@ export default function OfferPAdmin() {
             </div>
           )}
         </div>
+          </>
+        ) : (
+          <>
+        {subMsg && <Msg m={subMsg} />}
+        {/* 用户投稿审核 */}
+        <div style={card}>
+          <div style={cardTitle}>
+            用户投稿审核
+            <span style={{ marginLeft: 10, display: "flex", gap: 6 }}>
+              {(["pending", "published", "rejected", "private"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setSubFilter(s); loadSubs(token, s); }}
+                  style={subFilter === s ? filtOn : filtOff}
+                >
+                  {s === "pending" ? "待审核" : s === "published" ? "已上架" : s === "rejected" ? "被驳回" : "仅私有"}
+                </button>
+              ))}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <select value={subRecruit} onChange={(e) => setSubRecruit(e.target.value)} style={subSelect}>
+              <option value="">招聘类型：全部</option>
+              {["实习", "秋招", "春招", "校招"].map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <select value={subCohort} onChange={(e) => setSubCohort(e.target.value)} style={subSelect}>
+              <option value="">届别：全部</option>
+              {["2027届", "2028届", "2026届", "不限"].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <span style={{ color: "#8a8f98", fontSize: 12 }}>
+              {subs.filter((s) => (!subRecruit || s.recruit_type === subRecruit) && (!subCohort || s.cohort === subCohort)).length}
+              {" / "}{subs.length} 条
+            </span>
+          </div>
+          {subLoading ? (
+            <div style={{ color: "#8a8f98", fontSize: 13, padding: "12px 0" }}>加载中…</div>
+          ) : subs.length === 0 ? (
+            <div style={{ color: "#8a8f98", fontSize: 13, padding: "12px 0" }}>当前没有投稿</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {subs.filter((s) => (!subRecruit || s.recruit_type === subRecruit) && (!subCohort || s.cohort === subCohort)).map((s) => (
+                <div key={s.id} style={rowCard}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>
+                      {s.company} · {s.title}
+                      <span style={{ marginLeft: 8, fontWeight: 500, color: "#ca0013", fontSize: 12 }}>
+                        {s.recruit_type || "校招"}
+                      </span>
+                    </div>
+                    <div style={{ color: "#8a8f98", fontSize: 12, marginTop: 3, wordBreak: "break-all" }}>
+                      {s.email} · {s.company_type || "未填类型"} · {s.cohort || "未填届别"} · {s.city || "全国"}
+                    </div>
+                    <div style={{ color: "#8a8f98", fontSize: 12, marginTop: 2, wordBreak: "break-all" }}>
+                      {s.industry || "未分类"} · {s.degree || "学历不限"}
+                      {s.deadline_at ? ` · 截止 ${s.deadline_at}` : " · 招满为止"}
+                    </div>
+                    {s.note && <div style={{ color: "#b7c6c2", fontSize: 12, marginTop: 2 }}>备注：{s.note}</div>}
+                    <div style={{ color: "#6b7280", fontSize: 11, marginTop: 2 }}>
+                      {s.submit_status === "published" ? `已上架 job:${s.published_job_id || ""}` : ""}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                    <a href={s.apply_url} target="_blank" rel="noreferrer" style={linkBtn}>投递页</a>
+                    {s.submit_status === "pending" && (
+                      <>
+                        <button onClick={() => decideSub(s.id, "approve")} style={approveBtn}>通过上架</button>
+                        <button onClick={() => decideSub(s.id, "reject")} style={delBtn}>驳回</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -431,4 +578,62 @@ const delBtn: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
   padding: 0,
+};
+const approveBtn: React.CSSProperties = {
+  fontSize: 12,
+  color: "#34d399",
+  background: "rgba(16,185,129,.12)",
+  border: "1px solid rgba(16,185,129,.35)",
+  borderRadius: 8,
+  cursor: "pointer",
+  padding: "4px 10px",
+};
+const tabOn: React.CSSProperties = {
+  padding: "8px 18px",
+  borderRadius: 999,
+  border: "none",
+  background: "#ca0013",
+  color: "#fff",
+  fontSize: 13,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+const tabOff: React.CSSProperties = {
+  padding: "8px 18px",
+  borderRadius: 999,
+  border: "1px solid rgba(183,198,194,.3)",
+  background: "transparent",
+  color: "#b7c6c2",
+  fontSize: 13,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+const filtOn: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 800,
+  padding: "3px 10px",
+  borderRadius: 999,
+  border: "none",
+  background: "rgba(6,182,212,.25)",
+  color: "#67e8f9",
+  cursor: "pointer",
+};
+const filtOff: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 800,
+  padding: "3px 10px",
+  borderRadius: 999,
+  border: "1px solid rgba(183,198,194,.25)",
+  background: "transparent",
+  color: "#8a8f98",
+  cursor: "pointer",
+};
+const subSelect: React.CSSProperties = {
+  fontSize: 12,
+  padding: "5px 10px",
+  borderRadius: 8,
+  border: "1px solid rgba(183,198,194,.25)",
+  background: "rgba(255,255,255,.04)",
+  color: "#b7c6c2",
+  outline: "none",
 };
