@@ -306,10 +306,15 @@ svg{display:block}
 .daylist .dl-item{display:flex;align-items:center;gap:12px;padding:13px 6px;border-bottom:1px solid rgba(183,198,194,.1);cursor:pointer;border-radius:12px}
 .daylist .dl-item:last-child{border-bottom:none}
 .daylist .dl-item:hover{background:rgba(183,198,194,.06)}
+.daylist .dl-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-decoration:none}
 .daylist .dl-item .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title);font-weight:900;color:#fff;font-size:14px;flex:none}
 .daylist .dl-item .tt{font-weight:800;font-size:13px;color:var(--white)}
 .daylist .dl-item .cp{font-size:10.5px;color:rgba(183,198,194,.65)}
-.daylist .dl-item .go{margin-left:auto;font-size:10.5px;font-weight:800;color:#c4b5fd;white-space:nowrap}
+.daylist .dl-ops{display:flex;align-items:center;gap:8px;flex:none}
+.daylist .dl-board{border:1px solid rgba(6,182,212,.4);background:rgba(6,182,212,.1);color:#67e8f9;border-radius:9999px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .18s}
+.daylist .dl-board:hover{background:rgba(6,182,212,.22)}
+.daylist .dl-board.on{background:rgba(6,182,212,.25);border-color:rgba(6,182,212,.7)}
+.daylist .dl-item .go{margin-left:0;font-size:10.5px;font-weight:800;color:#c4b5fd;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;text-decoration:none}
 
 /* ===== 求职看板 ===== */
 .board-stats{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
@@ -590,8 +595,10 @@ svg{display:block}
   .page-hero .orbital-actions .orbital{width:100%}
   .page-hero .orbital-actions .orbital .inner{justify-content:center;width:100%}
   .cal-card{padding:18px;border-radius:28px}
-  .cal-grid-big .cd .day{min-height:48px}
-  .cal-grid-big .cd .day .ct{display:none}
+  .cal-grid-big .cd .day{min-height:54px}
+  .cal-grid-big .cd .day .ct{font-size:8px;margin-top:3px}
+  .daylist .dl-item{flex-wrap:wrap;gap:8px}
+  .daylist .dl-ops{width:100%;justify-content:flex-end;padding-left:50px}
   .tool-grid{grid-template-columns:1fr}
   .post-card{padding:14px 16px;border-radius:20px}
   .board-stats .st{min-width:0;flex:1;padding:12px 14px}
