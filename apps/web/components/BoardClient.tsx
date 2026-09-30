@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 
 const STAGES = ["待投", "已投", "笔试", "面试", "已挂", "Offer"] as const;
 type Stage = (typeof STAGES)[number];
+// 统计条窄格用两字短标签，列头/下拉保持 Offer
+const STAT_LABEL: Record<Stage, string> = { "待投": "待投", "已投": "已投", "笔试": "笔试", "面试": "面试", "已挂": "已挂", "Offer": "录用" };
 const KEY = "offer_board";
 
 const STAGE_TO_STATUS: Record<string, string> = {
@@ -313,7 +315,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
       <div className="board-stats">
         {stats.map((s) => (
           <div key={s.st} className={"st glass" + (s.st === "已挂" ? " failed" : "")}>
-            <b>{s.n}</b><span>{s.st}</span>
+            <b>{s.n}</b><span>{STAT_LABEL[s.st]}</span>
           </div>
         ))}
       </div>
