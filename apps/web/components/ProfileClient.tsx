@@ -31,10 +31,6 @@ export default function ProfileClient() {
   const [cohort, setCohort] = useState("");
   const [saved, setSaved] = useState(false);
   const [sw, setSw] = useState({ email: true, push: false, ics: true });
-  // 简历
-  const [resumes, setResumes] = useState<any[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadMsg, setUploadMsg] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -60,52 +56,8 @@ export default function ProfileClient() {
           }
           setLoading(false);
         });
-      // 简历列表
-      supabase
-        .from("resumes")
-        .select("id, file_name, status, version, created_at")
-        .eq("user_id", u.id)
-        .order("created_at", { ascending: false })
-        .then(({ data: r }) => setResumes(r || []));
     });
   }, [router]);
-
-  async function uploadResume(file: File) {
-    if (!user) return;
-    setUploading(true);
-    setUploadMsg("");
-    try {
-      const path = `${user.id}/${Date.now()}-${file.name.replace(/[^\w.\-\u4e00-\u9fa5]/g, "_")}`;
-      const { error: upErr } = await supabase.storage
-        .from("resumes")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (upErr) {
-        setUploadMsg("上传失败：" + upErr.message);
-        return;
-      }
-      const { data: row, error: insErr } = await supabase
-        .from("resumes")
-        .insert({
-          user_id: user.id,
-          file_name: file.name,
-          storage_path: path,
-          status: "parsing",
-          version: (resumes[0]?.version || 0) + 1,
-        })
-        .select("id, file_name, status, version, created_at")
-        .single();
-      if (insErr) {
-        setUploadMsg("记录失败：" + insErr.message);
-        return;
-      }
-      setResumes((prev) => [row, ...prev]);
-      setUploadMsg("✓ 上传成功，状态解析中");
-    } catch (e) {
-      setUploadMsg("上传异常：" + (e as Error).message);
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function saveProfile() {
     if (!user) return;
@@ -205,103 +157,6 @@ export default function ProfileClient() {
                 <div className="ts">悬赏内推码 · 面经</div>
               </div>
             </Link>
-          </div>
-        </div>
-
-        {/* 简历管理 */}
-        <div className="profile-card glass" style={{ gridColumn: "1/-1" }}>
-          <h4>
-            <span className="gicon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" />
-                <path d="M14 3v5h5M9 13h6M9 17h6" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </span>
-            我的简历
-          </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                padding: "14px",
-                border: "1px dashed rgba(183,198,194,.4)",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontSize: 13,
-                color: "rgba(238,235,227,.85)",
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M12 5v14M5 12h14" stroke="#8b5cf6" strokeWidth="2.4" strokeLinecap="round" />
-              </svg>
-              {uploading ? "上传中…" : "上传简历（PDF / Word，≤5MB）"}
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                style={{ display: "none" }}
-                disabled={uploading}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) uploadResume(f);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            {uploadMsg && (
-              <p style={{ fontSize: 12, color: uploadMsg.startsWith("✓") ? "#4ade80" : "#fda4af" }}>{uploadMsg}</p>
-            )}
-            {resumes.length === 0 ? (
-              <p style={{ fontSize: 12, color: "rgba(183,198,194,.6)" }}>
-                还没有简历。上传后可用于 AI 匹配与投递记录。
-              </p>
-            ) : (
-              resumes.map((r) => (
-                <div
-                  key={r.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 12px",
-                    background: "rgba(255,255,255,.04)",
-                    border: "1px solid rgba(255,255,255,.08)",
-                    borderRadius: 10,
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 13, color: "#eeebe3", fontWeight: 600 }}>{r.file_name}</div>
-                    <div style={{ fontSize: 11, color: "rgba(183,198,194,.55)", marginTop: 2 }}>
-                      v{r.version} · {r.created_at?.slice(0, 10)}
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "3px 10px",
-                      borderRadius: 999,
-                      background:
-                        r.status === "ready"
-                          ? "rgba(22,163,74,.15)"
-                          : r.status === "failed"
-                          ? "rgba(202,0,19,.15)"
-                          : "rgba(250,204,21,.12)",
-                      color:
-                        r.status === "ready"
-                          ? "#4ade80"
-                          : r.status === "failed"
-                          ? "#fda4af"
-                          : "#facc15",
-                    }}
-                  >
-                    {r.status === "ready" ? "解析完成" : r.status === "failed" ? "解析失败" : "解析中"}
-                  </span>
-                </div>
-              ))
-            )}
           </div>
         </div>
 
