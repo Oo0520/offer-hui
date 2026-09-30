@@ -72,6 +72,13 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
+  // 每次打开定位到「已选日期所在月」；未选则定位「今天所在月」
+  const openPicker = () => {
+    const base = value ? new Date(value + "T00:00:00") : new Date();
+    if (!isNaN(base.getTime())) { setViewY(base.getFullYear()); setViewM(base.getMonth()); }
+    setOpen(true);
+  };
+
   const firstDow = new Date(viewY, viewM, 1).getDay();
   const daysInMonth = new Date(viewY, viewM + 1, 0).getDate();
   const cells: (number | null)[] = [];
@@ -84,7 +91,7 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
 
   return (
     <div className="cal" ref={ref}>
-      <div className="cal-head" onClick={() => setOpen((o) => !o)}>
+      <div className="cal-head" onClick={open ? () => setOpen(false) : openPicker}>
         <span className={value ? "" : "ph"}>{value || "招满为止"}</span>
         <span className="fancy-caret">▾</span>
       </div>
