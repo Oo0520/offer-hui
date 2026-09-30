@@ -5,7 +5,7 @@ import type { JobView } from "@/lib/jobs";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { INDUSTRY_LIST } from "@/lib/industryList";
-import { CITY_PROVINCES, PROVINCE_ORDER } from "@/lib/cityTree";
+import { CITY_PROVINCES, PROVINCE_ORDER, HOT_CITIES } from "@/lib/cityTree";
 
 const STAGES = ["待投", "已投", "笔试", "面试", "已挂", "Offer"] as const;
 type Stage = (typeof STAGES)[number];
@@ -56,6 +56,58 @@ type BoardCard =
   | { key: string; isCustom: false; job: JobView }
   | { key: string; isCustom: true; custom: CustomJob };
 
+// 自绘深色下拉（替代原生 select，对齐网站风格）
+function FancySelect({ value, onChange, options, placeholder }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const display = value || placeholder || "";
+  return (
+    <div className="fancy" ref={ref}>
+      <div className={"fancy-head" + (open ? " open" : "")} onClick={() => setOpen((o) => !o)}>
+        <span className={value ? "" : "ph"}>{display}</span>
+        <span className="fancy-caret">▾</span>
+      </div>
+      {open && (
+        <div className="fancy-menu">
+          {options.map((o) => (
+            <div
+              key={o || "__empty"}
+              className={"fancy-item" + (value === o ? " sel" : "")}
+              onClick={() => { onChange(o); setOpen(false); }}
+            >{o === "" ? (placeholder || "未分类") : o}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 城市两级：一级=全国/热门/省份（可选项），二级=对应城市列表（联动）
+const PROVINCE_OPTIONS: string[] = [
+  "全国",
+  "热门",
+  ...PROVINCE_ORDER.filter((p) => p !== "全国" && p !== "热门" && p !== "海外" && CITY_PROVINCES[p]),
+];
+function citiesOfProvince(prov: string): string[] {
+  if (prov === "全国") return ["全国"];
+  if (prov === "热门") return HOT_CITIES;
+  return CITY_PROVINCES[prov] || [];
+}
+
 function readBoard(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { return {}; }
 }
@@ -66,6 +118,7 @@ const emptyForm = {
   company_type: COMPANY_TYPES[1],
   recruit_type: RECRUIT_TYPES[3],
   cohort: COHORTS[0],
+  cityProvince: "全国",
   city: "全国",
   deadline_at: "",
   apply_url: "",
@@ -428,45 +481,43 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           </label>
           <label>
             <span>企业类型</span>
-            <select value={form.company_type} onChange={(e) => setForm({ ...form, company_type: e.target.value })}>
-              {COMPANY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <FancySelect value={form.company_type} onChange={(v) => setForm({ ...form, company_type: v })} options={COMPANY_TYPES} />
           </label>
           <label>
             <span>招聘类型</span>
-            <select value={form.recruit_type} onChange={(e) => setForm({ ...form, recruit_type: e.target.value })}>
-              {RECRUIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <FancySelect value={form.recruit_type} onChange={(v) => setForm({ ...form, recruit_type: v })} options={RECRUIT_TYPES} />
           </label>
           <label>
             <span>招聘对象</span>
-            <select value={form.cohort} onChange={(e) => setForm({ ...form, cohort: e.target.value })}>
-              {COHORTS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <FancySelect value={form.cohort} onChange={(v) => setForm({ ...form, cohort: v })} options={COHORTS} />
           </label>
           <label>
             <span>行业（未分类可不选）</span>
-            <select value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })}>
-              <option value="">未分类</option>
-              {INDUSTRY_LIST.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <FancySelect value={form.industry} onChange={(v) => setForm({ ...form, industry: v })} options={["", ...INDUSTRY_LIST]} placeholder="未分类" />
           </label>
           <label>
             <span>学历要求</span>
-            <select value={form.degree} onChange={(e) => setForm({ ...form, degree: e.target.value })}>
-              {DEGREE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <FancySelect value={form.degree} onChange={(v) => setForm({ ...form, degree: v })} options={DEGREE_OPTIONS} />
           </label>
           <label>
-            <span>工作地点</span>
-            <select value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
-              <option value="全国">全国</option>
-              {PROVINCE_ORDER.filter((p) => CITY_PROVINCES[p]).map((p) => (
-                <optgroup key={p} label={p}>
-                  {CITY_PROVINCES[p].map((c) => <option key={c} value={c}>{c}</option>)}
-                </optgroup>
-              ))}
-            </select>
+            <span>所在地区</span>
+            <FancySelect
+              value={form.cityProvince}
+              onChange={(v) => {
+                const next = { ...form, cityProvince: v };
+                next.city = v === "全国" ? "全国" : (citiesOfProvince(v)[0] || "");
+                setForm(next);
+              }}
+              options={PROVINCE_OPTIONS}
+            />
+          </label>
+          <label>
+            <span>城市</span>
+            <FancySelect
+              value={form.city}
+              onChange={(v) => setForm({ ...form, city: v })}
+              options={form.cityProvince === "全国" ? ["全国"] : citiesOfProvince(form.cityProvince)}
+            />
           </label>
           <label>
             <span>投递截止时间（空=招满为止）</span>
@@ -482,9 +533,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
           </label>
           <label>
             <span>我的进度</span>
-            <select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value as Stage })}>
-              {STAGES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <FancySelect value={form.stage} onChange={(v) => setForm({ ...form, stage: v as Stage })} options={[...STAGES]} />
           </label>
         </div>
         <label className="entry-submit">
