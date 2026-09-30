@@ -381,7 +381,8 @@ svg{display:block}
 .bd-card.dim{opacity:.62;filter:grayscale(.35)}
 .bd-card.dim .bt,.bd-card.dim .bc,.bd-card.dim .bd-row{color:rgba(183,198,194,.75)}
 .board-stats .st.failed b{color:rgba(183,198,194,.8)}
-.orbital .inner.entry{margin-left:10px;background:rgba(6,182,212,.14);border-color:rgba(6,182,212,.4)}
+.orbital-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex:none}
+.orbital-actions .orbital .inner{white-space:nowrap}
 
 /* ===== AI匹配 ===== */
 .match-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;margin-top:22px;align-items:start}
@@ -558,8 +559,9 @@ svg{display:block}
   .main{margin-top:16px}
   .page-hero{padding:26px 22px;border-radius:28px;flex-direction:column;align-items:flex-start}
   .page-hero h1{font-size:24px}
-  .page-hero .orbital{width:100%;flex:none}
-  .page-hero .orbital .inner{justify-content:center;width:100%}
+  .page-hero .orbital-actions{width:100%;flex-direction:column;align-items:stretch;flex:none}
+  .page-hero .orbital-actions .orbital{width:100%}
+  .page-hero .orbital-actions .orbital .inner{justify-content:center;width:100%}
   .cal-card{padding:18px;border-radius:28px}
   .cal-grid-big .cd .day{min-height:48px}
   .cal-grid-big .cd .day .ct{display:none}

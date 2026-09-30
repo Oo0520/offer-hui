@@ -277,19 +277,23 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             <span>登录后自动云端同步</span>
           </div>
         </div>
-        <div className="orbital">
-          <button className="inner" onClick={() => router.push("/")}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
-            从首页添加岗位
-          </button>
-          <button className="inner entry" onClick={() => setShowEntry(true)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
-            ＋手动录入
-          </button>
+        <div className="orbital-actions">
+          <div className="orbital">
+            <button className="inner" onClick={() => router.push("/")}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+              </svg>
+              从首页添加岗位
+            </button>
+          </div>
+          <div className="orbital">
+            <button className="inner entry" onClick={() => setShowEntry(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+              </svg>
+              ＋手动录入
+            </button>
+          </div>
         </div>
       </div>
 
