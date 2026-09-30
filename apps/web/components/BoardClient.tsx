@@ -72,10 +72,11 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  // 每次打开定位到「已选日期所在月」；未选则定位「今天所在月」
+  // 每次打开固定定位到「今天所在月」
   const openPicker = () => {
-    const base = value ? new Date(value + "T00:00:00") : new Date();
-    if (!isNaN(base.getTime())) { setViewY(base.getFullYear()); setViewM(base.getMonth()); }
+    const t = new Date();
+    setViewY(t.getFullYear());
+    setViewM(t.getMonth());
     setOpen(true);
   };
 
