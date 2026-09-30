@@ -416,7 +416,7 @@ export default function OfferPAdmin() {
             </select>
             <select value={subCohort} onChange={(e) => setSubCohort(e.target.value)} style={subSelect}>
               <option value="">届别：全部</option>
-              {["2027届", "2026届", "2025届", "不限"].map((c) => <option key={c} value={c}>{c}</option>)}
+              {["2027届", "2028届", "2026届", "不限"].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <span style={{ color: "#8a8f98", fontSize: 12 }}>
               {subs.filter((s) => (!subRecruit || s.recruit_type === subRecruit) && (!subCohort || s.cohort === subCohort)).length}

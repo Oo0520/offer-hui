@@ -114,8 +114,11 @@ export async function POST(req: NextRequest) {
   if (!cRes.ok) return NextResponse.json({ error: `公司写入失败 ${cRes.status}` }, { status: 502 });
   const companyId = (await cRes.json() as { id: string }[])[0].id;
 
-  // 2) 招聘类型 → job_type（实习=intern，其余=校招 campus）
-  const jobType = row.recruit_type === "实习" ? "intern" : "campus";
+  // 2) 招聘类型 → job_type（与首页分类一致：校招/实习/宣讲会/招聘会）
+  const jobType = row.recruit_type === "实习" ? "intern"
+    : row.recruit_type === "宣讲会" ? "teachin"
+    : row.recruit_type === "招聘会" ? "fair"
+    : "campus";
   const tags: string[] = ["来源:用户投稿"];
   if (row.company_type) tags.push(row.company_type);
   if (row.recruit_type) tags.push(row.recruit_type);

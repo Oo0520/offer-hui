@@ -22,8 +22,8 @@ const STATUS_TO_STAGE: Record<string, string> = Object.fromEntries(
 );
 
 const COMPANY_TYPES = ["外企/合资", "国企/央企", "民企/私企", "上市公司/500强"];
-const RECRUIT_TYPES = ["实习", "秋招", "春招", "校招"];
-const COHORTS = ["2027届", "2026届", "2025届", "不限"];
+const RECRUIT_TYPES = ["校招", "实习", "宣讲会", "招聘会"];
+const COHORTS = ["2027届", "2028届", "2026届", "不限"];
 const DEGREE_OPTIONS = ["不限", "专科", "本科", "硕士", "博士"];
 
 const SUBMIT_LABEL: Record<string, string> = {
@@ -116,10 +116,13 @@ const emptyForm = {
   company: "",
   title: "",
   company_type: COMPANY_TYPES[1],
-  recruit_type: RECRUIT_TYPES[3],
+  recruit_type: "校招",
   cohort: COHORTS[0],
   cityProvince: "全国",
   city: "全国",
+  deadlineY: "",
+  deadlineM: "",
+  deadlineD: "",
   deadline_at: "",
   apply_url: "",
   note: "",
@@ -128,6 +131,14 @@ const emptyForm = {
   industry: "",
   degree: "不限",
 };
+
+// 截止时间三段（年/月/日），全空 = 招满为止
+const YEAR_OPTIONS = ["", "2026", "2027", "2028", "2029"];
+const MONTH_OPTIONS = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+const DAY_OPTIONS = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"];
+function combineDeadline(y: string, m: string, d: string): string {
+  return y && m && d ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : "";
+}
 
 export default function BoardClient({ jobs }: { jobs: JobView[] }) {
   const router = useRouter();
@@ -277,7 +288,7 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
         recruit_type: form.recruit_type,
         cohort: form.cohort,
         city: form.city === "全国" ? "全国" : (form.city.trim() || null),
-        deadline_at: form.deadline_at || null,
+        deadline_at: combineDeadline(form.deadlineY, form.deadlineM, form.deadlineD) || null,
         apply_url: form.apply_url.trim(),
         note: form.note.trim() || null,
         industry: form.industry || null,
@@ -520,8 +531,12 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             />
           </label>
           <label>
-            <span>投递截止时间（空=招满为止）</span>
-            <input type="date" value={form.deadline_at} onChange={(e) => setForm({ ...form, deadline_at: e.target.value })} />
+            <span>投递截止时间（留空=招满为止）</span>
+            <div className="deadline-row">
+              <FancySelect value={form.deadlineY} onChange={(v) => setForm({ ...form, deadlineY: v })} options={YEAR_OPTIONS} placeholder="年" />
+              <FancySelect value={form.deadlineM} onChange={(v) => setForm({ ...form, deadlineM: v })} options={MONTH_OPTIONS} placeholder="月" />
+              <FancySelect value={form.deadlineD} onChange={(v) => setForm({ ...form, deadlineD: v })} options={DAY_OPTIONS} placeholder="日" />
+            </div>
           </label>
           <label>
             <span>投递链接 *</span>
@@ -556,7 +571,8 @@ export default function BoardClient({ jobs }: { jobs: JobView[] }) {
             <div className="guide-item"><b>拖拽卡片</b>到下方 6 列，自动改阶段（待投/已投/笔试/面试/已挂/Offer）</div>
             <div className="guide-item"><b>拖到顶部垃圾桶</b>可移除该岗位</div>
             <div className="guide-item">点卡片可手动选阶段，登录后自动云端同步</div>
-            <div className="guide-item">投的公司网站没收录？点<b>「＋手动录入」</b>自己添加</div>
+            <div className="guide-item">投的公司网站没收录？点<b>「＋手动录入」</b>自己添加，保存后立即进入看板管理</div>
+            <div className="guide-item">录入时可勾选<b>投稿到网站</b>，审核通过后在首页公开展示</div>
             <button className="guide-ok" onClick={() => { localStorage.setItem("offer_board_guide_seen", "1"); setShowGuide(false); }}>我知道了</button>
           </div>
         </div>
