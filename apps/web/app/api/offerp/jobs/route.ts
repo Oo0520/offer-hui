@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { getAdminUser } from "@/lib/admin-auth";
 
 const URL = process.env.SUPABASE_URL!;
 const KEY = process.env.SUPABASE_SERVICE_KEY!;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 
 const HEADERS = {
   apikey: KEY,
@@ -12,7 +12,7 @@ const HEADERS = {
 };
 
 function authed(req: NextRequest): boolean {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
+  return false; // 不再使用口令；下方改为 session 校验
 }
 
 // 来源类型 → 展示标签
@@ -56,7 +56,7 @@ type JobInput = {
 
 // GET /api/offerp/jobs → 手动录入岗位列表
 export async function GET(req: NextRequest) {
-  if (!authed(req)) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await getAdminUser(req))) return NextResponse.json({ error: "未授权" }, { status: 401 });
   const url = `${URL}/rest/v1/jobs?source=eq.manual&select=id,title,external_id,city,industry,job_type,degree,cohort,deadline_at,posted_at,apply_url,source_url,status,tags,description,created_at,companies(name)&order=created_at.desc&limit=100`;
   const res = await fetch(url, { headers: HEADERS });
   if (!res.ok) return NextResponse.json({ error: `查询失败 ${res.status}` }, { status: 502 });
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/offerp/jobs → 新增或更新（同公司同岗位覆盖）
 export async function POST(req: NextRequest) {
-  if (!authed(req)) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await getAdminUser(req))) return NextResponse.json({ error: "未授权" }, { status: 401 });
   let body: JobInput;
   try {
     body = await req.json();
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/offerp/jobs?id=xxx
 export async function DELETE(req: NextRequest) {
-  if (!authed(req)) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await getAdminUser(req))) return NextResponse.json({ error: "未授权" }, { status: 401 });
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "缺少 id" }, { status: 400 });
   const res = await rest(`jobs?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
