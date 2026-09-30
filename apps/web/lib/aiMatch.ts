@@ -220,7 +220,6 @@ export async function callAI(
       .replace(/^```(?:json)?\s*/i, "")
       .replace(/```\s*$/, "");
     raw = JSON.parse(cleaned);
-    // 兼容 {"results":[...]} 包裹
     if (!Array.isArray(raw) && raw && typeof raw === "object" && Array.isArray((raw as { results?: unknown }).results)) {
       raw = (raw as { results: unknown }).results;
     }
@@ -245,14 +244,7 @@ export async function callAI(
 }
 
 // 示例简历（无文件时体验用）
-export const SAMPLE_RESUME = `求职者：张同学
-届别：2027届本科
-院校专业：某理工大学 · 软件工程
-意向城市：北京 / 上海 / 深圳 / 杭州
-技能：Python / Java / React / 数据分析 / SQL
-项目经历：校园招聘信息聚合平台（全栈开发）；参与实验室数据分析项目
-实习：某互联网公司数据分析实习（2026 暑期）
-求职方向：软件开发、算法、数据研发、前端/后端工程师`;
+export const SAMPLE_RESUME = `求职者：张同学\n届别：2027届本科\n院校专业：某理工大学 · 软件工程\n意向城市：北京 / 上海 / 深圳 / 杭州\n技能：Python / Java / React / 数据分析 / SQL\n项目经历：校园招聘信息聚合平台（全栈开发）；参与实验室数据分析项目\n实习：某互联网公司数据分析实习（2026 暑期）\n求职方向：软件开发、算法、数据研发、前端/后端工程师`;
 
 export const SAMPLE_CONFIG_HINT = {
   baseUrl: "https://api.deepseek.com/v1",

@@ -88,7 +88,6 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
     setErrMsg(null);
   }
 
-  // 规则引擎结果
   function runRule() {
     const scored = ruleEngine(jobs, 6);
     setResults(scored);
@@ -113,9 +112,8 @@ export default function MatchClient({ jobs }: { jobs: JobView[] }) {
     const config = loadConfig();
     const text = name ? SAMPLE_RESUME : resumeText;
 
-    // 有配置 + 有简历文本 → AI 路径
     if (config && text) {
-      const pool = ruleEngine(jobs, 15); // 规则初筛候选池，避免全量发 LLM
+      const pool = ruleEngine(jobs, 15);
       if (pool.length) {
         try {
           const items = await callAI(config, text, pool.map((r) => r.job));
