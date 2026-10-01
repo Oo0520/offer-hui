@@ -7,4 +7,4 @@ psycopg[binary]>=3.2
 apscheduler>=3.10
 scrapling[fetchers]>=0.2
 curl_cffi>=0.7
-patchright>=1.40
+patchright>=1.63.0
