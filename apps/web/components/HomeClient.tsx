@@ -17,6 +17,7 @@ import {
   cityOptions,
   industryOptions,
   companyTypeOptions,
+  SOURCE_NAME,
 } from "@/lib/jobs";
 import { supabase } from "@/lib/supabase";
 
@@ -378,7 +379,7 @@ export default function HomeClient({
         <div className="hero-search">
           <input
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => setQ(e.value)}
             onKeyDown={(e) => e.key === "Enter" && setCurrentPage(1)}
             placeholder="搜索公司 / 岗位 / 行业"
           />
@@ -773,7 +774,7 @@ function FilterOptions({
           <path d="m5 12 4 4L19 6" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      {o.v}
+      {dim === "school" ? SOURCE_NAME[o.v] || o.v : o.v}
       <span className="n">{o.n}</span>
     </div>
   );
