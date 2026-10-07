@@ -171,8 +171,17 @@ def normalize_city(raw):
     # 9) 无法归市的区县级残值（如"新兴县""新疆若羌县"）归 None，避免无意义选项
     if cleaned.endswith(("县", "区", "旗")):
         return None
-    # 10) 兜底：返回清洗后的原值（交由人工补全；也可改为"其他"）
-    return cleaned if cleaned else None
+    # 10) 兜底：疑似整段自由文本（招聘标题/场地描述/公司名，不是城市名）→ None，
+    #     避免脏值进入城市维度（2026-10-07：曾有 403 条 >8 字脏 city，如
+    #     "线下\n…\n中国农业发展银行2027年度校园招聘宣讲"）。
+    #     标准城市名最长 4 字（石家庄/乌鲁木齐/秦皇岛/喀什/阿勒泰），设 5 字上限；
+    #     含 ASCII 字母的数字串（"未知XYZ"）一律视为非城市。
+    norm = re.sub(r"\s+", "", cleaned)
+    if not norm or len(norm) > 5:
+        return None
+    if re.search(r"[A-Za-z]", norm):
+        return None
+    return norm
 
 
 def normalize_industry(raw):

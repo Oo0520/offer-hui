@@ -36,9 +36,12 @@ offer-hui/
 ├── infra/supabase/migrations/  # SQL 迁移
 └── design-doc/
 
-# 注意：实际每日跑的爬虫脚本在仓库外：
-#   E:\AIMemory\DaoBao\crawl-fjut.py
-#   E:\AIMemory\DaoBao\crawl-fjrclh.py
+# 注意：实际每日跑的爬虫脚本仓库内为准（scripts/crawl/）：
+#   offer-hui\scripts\crawl\crawl-fjut.py
+#   offer-hui\scripts\crawl\crawl-fjrclh.py
+# 豆包定时任务执行的是仓库外本地副本，需与仓库同步（勿反向改副本）：
+#   E:\01_AI_Workspace\AIMemory\DaoBao\crawl-fjut.py
+#   E:\01_AI_Workspace\AIMemory\DaoBao\crawl-fjrclh.py
 ```
 
 **数据流**：
@@ -79,10 +82,10 @@ npm run build      # 生产构建（必须零错误）
 npm start
 
 # 爬虫（本地手动跑一次调试；线上由豆包定时任务每天 12:00 自动跑）
-# 脚本在仓库外：
-cd E:\AIMemory\DaoBao
-offer-hui\apps\worker\.venv\Scripts\python.exe crawl-fjut.py
-offer-hui\apps\worker\.venv\Scripts\python.exe crawl-fjrclh.py
+# 仓库内版本为准（scripts/crawl/），本地执行副本在仓库外需保持同步：
+cd E:\01_AI_Workspace\AIMemory\DaoBao
+offer-hui\apps\worker\.venv\Scripts\python.exe offer-hui\scripts\crawl\crawl-fjut.py
+offer-hui\apps\worker\.venv\Scripts\python.exe offer-hui\scripts\crawl\crawl-fjrclh.py
 
 # git（本地备份，时间戳格式）
 git add -A
@@ -116,16 +119,19 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 
 | source 键 | 数据源 | 抓取方式 | 文件 |
 |---|---|---|---|
-| `fjut` | 福建理工大学就业网 | Scrapling StealthyFetcher，5 板块（全职/实习/宣讲会/招聘会/招聘公告） | `E:\AIMemory\DaoBao\crawl-fjut.py`（在豆包定时任务里跑） |
-| `fjrclh` | 福州大学就业网 | httpx API + 增量 | `E:\AIMemory\DaoBao\crawl-fjrclh.py` |
+| `fjut` | 福建理工大学就业网 | Scrapling StealthyFetcher，5 板块（全职/实习/宣讲会/招聘会/招聘公告） | `scripts/crawl/crawl-fjut.py`（豆包定时任务执行仓库外副本） |
+| `fjrclh` | 福州大学就业网 | httpx API + 增量 | `scripts/crawl/crawl-fjrclh.py` |
 | `fj99` | 福建就业网 | POST + md5 签名 | `run_fj99.py` |
-| `campus2027` / `open_jobs` / `wechat` | 开源社区 / 公众号 | 历史导入 | `import_*.py` |
+| `xmu` / `jmu` | 厦门大学 / 集美大学就业网 | ⚠️ **代码不在本仓库**（2026-10-07 核查确认，见下） | 未知，需补录 |
+| `campus2027` / `open_jobs` / `wechat` / `zhaopin_h5` | 开源社区 / 公众号 / 历史导入 | 历史导入 | `import_*.py` |
 
-**数据源收口决策（2026-09-28 已确认）**：
-- 生产实际只跑 **仓库外** `E:\AIMemory\DaoBao\crawl-fjut.py` + `crawl-fjrclh.py`（豆包定时任务 12:00 调用）。仓库内 `apps/worker/crawl_fjut.py` / `crawl_fjrclh.py` / `crawl_fair.py` 为旧副本，**已删除**，勿再以仓库内副本为准。
-- **hit / pku / ncss / feishu 四个源已停用**：`apps/worker/app/sources/` 下对应文件（hit.py / pku.py / ncss.py / feishu.py）**已删除**，无代码引用；库内历史数据保留不更新。
+**数据源收口决策（2026-09-28 确认，2026-10-07 修正）**：
+- 生产实际只跑 `crawl-fjut.py` + `crawl-fjrclh.py`（豆包定时任务 12:00 调用）。**权威版本在仓库内 `scripts/crawl/`**（2026-09-30 迁仓，PR #35）；仓库外 `E:\01_AI_Workspace\AIMemory\DaoBao\` 下同名文件只是**本地执行副本，须与仓库同步，不得反向改副本**。
+- 仓库外 `apps/worker/crawl_fjut.py` / `crawl_fjrclh.py` / `crawl_fair.py` 为旧副本，已删除。
+- **hit / pku / ncss / feishu 四个源已停用**：`apps/worker/app/sources/` 下对应文件（hit.py / pku.py / ncss.py / feishu.py）已删除，无代码引用；库内历史数据保留不更新。
 - **scheduler.py 标注「备用，不启用」**：生产调度 = 豆包定时任务，不是 scheduler.py。
 - `run_fj99.py` 等仓库内脚本仅按需手动执行，不进定时任务。
+- ⚠️ **`xmu` / `jmu` 源代码不在本仓库**（2026-10-07 实测：仓库全分支、全盘脚本、git 历史均无 `jy.xmu.edu.cn` / `xsjyzd.jmu.edu.cn` 抓取代码），但库内 3109 条数据且 2026-10-06 仍在更新——存在一条未被记录的生产管线，代码位置待补。
 
 **爬虫性能基线（2026-09-29 实测，目标 4 验收）**：
 - **写入**：批量 upsert/PATCH 对比逐条，20 条同批实测 **0.88s vs 16.85s（快 19.1 倍）**，往返次数降 20 倍。
@@ -196,7 +202,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 1. **globals.css 必须 UTF-8 无 BOM**，否则 build 失败。
 2. **Vercel Node runtime 支持 unstable_cache**：岗位数据走 build 时静态打包（revalidate: false）。**不要加 force-dynamic 到静态页**。数据更新靠豆包定时任务每天 12:00 跑爬虫 upsert 到 Supabase，然后**调用 `/api/revalidate?secret=<ADMIN_TOKEN>` 按需失效缓存**（接口内部 `revalidateTag("jobs", {expire:0})` + `revalidatePath` 各静态页），300ms 内全球生效，无需重新 build。
 3. **SERVICE_KEY 绝不能加 NEXT_PUBLIC_ 前缀**，否则暴露浏览器。
-4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai（2026-09-28 用户确认），跑在本地 Windows。依赖电脑开机且豆包在线。脚本路径在 `E:\AIMemory\DaoBao\crawl-fjut.py` 和 `crawl-fjrclh.py`（不在仓库 `apps/worker/` 里，是仓库外的独立脚本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
+4. **爬虫跑在豆包本地定时任务**：任务名「Offer派每日数据抓取刷新」，cron `0 12 * * *` Asia/Shanghai（2026-09-28 用户确认），跑在本地 Windows。依赖电脑开机且豆包在线。**权威代码在仓库 `scripts/crawl/`**，定时任务执行的是仓库外副本 `E:\01_AI_Workspace\AIMemory\DaoBao\crawl-fjut.py` / `crawl-fjrclh.py`（改代码只改仓库侧，跑完手动同步副本）。跑完调用 `/api/revalidate` 失效缓存（不再 push 空 commit 触发 redeploy）。
 5. **PowerShell 中文编码**：读含中文的 .py/.md 文件用 `[System.IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)`，不要用 Get-Content 管道（默认 ANSI 会乱码）。
 6. **git commit 格式**：`[YYYY-MM-DD HH:mm] type: 描述`，方便时间轴回溯。
 7. **端口占用**：改完代码重启前先杀 3000 端口旧进程（`Get-NetTCPConnection :3000 | Stop-Process`），否则旧进程占着端口跑老代码。
@@ -205,7 +211,7 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 10. **PR 流程**：不直接 push main，走分支 + PR；用户说"合并"才合。
 11. **城市/行业标准化（2026-09-29 落地）**：
     - 标准数据在 `infra/classify/`：`pcas.json`（民政部行政区划，省→市→区三级，来源 modood/Administrative-divisions-of-China）、`industries.json`（21 类目 + 关键词映射，含英文关键词）、`city_aliases.json`（英文/脏变体→标准中文）。
-    - 归一化函数在仓库外 `E:\AIMemory\DaoBao\normalize.py`（`normalize_city` / `normalize_industry` / `normalize_company_type`），两个生产爬虫已接入（city 入库前归一化）。
+    - 归一化函数在仓库 `scripts/crawl/normalize.py`（`normalize_city` / `normalize_industry` / `normalize_company_type`），两个生产爬虫已接入（city 入库前归一化）。
     - 存量清洗结果：2620 条中 city 601 条、industry 1663 条改写；city distinct 277→156、industry 69→19。
     - **pcas.json 重庆市下有分组键"县"**，加载时必须跳过（`city_short in ("县","区","旗")`），否则单字"县"混入城市集导致脏值。
     - **同名多义区县**（鼓楼/台江/新兴等全国多个）用 `_district_name_count` 统计次数，>1 的不建区县→市索引，避免归错市（曾把福州鼓楼区归到开封）。
@@ -213,7 +219,9 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
     - jysd 详情页薪资正则已删除（页面无结构化薪资区，只会命中 base64 碎片抖动 hash）；fjrclh 是 API 结构化数据不受影响。
     - 前端 `dimOptions`（lib/jobs.ts）直接 distinct 库值，数据标准化后筛选面板自动规范，无需改前端逻辑。
     - **前端交互（2026-09-29 追加）**：城市筛选改三级联动（`components/CityFilterPanel.tsx`，数据 `lib/cityTree.ts` 由 `scripts/gen-citytree.py` 从 pcas.json 生成，全国/热门 + 省份折叠展开）；公司性质拆独立维度（jobs 表新增 company_type 列，迁移见 `infra/supabase/migrations/202609290003_company_type.sql`，`normalize_company_type()` 归一化，industries.json 已移除"外企/合资""国企/央企"类目）。订阅面板（CalendarClient）与首页共用 CityFilterPanel；subscriptions.filters 含 company_types，ICS 服务端同步过滤。
-12. **仓库外爬虫脚本（`E:\AIMemory\DaoBao\crawl-fjut.py` / `crawl-fjrclh.py`）与 `models.py` 的 hash 口径必须一致**：content_hash 用 SHA1 + `json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)`（十键 payload：title/company/city/industry/degree/salary[min,max]/salary_text/deadline/apply/tags，None 归一为 ""/[]/0，posted_at 不进 hash）。改任一侧的归一逻辑都会导致全量误判「变更」。另注意：① PostgREST 批量 upsert 用 `POST /jobs?on_conflict=source,external_id` + `Prefer: resolution=merge-duplicates`，`tags` 为 jsonb NOT NULL，Python 侧 None 必须兜底 `[]`，否则 400；② 脚本 SERVICE_KEY 已改为环境变量优先、硬编码回退，勿再加回纯硬编码；③ fjrclh 源站 WAF 拦 python 默认 UA，httpx 必须带浏览器 User-Agent；④ **fjut 详情页 HTML 解析前必须剥离 base64/渲染数据**：页面内联大量 base64（图片/统计像素/压缩 JS），其中随机出现「数字K」，且存在 <200 字符的短碎片，任何「全页搜数字K」式 salary 匹配都会命中随机值 → content_hash 抖动。jysd 页面**根本没有结构化薪资区**，fjut 源 salary_text 恒 None（2026-09-28 诊断实锤，七跑验证幂等 `变更:0, 跳过:348`）；诊断同类抖动的方法：一次性脚本抓单页，打印各正则命中与库里值对比，跨两次抓取看哪个字段漂移。
+12. **生产爬虫（`scripts/crawl/crawl-fjut.py` / `crawl-fjrclh.py`）与 `models.py` 的 hash 口径必须一致**：content_hash 用 SHA1 + `json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)`（十键 payload：title/company/city/industry/degree/salary[min,max]/salary_text/deadline/apply/tags，None 归一为 ""/[]/0，posted_at 不进 hash）。改任一侧的归一逻辑都会导致全量误判「变更」。另注意：① PostgREST 批量 upsert 用 `POST /jobs?on_conflict=source,external_id` + `Prefer: resolution=merge-duplicates`，`tags` 为 jsonb NOT NULL，Python 侧 None 必须兜底 `[]`，否则 400；② 脚本 SERVICE_KEY 从 `.env`/环境变量读，勿再加回纯硬编码；③ fjrclh 源站 WAF 拦 python 默认 UA，httpx 必须带浏览器 User-Agent；④ **fjut 详情页 HTML 解析前必须剥离 base64/渲染数据**：页面内联大量 base64（图片/统计像素/压缩 JS），其中随机出现「数字K」，且存在 <200 字符的短碎片，任何「全页搜数字K」式 salary 匹配都会命中随机值 → content_hash 抖动。jysd 页面**根本没有结构化薪资区**，fjut 源 salary_text 恒 None（2026-09-28 诊断实锤，七跑验证幂等 `变更:0, 跳过:348`）；诊断同类抖动的方法：一次性脚本抓单页，打印各正则命中与库里值对比，跨两次抓取看哪个字段漂移。
+13. **仓库内外脚本不同步是真实事故源（2026-10-07 实测）**：仓库外副本一度落后仓库两个版本（缺 company_type 修复、日期正则更严、`normalize.py` 硬编码 `../offer-hui/infra/classify` 路径、`crawl_alert.py` 只读同级 .env）。**改爬虫只改 `scripts/crawl/`，改完用 SHA256 对比并覆盖同步仓库外副本**；豆包定时任务跑的是仓库外副本。
+14. **数据质量红线（2026-10-07 实测 5808 条）**：`city` 出现 >8 字的脏值 403 条（占 6.9%），主要是 xmu/jmu 源把招聘标题/场地地址整段塞进 city（如"线下\n…\n中国农业发展银行2027年度校园招聘宣讲"），前端三级联动城市筛选会直接被撑爆。新增数据源**入库前必须过 `normalize_city`**，且 city 长度 >8 视为解析失败。
 
 ## 6. 设计资产
 
