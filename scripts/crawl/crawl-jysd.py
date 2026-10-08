@@ -149,7 +149,6 @@ def build_sections(school: dict) -> dict:
     override_pages = school.get("pages") or {}
     for key, tpl in SECTION_TEMPLATES.items():
         cfg = dict(tpl)
-        # n="{n}"：保留页码占位给翻页时填充；id="{id}"：保留详情 id 占位
         cfg["list_url"] = tpl["list_url"].format(host=school["host"], domain=school["domain"], n="{n}")
         cfg["detail_url"] = tpl["detail_url"].format(host=school["host"], id="{id}")
         cfg["pages"] = override_pages.get(key, tpl["pages"])
@@ -233,14 +232,12 @@ def parse_jobcard(school, cfg, block):
     cm = re.search(r'/company/view/id/\d+"[^>]*>(.*?)</a>', block, re.DOTALL)
     if cm:
         company = _strip_tags(cm.group(1))
-    # 公司行业/规模（company div 内两个 li）
     comp_meta = re.search(r'<div class="company">(.*?)</div>\s*<div class="name">', block, re.DOTALL)
     industry = None
     if comp_meta:
         lis = re.findall(r'<li[^>]*>(.*?)</li>', comp_meta.group(1), re.DOTALL)
         if lis:
             industry = normalize_industry(_strip_tags(lis[0]))
-    # 标题
     title = None
     tm = re.search(rf'{re.escape(cfg["id_pattern"].replace(r"(\d+)", ""))}\d+"[^>]*title="([^"]+)"', block)
     if tm:
@@ -248,13 +245,10 @@ def parse_jobcard(school, cfg, block):
     else:
         tm2 = re.search(r'title="([^"]+)"[^>]*target="_blank"', block)
         title = tm2.group(1) if tm2 else None
-    # 发布日期（fjut 格式 "<span>2026-09-28发布</span>"；集美/厦大 "<span>2026-10-05</span>"）
     dm = re.search(r'<span>\s*(20\d{2}-\d{2}-\d{2})\s*(?:发布)?\s*</span>', block)
     posted = parse_posted_time(dm.group(0) if dm else None)
-    # 薪资
     sm = re.search(r'<p class="text-orange"[^>]*>(.*?)</p>', block, re.DOTALL)
     sal_min, sal_max, sal_text = parse_salary(sm.group(1) if sm else None)
-    # 地点/类型/学历（salary div 内 ul 的 li）
     sal_box = re.search(r'<div class="salary">(.*?)</div>', block, re.DOTALL)
     place = None
     degree = None
@@ -283,7 +277,6 @@ def parse_listcard(school, cfg, block):
     if not m:
         return None
     fid = m.group(1)
-    # 标题（优先 title 属性，否则链接文本）
     title = None
     tm = re.search(r'title="([^"]+)"', block)
     if tm:
@@ -292,18 +285,15 @@ def parse_listcard(school, cfg, block):
         am = re.search(rf'{cfg["id_pattern"]}[^>]*>(.*?)</a>', block, re.DOTALL)
         if am:
             title = _strip_tags(am.group(1))
-    # 地点（span 之外的 li）
     place = None
     pm = re.search(r'<li class="span\d+"[^>]*>(.*?)</li>', block, re.DOTALL)
     if pm:
         place = _strip_tags(pm.group(1))
-    # 时间（最后一个 li）
     all_li = re.findall(r'<li[^>]*>(.*?)</li>', block, re.DOTALL)
     time_text = _strip_tags(all_li[-1]) if all_li else None
     if cfg["date_type"] == "event":
         event_iso = parse_event_time(time_text)
         posted = None
-        # 校内教室归不到城市 → 兜底学校城市
         city = normalize_city(place) or school["city"]
     else:
         event_iso = None
@@ -431,13 +421,13 @@ def flush(pending: list, stats: dict):
             return
         except urllib.error.HTTPError as e:
             if e.code < 500 and e.code != 429:
-                break  # 4xx 降级逐条定位坏行
+                break
             if attempt < 2:
                 time.sleep(1 if attempt == 0 else 3)
         except Exception:
             if attempt < 2:
                 time.sleep(1 if attempt == 0 else 3)
-    for it in payload:  # 降级逐条
+    for it in payload:
         try:
             upsert_batch([it])
         except Exception as e:
@@ -473,14 +463,12 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
     print(f"=== {school['name']}（source={source}）===")
     print(f"{'='*60}", flush=True)
 
-    # 1. 查已有 ID + hash
     print("\n[1/3] 查数据库已有数据...")
     existing = fetch_existing_map(source)
     print(f"  已有 {len(existing)} 条 published（含 hash {sum(1 for v in existing.values() if v)} 条）")
 
-    # 2. 逐板块抓列表 + 直接解析卡片（按日期过滤、跨板块去重）
     print("\n[2/3] 抓列表页 + 解析卡片（按日期过滤）...")
-    items = []          # 待写入 item
+    items = []
     valid_eids = set()
     seen_eid = set()
     today_s = today.strftime("%Y-%m-%d")
@@ -495,9 +483,8 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
             print(f"  抓列表 p{n}: {url}")
             page = fetcher.fetch(url, headless=True, network_idle=True)
             h = page.body.decode("utf-8")
-            # 按卡片风格切分
             if cfg["card"] == "jobcard":
-                blocks = re.split(r'(?=<li data-id=")', h)
+                blocks = re.split(r'(?=<li data-id=" )', h)
                 blocks = [b for b in blocks if b.startswith('<li data-id=')]
             else:
                 blocks = re.findall(cfg["list_block"], h, re.DOTALL)
@@ -510,7 +497,6 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
                     parsed = parse_listcard(school, cfg, block)
                 if not parsed:
                     continue
-                # 日期过滤
                 if cfg["date_type"] == "posted":
                     iso = parsed.get("posted")
                 else:
@@ -533,13 +519,12 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
             kept += page_kept
             print(f"    本页 {len(blocks)} → 保留 {page_kept}")
             if not blocks:
-                break  # 空页到底
+                break
             if cfg["date_type"] == "posted" and page_dates and min(page_dates) < cutoff:
-                break  # 已翻到窗口外
+                break
             time.sleep(1)
         print(f"  → {cfg['name']} 有效 {kept}")
 
-    # 3. 标记过期 + 三分类 + 分批写入
     if valid_eids:
         print(f"\n[3/3] 标记过期（有效集合 {len(valid_eids)}）+ 三分类写入...")
         mark_expired(source, valid_eids, existing, stats)
@@ -583,7 +568,7 @@ def main():
     total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0}
 
     try:
-        fetcher = StealthyFetcher()  # 列表 fetcher 跨学校复用
+        fetcher = StealthyFetcher()
         for school in SCHOOLS:
             crawl_school(school, fetcher, total, today)
 
