@@ -8,14 +8,18 @@ import {
   degreeLevel,
   dimOptions,
   sortJobsBy,
+  toView,
 } from "@/lib/jobs";
 import JobCard from "./JobCard";
 import JobTable from "./JobTable";
 import CityFilterPanel from "./CityFilterPanel";
-import { cityOptions, SOURCE_NAME } from "@/lib/jobs";
+import {
+  cityOptions,
+  industryOptions,
+  companyTypeOptions,
+  SOURCE_NAME,
+} from "@/lib/jobs";
 import { supabase } from "@/lib/supabase";
-import { DEADLINE_BUCKETS, matchDeadlineBucket, JOB_TYPES } from "@/lib/taxonomy";
-import { parseQuery, mergeParsed } from "@/lib/queryParser";
 
 
 export type HomeStats = {
@@ -24,34 +28,27 @@ export type HomeStats = {
   due30: number;
 };
 
-// 面板常驻维度：按「只留必须项」收敛为 4 项 + 1 个上下文维度（学校仅在活动类出现）。
-// 其余维度（行业 / 公司性质 / 届别）不再占面板，改由顶部复合搜索承担。
-type Dim = "city" | "industry" | "companyType" | "jobType" | "cohort" | "degree" | "school" | "deadline";
+type Dim = "city" | "industry" | "companyType" | "jobType" | "cohort" | "degree" | "school";
 type FState = Record<Dim, string[]>;
 
-const DIMS: { key: Dim; label: string; contextual?: "event" }[] = [
-  { key: "jobType", label: "招聘类型" },
+const DIMS: { key: Dim; label: string }[] = [
   { key: "city", label: "城市" },
+  { key: "industry", label: "行业" },
+  { key: "companyType", label: "公司性质" },
+  { key: "jobType", label: "招聘类型" },
+  { key: "cohort", label: "届别" },
   { key: "degree", label: "学历" },
-  { key: "deadline", label: "截止时间" },
-  { key: "school", label: "学校", contextual: "event" },
+  { key: "school", label: "学校" },
 ];
 
-// 复合搜索可回显的条件标签（含面板不展示、仅由搜索产生的维度）
-const PARSED_FIELD_LABEL: Record<string, string> = {
-  jobType: "招聘类型",
-  city: "城市",
-  degree: "学历",
-  deadline: "截止",
-  cohort: "届别",
-  industry: "行业",
-  companyType: "公司性质",
-  school: "学校",
-};
-
-const DEADLINE_LABEL: Record<string, string> = Object.fromEntries(
-  DEADLINE_BUCKETS.map((b) => [b.key, b.label]),
-);
+const CHIPS = [
+  { key: "all", label: "全部" },
+  { key: "校招", label: "校招" },
+  { key: "实习", label: "实习" },
+  { key: "招聘会", label: "招聘会" },
+  { key: "宣讲会", label: "宣讲会" },
+  { key: "urgent", label: "30天内截止" },
+];
 
 export default function HomeClient({
   jobs,
@@ -60,6 +57,7 @@ export default function HomeClient({
   jobs: JobView[];
   stats: HomeStats;
 }) {
+  const [chip, setChip] = useState("all");
   const [q, setQ] = useState("");
   const [filters, setFilters] = useState<FState>({
     city: [],
@@ -69,7 +67,6 @@ export default function HomeClient({
     cohort: [],
     degree: [],
     school: [],
-    deadline: [],
   });
   const [openDim, setOpenDim] = useState<Dim | null>(null);
   const [view, setView] = useState<"card" | "table">("card");
@@ -91,31 +88,6 @@ export default function HomeClient({
   // 用户岗位状态：favs = 收藏的 jobId 集合, boards = { jobId: 状态 }
   const [favs, setFavs] = useState<Set<string>>(new Set());
   const [boards, setBoards] = useState<Record<string, string>>({});
-
-  // 顶部导航搜索跳转 /?q=...，这里接住并复用同一解析器
-  // （此前全站没有任何路由读取 searchParams，导致顶部搜索点了等于没搜）
-  useEffect(() => {
-    const initial = new URLSearchParams(window.location.search).get("q");
-    if (!initial) return;
-    const p = parseQuery(initial);
-    setFilters((prev) => mergeParsed(prev, p.filters));
-    setQ(p.keyword);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 已在首页时，Nav 通过事件投递搜索词（router.push 同路由不会重挂载本组件）
-  useEffect(() => {
-    const onSearch = (e: Event) => {
-      const v = (e as CustomEvent<string>).detail || "";
-      if (!v) return;
-      const p = parseQuery(v);
-      setFilters((prev) => mergeParsed(prev, p.filters));
-      setQ(p.keyword);
-      setCurrentPage(1);
-    };
-    window.addEventListener("offer-search", onSearch as EventListener);
-    return () => window.removeEventListener("offer-search", onSearch as EventListener);
-  }, []);
 
   // 初始化：从 localStorage 读，再从数据库同步
   useEffect(() => {
@@ -279,38 +251,48 @@ export default function HomeClient({
       cohort: [],
       degree: [],
       school: [],
-      deadline: [],
     };
-    // 招聘类型：本站内容形态 5 类（含此前遗漏的「招聘公告」）
-    m.jobType = JOB_TYPES.map((v) => ({
-      v,
-      n: jobs.filter((j) => j.jobType === v).length,
-    }));
-    // 城市：标准城市树 + 计数
-    m.city = cityOptions(jobs);
-    // 学历：「我的学历」三档，计数按向下兼容语义（岗位要求层级 ≤ 我的层级）
-    m.degree = dimOptions(jobs, "degree").map((v) => ({
-      v,
-      n: jobs.filter((j) => degreeLevel(j.degree) <= (DEGREE_FILTER_LEVEL[v] ?? 0)).length,
-    }));
-    // 截止时间：分档
-    m.deadline = DEADLINE_BUCKETS.map((b) => ({
-      v: b.key,
-      n: jobs.filter((j) => matchDeadlineBucket(j.deadlineDays, b.key)).length,
-    }));
-    // 学校：仅从招聘会/宣讲会提取（活动类才有「举办学校」语义）
-    const m2 = new Map<string, number>();
-    for (const j of jobs) {
-      if (!j.source) continue;
-      if (j.jobType !== "招聘会" && j.jobType !== "宣讲会") continue;
-      m2.set(j.source, (m2.get(j.source) || 0) + 1);
+    for (const d of DIMS) {
+      if (d.key === "school") {
+        // 学校维度只从招聘会/宣讲会提取
+        const m2 = new Map<string, number>();
+        for (const j of jobs) {
+          if (!j.source) continue;
+          if (j.jobType !== "招聘会" && j.jobType !== "宣讲会") continue;
+          m2.set(j.source, (m2.get(j.source) || 0) + 1);
+        }
+        m.school = [...m2.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
+        continue;
+      }
+      if (d.key === "city") {
+        m.city = cityOptions(jobs);
+        continue;
+      }
+      if (d.key === "industry") {
+        m.industry = industryOptions(jobs);
+        continue;
+      }
+      if (d.key === "companyType") {
+        m.companyType = companyTypeOptions(jobs);
+        continue;
+      }
+      m[d.key] = dimOptions(jobs, d.key as "city").map((v) => ({
+        v,
+        n:
+          d.key === "degree"
+            ? jobs.filter((j) => degreeLevel(j.degree) <= (DEGREE_FILTER_LEVEL[v] ?? 0)).length
+            : jobs.filter((j) => (j as any)[d.key] === v).length,
+      }));
     }
-    m.school = [...m2.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
+    // 招聘类型固定三项
+    m.jobType = [
+      { v: "校招", n: jobs.filter((j) => j.jobType === "校招").length },
+      { v: "实习", n: jobs.filter((j) => j.jobType === "实习").length },
+      { v: "招聘会", n: jobs.filter((j) => j.jobType === "招聘会").length },
+      { v: "宣讲会", n: jobs.filter((j) => j.jobType === "宣讲会").length },
+    ];
     return m;
   }, [jobs]);
-
-  // 复合搜索：解析预览（输入即时可见，Enter 才提交条件）
-  const parsed = useMemo(() => parseQuery(q), [q]);
 
   const list = useMemo(() => {
     let l = jobs;
@@ -320,13 +302,19 @@ export default function HomeClient({
     if (f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
     if (f("companyType").length) l = l.filter((j) => f("companyType").includes(j.companyType));
     if (f("cohort").length) l = l.filter((j) => f("cohort").includes(j.cohort));
-    if (f("school").length) l = l.filter((j) => f("school").some((s) => s && j.source.includes(s)));
-    if (f("deadline").length) l = l.filter((j) => f("deadline").some((k) => matchDeadlineBucket(j.deadlineDays, k)));
+    if (f("school").length) l = l.filter((j) => f("school").includes(j.source));
     if (f("degree").length) {
       // 向下兼容：多选时取最高学历作为我的学历，显示岗位要求层级 <= 我的层级
       const myLevel = Math.max(...f("degree").map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
       l = l.filter((j) => degreeLevel(j.degree) <= myLevel);
     }
+    if (chip === "校招") l = l.filter((j) => j.jobType === "校招");
+    if (chip === "实习") l = l.filter((j) => j.jobType === "实习");
+    if (chip === "招聘会") l = l.filter((j) => j.jobType === "招聘会");
+    if (chip === "宣讲会") l = l.filter((j) => j.jobType === "宣讲会");
+    if (chip === "招聘公告") l = l.filter((j) => j.jobType === "招聘公告");
+    if (chip === "urgent")
+      l = l.filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30);
     if (q.trim()) {
       const ql = q.trim().toLowerCase();
       l = l.filter((j) =>
@@ -334,7 +322,7 @@ export default function HomeClient({
       );
     }
     return sortJobsBy(l, sortMode);
-  }, [jobs, filters, q, sortMode]);
+  }, [jobs, filters, chip, q, sortMode]);
 
   const todayJobs = useMemo(
     () => jobs.filter((j) => j.deadlineDays === 0).sort((a, b) => (a.deadlineAt || "").localeCompare(b.deadlineAt || "")),
@@ -366,37 +354,7 @@ export default function HomeClient({
     setFilters((prev) => ({ ...prev, [d]: [] }));
   }
 
-  // 提交复合搜索：解析出的条件并入筛选面板（同一份 state），
-  // 输入框只保留未识别的关键词——避免「搜索」与「面板」两套条件互相矛盾。
-  function commitQuery() {
-    const p = parseQuery(q);
-    setFilters((prev) => mergeParsed(prev, p.filters));
-    setQ(p.keyword);
-    setCurrentPage(1);
-  }
-
-  function removeCondition(field: Dim, value: string) {
-    setFilters((prev) => ({ ...prev, [field]: prev[field].filter((v) => v !== value) }));
-    setCurrentPage(1);
-  }
-
-  // 已生效条件（含面板不展示、仅由搜索产生的行业/公司性质/届别），供 chip 回显与逐个移除
-  const activeConds = useMemo(() => {
-    const label = (field: Dim, v: string) =>
-      field === "deadline"
-        ? DEADLINE_LABEL[v] ?? v
-        : field === "school"
-          ? SOURCE_NAME[v] ?? v
-          : v;
-    const keys: Dim[] = ["jobType", "city", "degree", "deadline", "school", "cohort", "industry", "companyType"];
-    const out: { field: Dim; value: string; label: string }[] = [];
-    for (const k of keys) {
-      for (const v of filters[k]) out.push({ field: k, value: v, label: label(k, v) });
-    }
-    return out;
-  }, [filters]);
-
-  const activeCount = activeConds.length;
+  const activeCount = DIMS.reduce((n, d) => n + filters[d.key].length, 0);
 
   return (
     <div className="wrap">
@@ -422,11 +380,11 @@ export default function HomeClient({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && commitQuery()}
-            placeholder="复合搜索：福州 实习 本科 15K以上 本周"
+            onKeyDown={(e) => e.key === "Enter" && setCurrentPage(1)}
+            placeholder="搜索公司 / 岗位 / 行业"
           />
           <div className="orbital">
-            <button className="inner sm" onClick={commitQuery}>
+            <button className="inner sm" onClick={() => setCurrentPage(1)}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="7" stroke="#fff" strokeWidth="2" />
                 <path d="m20 20-3.5-3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
@@ -435,50 +393,6 @@ export default function HomeClient({
             </button>
           </div>
         </div>
-
-        {/* 复合搜索预览：输入即时识别，Enter 才提交（不静默猜） */}
-        {q.trim() && parsed.tokens.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginTop: "10px", fontSize: "12px", color: "rgba(183,198,194,.75)" }}>
-            <span>将识别为</span>
-            {parsed.tokens.map((t) => (
-              <span key={t.raw} style={{ padding: "2px 8px", borderRadius: "999px", border: "1px solid rgba(183,198,194,.28)" }}>
-                <b style={{ fontWeight: 700, marginRight: "4px" }}>{PARSED_FIELD_LABEL[t.field] ?? "关键词"}</b>
-                {t.label}
-              </span>
-            ))}
-            {parsed.keyword &&
-              !parsed.tokens.some((t) => t.field === "keyword" && t.value === parsed.keyword) && (
-                <span style={{ padding: "2px 8px", borderRadius: "999px", border: "1px solid rgba(183,198,194,.28)" }}>
-                  <b style={{ fontWeight: 700, marginRight: "4px" }}>关键词</b>
-                  {parsed.keyword}
-                </span>
-              )}
-          </div>
-        )}
-
-        {/* 已生效条件：可逐个移除，避免"面板没显示但结果被筛掉" */}
-        {activeConds.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginTop: "10px", fontSize: "12px" }}>
-            {activeConds.map((c) => (
-              <button
-                key={c.field + ":" + c.value}
-                onClick={() => removeCondition(c.field, c.value)}
-                style={{
-                  padding: "3px 9px",
-                  borderRadius: "999px",
-                  border: "1px solid rgba(202,0,19,.5)",
-                  background: "transparent",
-                  color: "#fda4af",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                {PARSED_FIELD_LABEL[c.field] ?? c.field}：{c.label} <span style={{ opacity: 0.7 }}>×</span>
-              </button>
-            ))}
-          </div>
-        )}
         <div className="hero-stats">
           <div className="st glass">
             <b>{stats.total}</b>
@@ -495,17 +409,28 @@ export default function HomeClient({
         </div>
       </div>
 
-      {/* ===== 筛选（只留必须项；类型不再与顶部 chip 重复） ===== */}
+      {/* ===== 快捷标签 + 筛选 ===== */}
       <div className="toolbar">
+        <div className="chips">
+          {CHIPS.map((c) => (
+            <button
+              key={c.key}
+              className={chip === c.key ? "on" : ""}
+              onClick={() => {
+                setChip(c.key);
+                setCurrentPage(1);
+              }}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
         <div className="filter-group" ref={fgRef}>
-          {dims
-            .filter((d) => {
-              // 学校只在「活动类」（宣讲会/招聘会）语境下出现——此时才有"举办学校"语义
-              if (d.key === "school")
-                return filters.jobType.some((t) => t === "招聘会" || t === "宣讲会");
-              return true;
-            })
-            .map((d) => (
+          {dims.filter((d) => {
+            // 学校筛选只在招聘会/宣讲会时显示
+            if (d.key === "school") return chip === "招聘会" || chip === "宣讲会";
+            return true;
+          }).map((d) => (
             <button
               key={d.key}
               className={"filter-btn" + (openDim === d.key ? " open" : "")}
@@ -525,7 +450,7 @@ export default function HomeClient({
               className="filter-btn"
               style={{ borderColor: "rgba(202,0,19,.5)", color: "#fda4af" }}
               onClick={() =>
-                setFilters({ city: [], industry: [], companyType: [], jobType: [], cohort: [], degree: [], school: [], deadline: [] })
+                setFilters({ city: [], industry: [], companyType: [], jobType: [], cohort: [], degree: [], school: [] })
               }
             >
               清除
@@ -629,11 +554,12 @@ export default function HomeClient({
                 </svg>
               </div>
               <h3>没有匹配的岗位</h3>
-              <p>试试更换筛选条件，或减少复合搜索里的词</p>
+              <p>试试更换标签或清除筛选条件</p>
               <button
                 onClick={() => {
+                  setChip("all");
                   setQ("");
-                  setFilters({ city: [], industry: [], companyType: [], jobType: [], cohort: [], degree: [], school: [], deadline: [] });
+                  setFilters({ city: [], industry: [], companyType: [], jobType: [], cohort: [], degree: [], school: [] });
                   setCurrentPage(1);
                 }}
               >
@@ -848,11 +774,7 @@ function FilterOptions({
           <path d="m5 12 4 4L19 6" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      {dim === "school"
-        ? SOURCE_NAME[o.v] || o.v
-        : dim === "deadline"
-          ? DEADLINE_LABEL[o.v] ?? o.v
-          : o.v}
+      {dim === "school" ? SOURCE_NAME[o.v] || o.v : o.v}
       <span className="n">{o.n}</span>
     </div>
   );

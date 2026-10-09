@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -89,19 +89,8 @@ export default function Nav() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   function submitSearch() {
-    const v = kw.trim();
+    router.push(kw.trim() ? `/?q=${encodeURIComponent(kw.trim())}` : "/");
     setOpen(false);
-    if (!v) {
-      router.push("/");
-      return;
-    }
-    // 已在首页时，router.push 同路由不会重挂载 HomeClient，条件会丢；
-    // 改用事件直达 HomeClient 的复合搜索解析器。跨页跳转仍走 URL 参数。
-    if (pathname === "/") {
-      window.dispatchEvent(new CustomEvent("offer-search", { detail: v }));
-    } else {
-      router.push(`/?q=${encodeURIComponent(v)}`);
-    }
   }
 
   return (
