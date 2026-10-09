@@ -20,7 +20,8 @@ from scrapling import StealthyFetcher
 import re, os, json, time, hashlib, threading, urllib.request, urllib.error, urllib.parse, sys
 from datetime import datetime, timedelta, timezone
 try:
-    from normalize import normalize_city, normalize_industry, normalize_company_by_name, normalize_company_type
+    from normalize import (normalize_city, normalize_industry, normalize_company_by_name,
+                            normalize_company_type, normalize_province)
 except ImportError:
     def normalize_city(v):
         return (v or "").strip() or None
@@ -29,6 +30,8 @@ except ImportError:
     def normalize_company_by_name(v):
         return None
     def normalize_company_type(v):
+        return None
+    def normalize_province(v):
         return None
 
 # 邮件告警：未捕获异常 → 发邮件（crawl_alert.py，静默失败不影响主流程）
@@ -340,6 +343,7 @@ def build_item(school, section_key, cfg, parsed):
         "company_type": company_type,
         "job_type": section_key,
         "city": parsed.get("city"),
+        "province": normalize_province(parsed.get("city")),
         "industry": parsed.get("industry"),
         "degree": parsed.get("degree"),
         "salary_min": parsed.get("sal_min"),

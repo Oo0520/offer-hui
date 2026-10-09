@@ -184,6 +184,62 @@ def normalize_city(raw):
     return norm
 
 
+# 市名 -> 省简称（惰性构建；province 列反推用）
+_city_to_prov = None
+
+
+# 民族自治区「简称 -> cityTree 口径全名」：库里两种写法都存在，需归一
+_PROV_SHORT_ALIAS = {"新疆": "新疆维吾尔", "广西": "广西壮族", "宁夏": "宁夏回族"}
+
+
+def _build_city_to_prov():
+    global _city_to_prov
+    if _city_to_prov is None:
+        m = {}
+        for prov, cities in _prov_city_zone.items():
+            # 与前端 cityTree 的 CITY_PROVINCES / PROVINCE_OF_CITY 口径保持一致：
+            # 保留民族部分（新疆维吾尔 / 广西壮族 / 宁夏回族），勿裁成简称
+            short = prov.replace("省", "").replace("自治区", "").replace("市", "")
+            # 库里存在「省名被当作城市值」的行（如 city="福建"），此时省份即自身
+            m.setdefault(short, short)
+            for city in cities.keys():
+                m.setdefault(city, short)
+        for alias, full in _PROV_SHORT_ALIAS.items():
+            m.setdefault(alias, full)
+        for d in ("北京", "上海", "天津", "重庆"):
+            m.setdefault(d, d)
+        for extra in ("香港", "澳门", "台湾"):
+            m.setdefault(extra, "港澳台")
+        _city_to_prov = m
+    return _city_to_prov
+
+
+def normalize_province(city):
+    """由城市名反推省级名（厦门->福建、乌鲁木齐->新疆维吾尔、香港->港澳台）。
+
+    用途：填充 jobs.province（此前该列从未被写入，是死列）。
+    口径对齐前端 lib/cityTree.ts 的 PROVINCE_OF_CITY，避免出现第二套省名。
+    先过一遍 normalize_city，以覆盖「省+市」拼接值（如 广东鹤山 -> 鹤山 -> 广东）。
+    未收录者（海外城市、脏值）返回 None —— 不猜测。
+    """
+    if not city:
+        return None
+    s = str(city).strip()
+    if not s:
+        return None
+    if s in _MUNICIPALITIES.values():
+        return s
+    table = _build_city_to_prov()
+    hit = table.get(s)
+    if hit:
+        return hit
+    # 拼接值/带后缀值：先归一到标准城市再查
+    c = normalize_city(s)
+    if c and c != s:
+        return table.get(c)
+    return None
+
+
 def normalize_industry(raw):
     """返回标准行业类目名；未命中返回「其他」；(null)/未分类 返回 None。
     注意：公司性质（外企/合资 等）不再归行业，走 normalize_company_type。"""
