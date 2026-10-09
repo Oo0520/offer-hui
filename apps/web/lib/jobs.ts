@@ -71,8 +71,10 @@ const AUTH_HEADERS = {
 
 export const SOURCE_NAME: Record<string, string> = {
   ncss: "国家24365平台",
-  fjut: "福建理工大学就业网",
+  fjut: "福建理工大学",
   fjrclh: "福州大学",
+  jmu: "集美大学",
+  xmu: "厦门大学",
   fj99: "福建就业网",
   xmu: "厦门大学就业网",
   jmu: "集美大学就业网",

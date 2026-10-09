@@ -17,6 +17,7 @@ import {
   cityOptions,
   industryOptions,
   companyTypeOptions,
+  SOURCE_NAME,
 } from "@/lib/jobs";
 import { supabase } from "@/lib/supabase";
 
@@ -773,7 +774,7 @@ function FilterOptions({
           <path d="m5 12 4 4L19 6" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      {o.v}
+      {dim === "school" ? SOURCE_NAME[o.v] || o.v : o.v}
       <span className="n">{o.n}</span>
     </div>
   );
