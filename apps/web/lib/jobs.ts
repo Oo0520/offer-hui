@@ -3,6 +3,10 @@
 import { unstable_cache } from "next/cache";
 import { CITY_PROVINCES } from "./cityTree";
 import { INDUSTRY_LIST } from "./industryList";
+import { degreeLevel, DEGREE_FILTER_LEVEL, COMPANY_TYPE_LIST } from "./taxonomy";
+
+// 词表统一由 lib/taxonomy.ts 定义，这里转出以保持既有 import 路径可用
+export { degreeLevel, DEGREE_FILTER_LEVEL, COMPANY_TYPE_LIST };
 
 export type JobRow = {
   id: string;
@@ -105,10 +109,25 @@ function hashStr(s: string): number {
   return h;
 }
 
+// 薪资单位归一（读取时归一，不改库）：
+// 库内存在两种口径——部分源存「元」(如 8000-11000)，部分存「K」(如 6-9)。
+// 统一换算为 K：>=1000 视为元；否则按 K。（存量清洗阶段应在入库侧统一，届时本函数可简化为恒等）
+export function salaryToK(v: number | null | undefined): number {
+  const n = Number(v || 0);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n >= 1000 ? Math.round(n / 100) / 10 : n;
+}
+
+// 形如 "0.0-0.0K" 的占位噪声（ncss 源），不作为展示文案
+const SALARY_NOISE_RE = /^0(?:\.0)?\s*[-~至]\s*0(?:\.0)?\s*[kK千]?$/;
+
 export function fmtSalary(j: JobRow): string {
-  if (j.salary_text) return j.salary_text;
-  if (j.salary_min && j.salary_max)
-    return `${j.salary_min}-${j.salary_max}K`;
+  const text = (j.salary_text || "").trim();
+  if (text && !SALARY_NOISE_RE.test(text)) return text;
+  const min = salaryToK(j.salary_min);
+  const max = salaryToK(j.salary_max);
+  if (min && max) return `${min}-${max}K`;
+  if (min) return `${min}K 起`;
   return "";
 }
 
@@ -140,8 +159,8 @@ export function toView(r: JobRow): JobView {
     degree: r.degree || "学历不限",
     cohort: r.cohort || "",
     salaryText: fmtSalary(r),
-    salaryMin: r.salary_min || 0,
-    salaryMax: r.salary_max || 0,
+    salaryMin: salaryToK(r.salary_min),
+    salaryMax: salaryToK(r.salary_max),
     deadlineAt: dl,
     deadlineDays: days,
     postedAt: r.posted_at ? r.posted_at.slice(0, 10) : null,
@@ -161,12 +180,19 @@ const RAW_FETCH_FIELDS =
 // PostgREST 服务端单请求上限 1000 行（db-max-rows），数据超 1000 需分页循环拉取
 const PAGE_SIZE = 1000;
 
+// 只取 published：本函数用 service key（绕过 RLS），若不显式过滤会把
+// status='expired' 的已下架岗位一并下发到前端（实测约 18%）。MCP 侧本就按 published 过滤。
+const RAW_STATUS_FILTER = "published";
+
 async function _fetchAllJobsRaw(): Promise<JobView[]> {
   const all: JobRow[] = [];
   let offset = 0;
   while (true) {
     const params = new URLSearchParams();
     params.set("select", RAW_FETCH_FIELDS);
+    params.set("status", `eq.${RAW_STATUS_FILTER}`);
+    // 显式稳定排序：无 ORDER BY 的 offset 分页在并发写入时可能重复/漏行
+    params.set("order", "id.asc");
     params.set("limit", String(PAGE_SIZE));
     params.set("offset", String(offset));
     const url = `${URL}/rest/v1/jobs?${params.toString()}`;
@@ -194,24 +220,6 @@ export const fetchAllJobs = unstable_cache(_fetchAllJobsRaw, ["all-jobs"], {
   tags: ["jobs"],
 });
 
-// 学历层级映射：不限=0, 专科=1, 本科=2, 硕士=3, 博士=4
-export function degreeLevel(degree: string | null | undefined): number {
-  const d = (degree || "").trim();
-  if (!d || d.includes("不限")) return 0;
-  if (d.includes("博士")) return 4;
-  if (d.includes("硕士")) return 3;
-  if (d.includes("本科")) return 2;
-  if (d.includes("专科") || d.includes("大专")) return 1;
-  return 0;
-}
-
-// 学历筛选（向下兼容）：选项 = 用户学历，显示该学历能投的岗位（岗位要求层级 <= 用户层级，含不限）
-export const DEGREE_FILTER_LEVEL: Record<string, number> = {
-  "专科": 1,
-  "本科": 2,
-  "硕士": 3,
-};
-
 // 筛选维度选项（按出现次数降序）
 export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" | "degree" | "companyType"): string[] {
   if (key === "degree") {
@@ -225,9 +233,6 @@ export function dimOptions(jobs: JobView[], key: "city" | "industry" | "cohort" 
   }
   return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
 }
-
-// 公司性质标准列表（与 normalize.py _COMPANY_TYPES 一致，前端显示完整列表）
-export const COMPANY_TYPE_LIST = ["外企/合资", "国企/央企", "民企/私企", "上市公司/500强"];
 
 // 完整城市选项：全部标准城市 + 计数（无岗位的城市计数 0）。含"全国"与库内海外兜底值。
 export function cityOptions(jobs: JobView[]): { v: string; n: number }[] {
@@ -276,26 +281,67 @@ export function companyTypeOptions(jobs: JobView[]): { v: string; n: number }[] 
   return COMPANY_TYPE_LIST.map((v) => ({ v, n: cnt.get(v) || 0 }));
 }
 
+// 单值或多值：复合搜索会一次性产出多个同类条件（如「北京 上海」）
+type Multi = string | string[];
+
 export type JobFilter = {
   q?: string;
-  jobType?: string; // "校招" | "实习"
-  city?: string;
-  industry?: string;
-  companyType?: string;
-  cohort?: string;
-  degree?: string;
+  jobType?: Multi; // "校招" | "实习" | "宣讲会" | "招聘会" | "招聘公告"
+  city?: Multi;
+  industry?: Multi;
+  companyType?: Multi;
+  cohort?: Multi;
+  degree?: Multi;
+  deadline?: string[]; // 截止档 key，见 lib/taxonomy.ts DEADLINE_BUCKETS
+  // 学校：当前由数据源名派生（源名形如「集美大学就业网」），故用子串匹配。
+  // 待 xmu/jmu 爬虫补录后再引入真实 school 字段。
+  school?: Multi;
+  salaryMin?: number;
+  salaryMax?: number;
 };
 
+/** 多值语义为「或」；未给出该字段一律视为不限制 */
+function matchMulti(v: Multi | undefined, actual: string): boolean {
+  if (v === undefined) return true;
+  return Array.isArray(v) ? v.includes(actual) : v === actual;
+}
+
+function maxDegreeLevel(v: Multi | undefined): number | null {
+  if (v === undefined) return null;
+  const arr = Array.isArray(v) ? v : [v];
+  if (arr.length === 0) return null;
+  if (arr.includes("不限")) return 0;
+  return Math.max(...arr.map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
+}
+
 export function filterJobs(jobs: JobView[], f: JobFilter): JobView[] {
+  const myLevel = maxDegreeLevel(f.degree);
   return jobs.filter((j) => {
-    if (f.jobType && j.jobType !== f.jobType) return false;
-    if (f.city && j.city !== f.city) return false;
-    if (f.industry && j.industry !== f.industry) return false;
-    if (f.companyType && j.companyType !== f.companyType) return false;
-    if (f.cohort && j.cohort !== f.cohort) return false;
-    if (f.degree && f.degree !== "不限") {
+    if (!matchMulti(f.jobType, j.jobType)) return false;
+    if (!matchMulti(f.city, j.city)) return false;
+    if (!matchMulti(f.industry, j.industry)) return false;
+    if (!matchMulti(f.companyType, j.companyType)) return false;
+    if (!matchMulti(f.cohort, j.cohort)) return false;
+    if (f.school !== undefined && f.school.length) {
+      // 子串匹配：用户输入「集美大学」要能命中源名「集美大学就业网」
+      const arr = Array.isArray(f.school) ? f.school : [f.school];
+      if (!arr.some((s) => s && j.source.includes(s))) return false;
+    }
+    if (f.deadline && f.deadline.length) {
+      const days = j.deadlineDays;
+      const ok = f.deadline.some((k) => {
+        if (k === "none") return days === null;
+        if (days === null) return false;
+        if (k === "past") return days < 0;
+        const want = k === "today" ? 0 : k === "d3" ? 3 : k === "d7" ? 7 : k === "d30" ? 30 : -1;
+        return want >= 0 && days >= 0 && days <= want;
+      });
+      if (!ok) return false;
+    }
+    if (typeof f.salaryMin === "number" && (j.salaryMax || j.salaryMin) < f.salaryMin) return false;
+    if (typeof f.salaryMax === "number" && j.salaryMin > f.salaryMax) return false;
+    if (myLevel !== null) {
       // 向下兼容：岗位要求层级 <= 我的学历层级（学历不限 level=0 恒满足）
-      const myLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;
       if (degreeLevel(j.degree) > myLevel) return false;
     }
     if (f.q) {
