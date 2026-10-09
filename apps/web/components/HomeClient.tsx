@@ -36,15 +36,30 @@ export type HomeStats = {
 type Dim = "city" | "industry" | "companyType" | "jobType" | "cohort" | "degree" | "school" | "deadline";
 type FState = Record<Dim, string[]>;
 
-const DIMS: { key: Dim; label: string; contextual?: "event" }[] = [
+const DIMS: { key: Dim; label: string }[] = [
   { key: "city", label: "城市" },
   { key: "industry", label: "行业" },
   { key: "companyType", label: "公司性质" },
   { key: "cohort", label: "届别" },
   { key: "degree", label: "学历" },
   { key: "deadline", label: "截止时间" },
-  { key: "school", label: "学校", contextual: "event" },
+  { key: "school", label: "学校" },
 ];
+
+// 各招聘类型下**适用**的面板维度（用户明确要求）：
+//   - 城市/行业/公司性质/届别/学历/截止时间 只对「校招/实习」有语义
+//   - 活动类（宣讲会/招聘会）只保留「学校」——此时才有"举办学校"语义
+//   - 「招聘公告」无可用维度
+// 不适用的维度：不显示、也不参与过滤（值保留，切回校招/实习时恢复）
+const PANEL_DIMS: Dim[] = ["city", "industry", "companyType", "cohort", "degree", "deadline", "school"];
+const APPLICABLE_BY_TYPE: Record<string, Dim[]> = {
+  "": PANEL_DIMS.filter((d) => d !== "school"),
+  校招: PANEL_DIMS.filter((d) => d !== "school"),
+  实习: PANEL_DIMS.filter((d) => d !== "school"),
+  宣讲会: ["school"],
+  招聘会: ["school"],
+  招聘公告: [],
+};
 
 // 顶部快捷区：5 个固定招聘类型。
 // 规则（用户明确要求）：
@@ -285,6 +300,10 @@ export default function HomeClient({
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
+  // 当前 chip 下真正适用的维度：同时决定「显示哪些」与「生效哪些」，
+  // 两者必须来自同一个列表，否则会出现"看不见但被筛掉"的静默过滤。
+  const applicable = useMemo(() => APPLICABLE_BY_TYPE[chip] ?? APPLICABLE_BY_TYPE[""], [chip]);
+
   useEffect(() => {
     function onScroll() {
       setShowBackTop(window.scrollY > 600);
@@ -347,16 +366,22 @@ export default function HomeClient({
   const list = useMemo(() => {
     let l = jobs;
     const f = (k: Dim) => filters[k];
+    // 只应用「当前类型适用」的维度。不适用的维度既不显示也不生效，
+    // 避免"面板看不见、结果却被筛掉"的静默过滤（值保留，切回校招/实习即恢复）。
+    const ok = (k: Dim) => applicable.includes(k);
     // 招聘类型：由顶部 chip 单选承担（与面板 filters 独立）
     if (chip) l = l.filter((j) => j.jobType === chip);
-    if (f("city").length) l = l.filter((j) => f("city").includes(j.city));
-    if (f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
-    if (f("companyType").length) l = l.filter((j) => f("companyType").includes(j.companyType));
+    if (ok("city") && f("city").length) l = l.filter((j) => f("city").includes(j.city));
+    if (ok("industry") && f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
+    if (ok("companyType") && f("companyType").length)
+      l = l.filter((j) => f("companyType").includes(j.companyType));
     // 届别：「不限届别」= 不筛（库内 81.7% 岗位届别为空，需要一个显式的"不筛"出口）
     const cohortSel = f("cohort").filter((c) => c !== COHORT_ANY);
-    if (cohortSel.length) l = l.filter((j) => cohortSel.includes(j.cohort));
-    if (f("school").length) l = l.filter((j) => f("school").some((s) => s && j.source.includes(s)));
-    if (f("deadline").length) l = l.filter((j) => f("deadline").some((k) => matchDeadlineBucket(j.deadlineDays, k)));
+    if (ok("cohort") && cohortSel.length) l = l.filter((j) => cohortSel.includes(j.cohort));
+    if (ok("school") && f("school").length)
+      l = l.filter((j) => f("school").some((s) => s && j.source.includes(s)));
+    if (ok("deadline") && f("deadline").length)
+      l = l.filter((j) => f("deadline").some((bk) => matchDeadlineBucket(j.deadlineDays, bk)));
     // 薪资：仅由复合搜索产出（面板无薪资维度），区间无交集或未标注薪资则排除
     if (salary && (typeof salary.min === "number" || typeof salary.max === "number")) {
       l = l.filter((j) => {
@@ -366,7 +391,7 @@ export default function HomeClient({
         return true;
       });
     }
-    if (f("degree").length) {
+    if (ok("degree") && f("degree").length) {
       // 向下兼容：多选时取最高学历作为我的学历，显示岗位要求层级 <= 我的层级
       const myLevel = Math.max(...f("degree").map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
       l = l.filter((j) => degreeLevel(j.degree) <= myLevel);
@@ -378,7 +403,7 @@ export default function HomeClient({
       );
     }
     return sortJobsBy(l, sortMode);
-  }, [jobs, filters, q, sortMode, salary, chip]);
+  }, [jobs, filters, q, sortMode, salary, chip, applicable]);
 
   const todayJobs = useMemo(
     () => jobs.filter((j) => j.deadlineDays === 0).sort((a, b) => (a.deadlineAt || "").localeCompare(b.deadlineAt || "")),
@@ -395,7 +420,7 @@ export default function HomeClient({
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const shown = list.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const dims = DIMS;
+  const dims = useMemo(() => DIMS.filter((d) => applicable.includes(d.key)), [applicable]);
 
   function toggleDim(d: Dim, v: string) {
     setFilters((prev) => {
@@ -449,10 +474,11 @@ export default function HomeClient({
     setCurrentPage(1);
   }
 
-  // 已选条件总数（面板维度 + 薪资）。
-  // 顶部 chip **不计入**——点 chip 不应触发「清除」按钮（chip 与面板相互独立）。
+  // 已选条件总数：只统计**当前类型适用**的面板维度 + 薪资。
+  // - 顶部 chip 不计入——点 chip 不应触发「清除」按钮（chip 与面板相互独立）
+  // - 不适用维度即使有残留值也不计入，否则会出现"看不到任何条件却有清除按钮"
   const activeCount =
-    (Object.keys(filters) as Dim[]).reduce((n, k) => n + filters[k].length, 0) + (salary ? 1 : 0);
+    applicable.reduce((n, k) => n + filters[k].length, 0) + (salary ? 1 : 0);
 
   // 薪资无面板维度，只有它能被复合搜索设上；单独给一个可删除 chip
   const salaryLabel = salary
@@ -575,13 +601,7 @@ export default function HomeClient({
           ))}
         </div>
         <div className="filter-group" ref={fgRef}>
-          {dims
-            .filter((d) => {
-              // 学校只在「活动类」（宣讲会/招聘会）语境下出现——此时才有"举办学校"语义
-              if (d.key === "school") return chip === "招聘会" || chip === "宣讲会";
-              return true;
-            })
-            .map((d) => (
+          {dims.map((d) => (
             <button
               key={d.key}
               className={"filter-btn" + (openDim === d.key ? " open" : "")}
@@ -606,7 +626,8 @@ export default function HomeClient({
             </button>
           )}
           <div className={"filter-panel" + (openDim ? " open" : "")}>
-            {openDim && <FilterOptions dim={openDim} opts={dimOpts[openDim]} filters={filters} toggleDim={toggleDim} clearDim={clearDim} setCurrentPage={setCurrentPage} onCityChange={(next) => { setFilters((f) => ({ ...f, city: next })); setCurrentPage(1); }} />}
+            {/* 只渲染「当前类型适用」维度的面板——否则切换 chip 后可能露出已隐藏维度的选项 */}
+            {openDim && applicable.includes(openDim) && <FilterOptions dim={openDim} opts={dimOpts[openDim]} filters={filters} toggleDim={toggleDim} clearDim={clearDim} setCurrentPage={setCurrentPage} onCityChange={(next) => { setFilters((f) => ({ ...f, city: next })); setCurrentPage(1); }} />}
           </div>
         </div>
       </div>
