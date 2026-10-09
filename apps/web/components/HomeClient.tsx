@@ -30,10 +30,9 @@ export type HomeStats = {
   due30: number;
 };
 
-// 面板维度：固定项全部保留，但从**读取边界**看每个维度只有一个控件。
-// 「招聘类型」不在此列——它由顶部 chip 承担（5 个固定类型），
-// 两者共用 filters.jobType 同一份 state，面板再放一份就是重复控件。
+// 面板维度：「招聘类型」不在此列——它由顶部 chip 单选承担（两者相互独立，不共用 state）。
 // 「学校」只在活动类（宣讲会/招聘会）语境下出现——此时才有"举办学校"语义。
+// jobType 键保留在 FState 里仅为兼容复合搜索的合并结构，恒为空数组（类型只走 chip）。
 type Dim = "city" | "industry" | "companyType" | "jobType" | "cohort" | "degree" | "school" | "deadline";
 type FState = Record<Dim, string[]>;
 
@@ -47,11 +46,14 @@ const DIMS: { key: Dim; label: string; contextual?: "event" }[] = [
   { key: "school", label: "学校", contextual: "event" },
 ];
 
-// 顶部快捷区：全部 + 5 个固定招聘类型。
-// 关键：chip 与面板「招聘类型」**共用同一份 filters.jobType**（不再是两套 state），
-// 因此不会出现旧版「chip=实习 + 面板=校招 → 空列表无提示」的矛盾条件。
-// 「全部」= 清空招聘类型（不限类型），不重置其他维度——重置全部由「清除」承担。
-const CHIPS = [{ key: "all", label: "全部" }, ...JOB_TYPES.map((t) => ({ key: t as string, label: t as string }))];
+// 顶部快捷区：5 个固定招聘类型。
+// 规则（用户明确要求）：
+//   - 单选：同时只能有一个生效；再点同一个即取消（回到"不限类型"）
+//   - 无「全部」项
+//   - 与面板相互独立：chip 不参与 activeCount，故点完 chip 不会冒出「清除」按钮
+//   - 面板已移除「招聘类型」，因此 chip 是该维度**唯一**控件，结构上不可能再出现
+//     旧版「chip=实习 + 面板=校招」那种互相矛盾的条件
+const CHIPS = JOB_TYPES.map((t) => ({ key: t as string, label: t as string }));
 
 // 复合搜索可回显的条件标签
 const PARSED_FIELD_LABEL: Record<string, string> = {
@@ -90,6 +92,9 @@ export default function HomeClient({
   const [openDim, setOpenDim] = useState<Dim | null>(null);
   const [view, setView] = useState<"card" | "table">("card");
   const [sortMode, setSortMode] = useState<SortMode>("deadline");
+  // 顶部 chip 的招聘类型：单选（"" = 不限类型）。与面板 filters 相互独立，
+  // 不计入 activeCount —— 点 chip 不应触发「清除」按钮。
+  const [chip, setChip] = useState("");
   // 薪资条件只可能来自复合搜索（面板无薪资维度）
   const [salary, setSalary] = useState<{ min?: number; max?: number } | null>(null);
   const [showToday, setShowToday] = useState(false);
@@ -342,7 +347,8 @@ export default function HomeClient({
   const list = useMemo(() => {
     let l = jobs;
     const f = (k: Dim) => filters[k];
-    if (f("jobType").length) l = l.filter((j) => f("jobType").includes(j.jobType));
+    // 招聘类型：由顶部 chip 单选承担（与面板 filters 独立）
+    if (chip) l = l.filter((j) => j.jobType === chip);
     if (f("city").length) l = l.filter((j) => f("city").includes(j.city));
     if (f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
     if (f("companyType").length) l = l.filter((j) => f("companyType").includes(j.companyType));
@@ -372,7 +378,7 @@ export default function HomeClient({
       );
     }
     return sortJobsBy(l, sortMode);
-  }, [jobs, filters, q, sortMode, salary]);
+  }, [jobs, filters, q, sortMode, salary, chip]);
 
   const todayJobs = useMemo(
     () => jobs.filter((j) => j.deadlineDays === 0).sort((a, b) => (a.deadlineAt || "").localeCompare(b.deadlineAt || "")),
@@ -405,9 +411,8 @@ export default function HomeClient({
     setFilters((prev) => ({ ...prev, [d]: [] }));
   }
 
-  // 重置全部条件：空结果页的"清除筛选"与面板「清除」共用
-  function resetAll() {
-    setQ("");
+  // 重置面板条件（**不含**顶部 chip —— chip 与面板相互独立）
+  function resetPanel() {
     setSalary(null);
     setFilters({
       city: [],
@@ -422,11 +427,20 @@ export default function HomeClient({
     setCurrentPage(1);
   }
 
+  // 重置全部（含搜索词与顶部 chip）：用于空结果页的"清除筛选"
+  function resetAll() {
+    setQ("");
+    setChip("");
+    resetPanel();
+  }
+
   // 提交复合搜索：解析出的条件并入筛选面板（同一份 state），
   // 输入框只保留未识别的关键词——避免「搜索」与「面板」两套条件互相矛盾。
+  // 招聘类型由 chip 单一承担：解析到类型时写进 chip，并从 filters 里剔除，避免两份状态。
   function commitQuery() {
     const p = parseQuery(q);
-    setFilters((prev) => mergeParsed(prev, p.filters));
+    setFilters((prev) => ({ ...mergeParsed(prev, p.filters), jobType: [] }));
+    if (p.filters.jobType.length) setChip(p.filters.jobType[0]);
     setQ(p.keyword);
     // 薪资没有面板维度，单独存；不清除已有值，除非这次搜索带了解析结果
     if (typeof p.filters.salaryMin === "number" || typeof p.filters.salaryMax === "number") {
@@ -435,9 +449,8 @@ export default function HomeClient({
     setCurrentPage(1);
   }
 
-  // 已选条件总数（**全部 FState 维度** + 薪资）。
-  // 注意：按 filters 全量统计而非按 DIMS，否则「招聘类型」（由 chip 承担、不在 DIMS 里）
-  // 被选中时 activeCount 仍为 0，「清除」按钮就不会出现。
+  // 已选条件总数（面板维度 + 薪资）。
+  // 顶部 chip **不计入**——点 chip 不应触发「清除」按钮（chip 与面板相互独立）。
   const activeCount =
     (Object.keys(filters) as Dim[]).reduce((n, k) => n + filters[k].length, 0) + (salary ? 1 : 0);
 
@@ -547,29 +560,25 @@ export default function HomeClient({
         </div>
       </div>
 
-      {/* ===== 筛选（8 个固定维度全部保留；顶部只留「全部」重置） ===== */}
+      {/* ===== 筛选（顶部 chip 单选招聘类型；面板 6 维固定项 + 情境化学校） ===== */}
       <div className="toolbar">
         <div className="chips">
-          {CHIPS.map((c) => {
-            // 与面板「招聘类型」共用 filters.jobType，故高亮状态始终与面板一致
-            const on = c.key === "all" ? filters.jobType.length === 0 : filters.jobType.includes(c.key);
-            return (
-              <button
-                key={c.key}
-                className={on ? "on" : ""}
-                onClick={() => (c.key === "all" ? clearDim("jobType") : toggleDim("jobType", c.key))}
-              >
-                {c.label}
-              </button>
-            );
-          })}
+          {CHIPS.map((c) => (
+            <button
+              key={c.key}
+              className={chip === c.key ? "on" : ""}
+              // 单选：点同一个即取消（回到"不限类型"）
+              onClick={() => setChip((prev) => (prev === c.key ? "" : c.key))}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
         <div className="filter-group" ref={fgRef}>
           {dims
             .filter((d) => {
               // 学校只在「活动类」（宣讲会/招聘会）语境下出现——此时才有"举办学校"语义
-              if (d.key === "school")
-                return filters.jobType.some((t) => t === "招聘会" || t === "宣讲会");
+              if (d.key === "school") return chip === "招聘会" || chip === "宣讲会";
               return true;
             })
             .map((d) => (
@@ -591,7 +600,7 @@ export default function HomeClient({
             <button
               className="filter-btn"
               style={{ borderColor: "rgba(202,0,19,.5)", color: "#fda4af" }}
-              onClick={resetAll}
+              onClick={resetPanel}
             >
               清除
             </button>
