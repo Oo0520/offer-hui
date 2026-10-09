@@ -48,17 +48,18 @@ const DIMS: { key: Dim; label: string }[] = [
 
 // 各招聘类型下**适用**的面板维度（用户明确要求）：
 //   - 城市/行业/公司性质/届别/学历/截止时间 只对「校招/实习」有语义
-//   - 活动类（宣讲会/招聘会）只保留「学校」——此时才有"举办学校"语义
-//   - 「招聘公告」无可用维度
+//   - 活动类（宣讲会/招聘会）保留「学校」（举办学校）与「截止时间」（举办日期）
+//   - 「招聘公告」保留「截止时间」
 // 不适用的维度：不显示、也不参与过滤（值保留，切回校招/实习时恢复）
 const PANEL_DIMS: Dim[] = ["city", "industry", "companyType", "cohort", "degree", "deadline", "school"];
+const CORE_DIMS: Dim[] = PANEL_DIMS.filter((d) => d !== "school");
 const APPLICABLE_BY_TYPE: Record<string, Dim[]> = {
-  "": PANEL_DIMS.filter((d) => d !== "school"),
-  校招: PANEL_DIMS.filter((d) => d !== "school"),
-  实习: PANEL_DIMS.filter((d) => d !== "school"),
-  宣讲会: ["school"],
-  招聘会: ["school"],
-  招聘公告: [],
+  "": CORE_DIMS,
+  校招: CORE_DIMS,
+  实习: CORE_DIMS,
+  宣讲会: ["deadline", "school"],
+  招聘会: ["deadline", "school"],
+  招聘公告: ["deadline"],
 };
 
 // 顶部快捷区：5 个固定招聘类型。
