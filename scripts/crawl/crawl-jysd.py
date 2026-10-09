@@ -323,6 +323,41 @@ def parse_listcard(school, cfg, block):
         "place": place, "city": city, "degree": None,
     }
 
+DETAIL_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+             "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
+
+# 详情页 <title> 里的站点级文案（无效 id / 错误页），不作为岗位标题
+_DETAIL_TITLE_NOISE = ("就业创业服务平台", "智慧就业", "View Teachin", "View Fair", "View Campus")
+
+
+def fetch_detail_title(url):
+    """列表卡片没解析出标题时的回退：抓详情页的 <title> 与公司名。
+
+    依据（2026-10-09 实测）：
+      - jysd 的**列表页是 JS 渲染**的，静态 HTML 里没有任何卡片标记
+        （零个 /job/view/id/、零个 title=、零个 infoList），所以列表卡片解析失败时
+        无法从列表 HTML 补救；
+      - 但**详情页是服务端渲染**的，纯 HTTP 可取、无需登录，且 <title> 就是岗位标题，
+        公司名在 <a href="/company/view/id/NNN">公司名</a> 里。
+    故这里用普通 HTTP（不是 StealthyFetcher，单页约 1s），且只对缺标题的卡片触发。
+    """
+    try:
+        req = urllib.request.Request(
+            url, headers={"User-Agent": DETAIL_UA, "Accept-Language": "zh-CN,zh;q=0.9"})
+        with urllib.request.urlopen(req, timeout=25) as r:
+            body = r.read().decode("utf-8", "replace")
+    except Exception as e:
+        print(f"    ! 详情页回退失败 {url}: {str(e)[:80]}")
+        return None, None
+    tm = re.search(r"<title>(.*?)</title>", body, re.S)
+    title = re.sub(r"\s+", " ", _strip_tags(tm.group(1))).strip() if tm else None
+    if title and any(n in title for n in _DETAIL_TITLE_NOISE):
+        title = None
+    cm = re.search(r'<a href="/company/view/id/\d+">(.*?)</a>', body, re.S)
+    company = re.sub(r"\s+", " ", _strip_tags(cm.group(1))).strip() if cm else None
+    return (title or None), (company or None)
+
+
 def build_item(school, section_key, cfg, parsed):
     """解析结果 → DB item（含 external_id/job_type/时间字段/公司性质）"""
     fid = parsed["fid"]
@@ -472,7 +507,8 @@ def mark_expired(source: str, valid_eids: set, existing_map: dict, stats: dict):
 def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
     source = school["source"]
     sections = build_sections(school)
-    stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0}
+    stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
+             "title_fallback": 0, "no_title": 0}
     print(f"\n{'='*60}")
     print(f"=== {school['name']}（source={source}）===")
     print(f"{'='*60}", flush=True)
@@ -528,6 +564,24 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
                         continue
                 item = build_item(school, section_key, cfg, parsed)
                 eid = item["external_id"]
+                # 回退：列表卡片没解析出标题 → 用详情页补（顺带补公司名）
+                if not (item.get("title") or "").strip():
+                    dt, dc = fetch_detail_title(cfg["detail_url"].format(id=parsed["fid"]))
+                    if dt:
+                        item["title"] = dt
+                        stats["title_fallback"] = stats.get("title_fallback", 0) + 1
+                    if dc and not item.get("company"):
+                        item["company"] = dc
+                if not (item.get("title") or "").strip():
+                    # 仍无标题：**不写库**（避免产生"没有信息"的残卡），但保留在 valid_eids，
+                    # 以免把它判成过期而误藏掉可能是真岗位的记录。
+                    stats["no_title"] = stats.get("no_title", 0) + 1
+                    print(f"    ! 跳过无标题卡片 {eid}")
+                    if eid in seen_eid:
+                        continue
+                    seen_eid.add(eid)
+                    valid_eids.add(eid)
+                    continue
                 if eid in seen_eid:
                     continue
                 seen_eid.add(eid)
@@ -570,11 +624,12 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
 
     print(f"\n--- {school['name']} 完成 ---")
     print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, "
-          f"过期: {stats['expired']}, 失败: {stats['fail']}", flush=True)
+          f"过期: {stats['expired']}, 失败: {stats['fail']}, "
+        f"详情页补标题: {stats.get('title_fallback', 0)}, 无标题跳过: {stats.get('no_title', 0)}", flush=True)
     if stats["fail"] > 0:
         alert_crawl_failed(SCRIPT_NAME, f"{school['name']} 有 {stats['fail']} 条失败", stats)
 
-    for k in ("new", "changed", "skipped", "fail"):
+    for k in ("new", "changed", "skipped", "fail", "title_fallback", "no_title"):
         total_stats[k] += stats[k]
     total_stats["expired"] = total_stats.get("expired", 0) + stats["expired"]
     return stats
@@ -584,7 +639,8 @@ def main():
     today = datetime.now(TZ)
     print("=== jysd 通用多学校爬虫（纯列表解析版） ===")
     print(f"今天 {today.strftime('%Y-%m-%d')}，配置学校：{', '.join(s['name'] for s in SCHOOLS)}")
-    total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0}
+    total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
+             "title_fallback": 0, "no_title": 0}
 
     try:
         fetcher = StealthyFetcher()  # 列表 fetcher 跨学校复用
@@ -594,7 +650,8 @@ def main():
         print(f"\n{'='*60}")
         print(f"=== 全部完成（{len(SCHOOLS)} 所学校）===")
         print(f"总计 新增: {total['new']}, 变更: {total['changed']}, 跳过: {total['skipped']}, "
-              f"过期: {total['expired']}, 失败: {total['fail']}")
+              f"过期: {total['expired']}, 失败: {total['fail']}, "
+      f"详情页补标题: {total.get('title_fallback', 0)}, 无标题跳过: {total.get('no_title', 0)}")
         if total["fail"] > 0:
             alert_crawl_failed(SCRIPT_NAME, f"总计 {total['fail']} 条失败", total)
     except Exception as e:
