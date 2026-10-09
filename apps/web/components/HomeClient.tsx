@@ -86,6 +86,35 @@ const DEADLINE_LABEL: Record<string, string> = Object.fromEntries(
   DEADLINE_BUCKETS.map((b) => [b.key, b.label]),
 );
 
+// 单维度匹配判定（sel 为空 = 不筛）。
+// **计数**与**实际筛选**必须共用这一份逻辑，否则两套规则会漂移成"数字和结果对不上"。
+function matchDim(j: JobView, k: Dim, sel: string[]): boolean {
+  if (!sel.length) return true;
+  switch (k) {
+    case "city":
+      return sel.includes(j.city);
+    case "industry":
+      return sel.includes(j.industry);
+    case "companyType":
+      return sel.includes(j.companyType);
+    case "cohort": {
+      const s = sel.filter((c) => c !== COHORT_ANY);
+      return s.length === 0 ? true : s.includes(j.cohort);
+    }
+    case "school":
+      return sel.some((s) => s && j.source.includes(s));
+    case "deadline":
+      return sel.some((bk) => matchDeadlineBucket(j.deadlineDays, bk));
+    case "degree": {
+      // 向下兼容：取最高学历作为"我的学历"，显示岗位要求层级 ≤ 我的层级
+      const my = Math.max(...sel.map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
+      return degreeLevel(j.degree) <= my;
+    }
+    default:
+      return true;
+  }
+}
+
 export default function HomeClient({
   jobs,
   stats,
@@ -323,65 +352,75 @@ export default function HomeClient({
       school: [],
       deadline: [],
     };
-    // 招聘类型：本站内容形态 5 类（含此前遗漏的「招聘公告」）
+    // 顶部类型是所有计数的底色
+    const typeBase = chip ? jobs.filter((j) => j.jobType === chip) : jobs;
+    // 分面计数（标准做法）：维度 D 的计数基数 = 顶部类型 + **除 D 以外**的其他已选条件。
+    // 这样"数字"就等于"点下去真正能拿到多少"；若只按类型算，会出现
+    // 「互联网 120」但一点下去 0 条（因为还选了城市）这种假数字。
+    const baseFor = (self: Dim): JobView[] => {
+      let l = typeBase;
+      for (const k of applicable) {
+        if (k === self) continue;
+        const sel = filters[k];
+        if (!sel.length) continue;
+        l = l.filter((j) => matchDim(j, k, sel));
+      }
+      return l;
+    };
+    // 招聘类型：由顶部 chip 单选承担，面板不再展示该维度（保留键位以免类型缺失）
     m.jobType = JOB_TYPES.map((v) => ({
       v,
       n: jobs.filter((j) => j.jobType === v).length,
     }));
-    // 城市：标准城市树 + 计数
-    m.city = cityOptions(jobs);
+    // 城市：标准城市树（选项集固定，只有计数随上方条件收缩）
+    m.city = cityOptions(baseFor("city"));
     // 行业：标准类目固定 19 项（含 0 计数项，保持选项集稳定）
-    m.industry = industryOptions(jobs);
+    m.industry = industryOptions(baseFor("industry"));
     // 公司性质：固定 4 类
-    m.companyType = companyTypeOptions(jobs);
-    // 届别：固定档位；「不限届别」计数=全部（选中它等于不筛）
+    m.companyType = companyTypeOptions(baseFor("companyType"));
+    // 届别：固定档位；「不限届别」计数=基数全部（选中它等于不筛）
+    const cBase = baseFor("cohort");
     m.cohort = COHORT_OPTIONS.map((v) => ({
       v,
-      n: v === COHORT_ANY ? jobs.length : jobs.filter((j) => j.cohort === v).length,
+      n: v === COHORT_ANY ? cBase.length : cBase.filter((j) => j.cohort === v).length,
     }));
-    // 学历：「我的学历」三档，计数按向下兼容语义（岗位要求层级 ≤ 我的层级）
+    // 学历：固定三档，计数按向下兼容语义（岗位要求层级 ≤ 我的层级）
+    const dBase = baseFor("degree");
     m.degree = dimOptions(jobs, "degree").map((v) => ({
       v,
-      n: jobs.filter((j) => degreeLevel(j.degree) <= (DEGREE_FILTER_LEVEL[v] ?? 0)).length,
+      n: dBase.filter((j) => degreeLevel(j.degree) <= (DEGREE_FILTER_LEVEL[v] ?? 0)).length,
     }));
-    // 截止时间：分档
+    // 截止时间：固定六档
+    const dlBase = baseFor("deadline");
     m.deadline = DEADLINE_BUCKETS.map((b) => ({
       v: b.key,
-      n: jobs.filter((j) => matchDeadlineBucket(j.deadlineDays, b.key)).length,
+      n: dlBase.filter((j) => matchDeadlineBucket(j.deadlineDays, b.key)).length,
     }));
     // 学校：仅从招聘会/宣讲会提取（活动类才有「举办学校」语义）
     const m2 = new Map<string, number>();
-    for (const j of jobs) {
+    for (const j of baseFor("school")) {
       if (!j.source) continue;
       if (j.jobType !== "招聘会" && j.jobType !== "宣讲会") continue;
       m2.set(j.source, (m2.get(j.source) || 0) + 1);
     }
     m.school = [...m2.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
     return m;
-  }, [jobs]);
+  }, [jobs, chip, filters, applicable]);
 
   // 复合搜索：解析预览（输入即时可见，Enter 才提交条件）
   const parsed = useMemo(() => parseQuery(q), [q]);
 
   const list = useMemo(() => {
     let l = jobs;
-    const f = (k: Dim) => filters[k];
-    // 只应用「当前类型适用」的维度。不适用的维度既不显示也不生效，
-    // 避免"面板看不见、结果却被筛掉"的静默过滤（值保留，切回校招/实习即恢复）。
-    const ok = (k: Dim) => applicable.includes(k);
     // 招聘类型：由顶部 chip 单选承担（与面板 filters 独立）
     if (chip) l = l.filter((j) => j.jobType === chip);
-    if (ok("city") && f("city").length) l = l.filter((j) => f("city").includes(j.city));
-    if (ok("industry") && f("industry").length) l = l.filter((j) => f("industry").includes(j.industry));
-    if (ok("companyType") && f("companyType").length)
-      l = l.filter((j) => f("companyType").includes(j.companyType));
-    // 届别：「不限届别」= 不筛（库内 81.7% 岗位届别为空，需要一个显式的"不筛"出口）
-    const cohortSel = f("cohort").filter((c) => c !== COHORT_ANY);
-    if (ok("cohort") && cohortSel.length) l = l.filter((j) => cohortSel.includes(j.cohort));
-    if (ok("school") && f("school").length)
-      l = l.filter((j) => f("school").some((s) => s && j.source.includes(s)));
-    if (ok("deadline") && f("deadline").length)
-      l = l.filter((j) => f("deadline").some((bk) => matchDeadlineBucket(j.deadlineDays, bk)));
+    // 只应用「当前类型适用」的维度。不适用的维度既不显示也不生效，
+    // 避免"面板看不见、结果却被筛掉"的静默过滤（值保留，切回校招/实习即恢复）。
+    for (const k of applicable) {
+      const sel = filters[k];
+      if (!sel.length) continue;
+      l = l.filter((j) => matchDim(j, k, sel));
+    }
     // 薪资：仅由复合搜索产出（面板无薪资维度），区间无交集或未标注薪资则排除
     if (salary && (typeof salary.min === "number" || typeof salary.max === "number")) {
       l = l.filter((j) => {
@@ -391,11 +430,6 @@ export default function HomeClient({
         return true;
       });
     }
-    if (ok("degree") && f("degree").length) {
-      // 向下兼容：多选时取最高学历作为我的学历，显示岗位要求层级 <= 我的层级
-      const myLevel = Math.max(...f("degree").map((d) => DEGREE_FILTER_LEVEL[d] ?? 0));
-      l = l.filter((j) => degreeLevel(j.degree) <= myLevel);
-    }
     if (q.trim()) {
       const ql = q.trim().toLowerCase();
       l = l.filter((j) =>
@@ -404,6 +438,9 @@ export default function HomeClient({
     }
     return sortJobsBy(l, sortMode);
   }, [jobs, filters, q, sortMode, salary, chip, applicable]);
+
+  // 招聘公告没有截止语义（该类型不带 deadline_at），隐藏所有截止相关区块
+  const showDeadlineBlocks = chip !== "招聘公告";
 
   // 「今日截止」与「近期截止 Top 6」必须跟随**当前筛选结果**（顶部 chip + 面板条件 + 搜索）。
   // 早前这两块直接读全量 jobs，导致切换顶部类型时它们纹丝不动（用户实测反馈）。
@@ -643,6 +680,8 @@ export default function HomeClient({
       {/* ===== 主体 ===== */}
       <div className="main">
         <div className="col">
+          {showDeadlineBlocks && (
+            <>
           {/* 今日截止（默认折叠，点击展开） */}
           <div
             className="today-fold glass"
@@ -691,6 +730,8 @@ export default function HomeClient({
                 ))}
               </div>
             ))}
+            </>
+          )}
 
           {/* 岗位列表 */}
           <div className="sec-head" style={{ marginTop: 24 }}>
@@ -806,6 +847,7 @@ export default function HomeClient({
 
         {/* 侧栏 */}
         <aside className="side">
+          {showDeadlineBlocks && (
           <div className="panel glass">
             <h4>
               <span className="dot"></span>近期截止 Top 6
@@ -875,6 +917,7 @@ export default function HomeClient({
               </div>
             )}
           </div>
+          )}
 
           <div className="panel glass">
             <h4>
