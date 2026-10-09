@@ -30,8 +30,9 @@ export type HomeStats = {
   due30: number;
 };
 
-// 面板维度：**全部保留为固定项**（不因引入复合搜索而削减），并按旧版顺序排列，
-// 新增「截止时间」取代原先的 "30天内截止" chip。
+// 面板维度：固定项全部保留，但从**读取边界**看每个维度只有一个控件。
+// 「招聘类型」不在此列——它由顶部 chip 承担（5 个固定类型），
+// 两者共用 filters.jobType 同一份 state，面板再放一份就是重复控件。
 // 「学校」只在活动类（宣讲会/招聘会）语境下出现——此时才有"举办学校"语义。
 type Dim = "city" | "industry" | "companyType" | "jobType" | "cohort" | "degree" | "school" | "deadline";
 type FState = Record<Dim, string[]>;
@@ -40,16 +41,17 @@ const DIMS: { key: Dim; label: string; contextual?: "event" }[] = [
   { key: "city", label: "城市" },
   { key: "industry", label: "行业" },
   { key: "companyType", label: "公司性质" },
-  { key: "jobType", label: "招聘类型" },
   { key: "cohort", label: "届别" },
   { key: "degree", label: "学历" },
   { key: "deadline", label: "截止时间" },
   { key: "school", label: "学校", contextual: "event" },
 ];
 
-// 顶部快捷区只留「全部」：原 4 个类型 chip 与面板「招聘类型」是同一维度两套控件，
-// 能选出互相矛盾的条件（chip=实习 + 面板=校招 → 空列表无提示），故删除。
-const CHIPS = [{ key: "all", label: "全部" }];
+// 顶部快捷区：全部 + 5 个固定招聘类型。
+// 关键：chip 与面板「招聘类型」**共用同一份 filters.jobType**（不再是两套 state），
+// 因此不会出现旧版「chip=实习 + 面板=校招 → 空列表无提示」的矛盾条件。
+// 「全部」= 清空招聘类型（不限类型），不重置其他维度——重置全部由「清除」承担。
+const CHIPS = [{ key: "all", label: "全部" }, ...JOB_TYPES.map((t) => ({ key: t as string, label: t as string }))];
 
 // 复合搜索可回显的条件标签
 const PARSED_FIELD_LABEL: Record<string, string> = {
@@ -88,8 +90,6 @@ export default function HomeClient({
   const [openDim, setOpenDim] = useState<Dim | null>(null);
   const [view, setView] = useState<"card" | "table">("card");
   const [sortMode, setSortMode] = useState<SortMode>("deadline");
-  // 顶部快捷区仅剩「全部」（重置）；类型 chip 与面板重复已删除
-  const [chip, setChip] = useState("all");
   // 薪资条件只可能来自复合搜索（面板无薪资维度）
   const [salary, setSalary] = useState<{ min?: number; max?: number } | null>(null);
   const [showToday, setShowToday] = useState(false);
@@ -405,9 +405,8 @@ export default function HomeClient({
     setFilters((prev) => ({ ...prev, [d]: [] }));
   }
 
-  // 重置全部条件：顶部「全部」chip 与空结果页的"清除筛选"共用
+  // 重置全部条件：空结果页的"清除筛选"与面板「清除」共用
   function resetAll() {
-    setChip("all");
     setQ("");
     setSalary(null);
     setFilters({
@@ -436,9 +435,11 @@ export default function HomeClient({
     setCurrentPage(1);
   }
 
-  // 已选条件总数（面板 8 维 + 薪资）。面板各按钮已显示自身计数，
-  // 故不再额外渲染"已生效条件"回显行——避免与面板重复。
-  const activeCount = DIMS.reduce((n, d) => n + filters[d.key].length, 0) + (salary ? 1 : 0);
+  // 已选条件总数（**全部 FState 维度** + 薪资）。
+  // 注意：按 filters 全量统计而非按 DIMS，否则「招聘类型」（由 chip 承担、不在 DIMS 里）
+  // 被选中时 activeCount 仍为 0，「清除」按钮就不会出现。
+  const activeCount =
+    (Object.keys(filters) as Dim[]).reduce((n, k) => n + filters[k].length, 0) + (salary ? 1 : 0);
 
   // 薪资无面板维度，只有它能被复合搜索设上；单独给一个可删除 chip
   const salaryLabel = salary
@@ -549,15 +550,19 @@ export default function HomeClient({
       {/* ===== 筛选（8 个固定维度全部保留；顶部只留「全部」重置） ===== */}
       <div className="toolbar">
         <div className="chips">
-          {CHIPS.map((c) => (
-            <button
-              key={c.key}
-              className={chip === c.key && activeCount === 0 ? "on" : ""}
-              onClick={resetAll}
-            >
-              {c.label}
-            </button>
-          ))}
+          {CHIPS.map((c) => {
+            // 与面板「招聘类型」共用 filters.jobType，故高亮状态始终与面板一致
+            const on = c.key === "all" ? filters.jobType.length === 0 : filters.jobType.includes(c.key);
+            return (
+              <button
+                key={c.key}
+                className={on ? "on" : ""}
+                onClick={() => (c.key === "all" ? clearDim("jobType") : toggleDim("jobType", c.key))}
+              >
+                {c.label}
+              </button>
+            );
+          })}
         </div>
         <div className="filter-group" ref={fgRef}>
           {dims
