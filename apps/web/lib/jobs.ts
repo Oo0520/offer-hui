@@ -244,6 +244,7 @@ export function cityOptions(jobs: JobView[]): { v: string; n: number }[] {
       out.push({ v: c, n: cnt.get(c) || 0 });
     }
   }
+  // 库内不在标准树里的值（海外等）追加兜底
   for (const [c, n] of cnt) {
     if (c !== "全国" && !seen.has(c)) out.push({ v: c, n });
   }
@@ -292,6 +293,7 @@ export function filterJobs(jobs: JobView[], f: JobFilter): JobView[] {
     if (f.companyType && j.companyType !== f.companyType) return false;
     if (f.cohort && j.cohort !== f.cohort) return false;
     if (f.degree && f.degree !== "不限") {
+      // 向下兼容：岗位要求层级 <= 我的学历层级（学历不限 level=0 恒满足）
       const myLevel = DEGREE_FILTER_LEVEL[f.degree] ?? 0;
       if (degreeLevel(j.degree) > myLevel) return false;
     }

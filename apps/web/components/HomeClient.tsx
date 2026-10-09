@@ -104,15 +104,18 @@ export default function HomeClient({
       const u = data.session?.user;
       if (!u) return;
 
+      // localStorage 的数据
       const localFavs = new Set(JSON.parse(localStorage.getItem("offer_fav") || "[]"));
       const localBoards = JSON.parse(localStorage.getItem("offer_board") || "{}");
 
+      // 数据库已有的
       const { data: existing } = await supabase
         .from("user_jobs")
         .select("job_id, status")
         .eq("user_id", u.id);
       const existingMap = new Set((existing || []).map((r) => r.job_id + "_" + r.status));
 
+      // 上传 localStorage 有但数据库没有的
       for (const jobId of localFavs) {
         if (!existingMap.has(jobId + "_star")) {
           await supabase.from("user_jobs").upsert(
@@ -130,6 +133,7 @@ export default function HomeClient({
         }
       }
 
+      // 再从数据库读全部
       supabase
         .from("user_jobs")
         .select("job_id, status")
@@ -147,6 +151,7 @@ export default function HomeClient({
         });
     });
 
+    // 监听登录状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!session?.user) return;
       supabase
@@ -176,7 +181,9 @@ export default function HomeClient({
     if (on) newFavs.add(jobId); else newFavs.delete(jobId);
     setFavs(newFavs);
     showToast(on ? "已收藏" : "已取消收藏");
+    // localStorage
     localStorage.setItem("offer_fav", JSON.stringify([...newFavs]));
+    // 数据库
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       if (on) {
@@ -200,6 +207,7 @@ export default function HomeClient({
     setBoards(newBoards);
     showToast(had ? "已从看板移除" : "已加入待投看板");
     localStorage.setItem("offer_board", JSON.stringify(newBoards));
+    // 数据库
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       if (newBoards[jobId]) {
