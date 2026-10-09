@@ -405,16 +405,18 @@ export default function HomeClient({
     return sortJobsBy(l, sortMode);
   }, [jobs, filters, q, sortMode, salary, chip, applicable]);
 
+  // 「今日截止」与「近期截止 Top 6」必须跟随**当前筛选结果**（顶部 chip + 面板条件 + 搜索）。
+  // 早前这两块直接读全量 jobs，导致切换顶部类型时它们纹丝不动（用户实测反馈）。
   const todayJobs = useMemo(
-    () => jobs.filter((j) => j.deadlineDays === 0).sort((a, b) => (a.deadlineAt || "").localeCompare(b.deadlineAt || "")),
-    [jobs]
+    () => list.filter((j) => j.deadlineDays === 0).sort((a, b) => (a.deadlineAt || "").localeCompare(b.deadlineAt || "")),
+    [list]
   );
   const dueSoon = useMemo(
     () =>
-      jobs
+      list
         .filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30)
         .sort((a, b) => (a.deadlineDays || 0) - (b.deadlineDays || 0)),
-    [jobs]
+    [list]
   );
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));

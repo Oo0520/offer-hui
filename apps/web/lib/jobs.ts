@@ -145,7 +145,11 @@ export function toView(r: JobRow): JobView {
   let days: number | null = null;
   if (dl) {
     const t = new Date(dl + "T00:00:00+08:00").getTime();
-    days = Math.round((t - Date.now()) / 86400000);
+    // 基准必须是**北京今日 0 点**，不能是 Date.now()：
+    // 两者都是北京 0 点，差值恰为整天数，Math.round 无歧义。
+    // 用 Date.now() 会随一天中的时刻漂移——中午 12 点后「今天截止」会被算成 -1（判定为已截止），
+    // 「今天截止」档里显示的其实是明天到期的岗位（2026-10-09 22:01 实测：13 vs 真实 11）。
+    days = Math.round((t - bjDayStart()) / 86400000);
   }
   const industry = r.industry || "未分类";
   return {
