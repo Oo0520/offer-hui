@@ -70,7 +70,19 @@ CASE
 END
 """
 
-_DEGREE_MIN = {"专科及以上": 1, "本科及以上": 2, "硕士及以上": 3}
+# 学历层级（与 Web 端 taxonomy.degreeLevel 及《高等教育法》口径一致）
+_DEGREE_MIN = {"专科及以上": 1, "本科及以上": 2, "硕士及以上": 3, "博士": 4}
+
+# 招聘类型 → 库内 job_type 取值。
+# 注意：xmu/jmu 的岗位类记录 job_type 存的是 'job'（语义等同校招），
+# 故「校招」必须同时匹配 campus 与 job，否则会漏掉这部分岗位。
+_JOB_TYPE_SQL = {
+    "校招": ["campus", "job"],
+    "实习": ["intern"],
+    "宣讲会": ["teachin"],
+    "招聘会": ["fair"],
+    "招聘公告": ["announcement"],
+}
 
 _SORT_SQL = {
     "deadline": """
@@ -117,7 +129,7 @@ def query_jobs(
     page: int = 1,
     page_size: int = 20,
 ) -> str:
-    """查询校招/实习岗位。city=城市(如 北京/上海)，job_type=校招|实习|招聘会，cohort=届别(如 2027届)，degree=不限|专科及以上|本科及以上|硕士及以上，keyword=岗位/公司关键词，sort=deadline(截止最近)|newest(最新)|salary(薪资最高)，page从1开始，page_size默认20。"""
+    """查询校招/实习岗位。city=城市(如 北京/上海)，job_type=校招|实习|宣讲会|招聘会|招聘公告，cohort=届别(如 2027届)，degree=不限|专科及以上|本科及以上|硕士及以上|博士，keyword=岗位/公司关键词，sort=deadline(截止最近)|newest(最新)|salary(薪资最高)，page从1开始，page_size默认20。"""
     _check_rate()
     page = max(1, page)
     page_size = min(50, max(1, page_size))
@@ -127,10 +139,11 @@ def query_jobs(
         where.append("j.city = %s")
         args.append(city)
     if job_type:
-        t = {"实习": "intern", "招聘会": "fair"}.get(job_type, "campus")
-        if job_type in ("校招", "实习", "招聘会"):
-            where.append("j.job_type = %s")
-            args.append(t)
+        # 未识别的类型不再默认按 campus 过滤（旧行为会静默返回错误结果）
+        ts = _JOB_TYPE_SQL.get(job_type)
+        if ts:
+            where.append("j.job_type = ANY(%s)")
+            args.append(ts)
     if industry:
         where.append("j.industry = %s")
         args.append(industry)
