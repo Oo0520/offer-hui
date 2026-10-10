@@ -80,10 +80,11 @@ def _rest_get(url: str, retries: int = 1):
 def fetch_existing_map(source: str) -> dict:
     """拉 {external_id: content_hash} 全量映射（仅 published；offset 分页防 1000 截断）
 
-    2026-10-10：**company_id 为 NULL 的行返回哨兵值**，而不是真实 hash。
-    原因：company_id 不进 content_hash，于是"内容没变但公司没关联上"的行会被
-    永久判为"跳过"、company_id 永远补不回来（实测因公司 upsert 报 500 导致 134 行
-    如此）。返回哨兵 → classify 视为"变更" → 下次抓取时重写并补上 company_id。
+    2026-10-10：**company_id 为 NULL 的行，hash 后面缀标记** `__NEEDS_COMPANY__`。
+    原因：company_id 不进 content_hash，于是"内容没变但公司没关联上"的行会被永久判为
+    "跳过"、company_id 永远补不回来（实测因公司 upsert 报 500 导致 134 行如此）。
+    注意标记必须**携带真实 hash**：只存哨兵字符串会让比较永远失配、每轮都白重写
+    （第一版就犯了这个错：公告类 100 行每轮都"变更"）。
     """
     existing = {}
     offset = 0
@@ -92,8 +93,8 @@ def fetch_existing_map(source: str) -> dict:
                f"&status=eq.published&offset={offset}&limit=1000")
         rows = _rest_get(url)
         for r in rows:
-            h = r.get("content_hash")
-            existing[r["external_id"]] = h if r.get("company_id") else "__NEEDS_COMPANY__"
+            h = r.get("content_hash") or ""
+            existing[r["external_id"]] = h if r.get("company_id") else h + "__NEEDS_COMPANY__"
         if len(rows) < 1000:
             return existing
         offset += 1000
@@ -357,7 +358,13 @@ def classify(item: dict | None, existing: dict, pending: list, stats: dict, expi
         return  # 沿用现状：本次列表中已过期的行不写入，不在列表才标过期
     eid = item["external_id"]
     h = compute_hash(item)
-    if eid in existing and existing[eid] == h:
+    # existing[eid] 可能是 "<真实hash>__NEEDS_COMPANY__"：拆出真实 hash 比较；
+    # 只有「本行确实有公司名可关联」时才强制重写，否则公告类会被每轮白重写
+    # （2026-10-10 实测：100 条公告行每轮"变更"而公司关联恒为 0）。
+    prev = existing.get(eid) or ""
+    prev_hash = prev.replace("__NEEDS_COMPANY__", "")
+    needs_company = prev.endswith("__NEEDS_COMPANY__") and bool((item.get("company") or "").strip())
+    if eid in existing and prev_hash == h and not needs_company:
         stats["skipped"] += 1
         return
     item["content_hash"] = h

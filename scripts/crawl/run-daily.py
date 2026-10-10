@@ -32,6 +32,15 @@ LOG = HERE / "run-daily.log"
 SCRIPTS = ("crawl-jysd.py", "crawl-fjrclh.py")
 REVALIDATE = "https://www.offerpiai.cn/api/revalidate?secret={token}"
 
+# 输出编码兜底（2026-10-10 实测事故）：本脚本会把子进程日志转印到自己的 stdout，
+# 而子进程带 PYTHONIOENCODING=utf-8、输出里有 ✓/⚠/✗；本脚本 stdout 若是 GBK（重定向/
+# 计划任务场景）就会在这里抛 UnicodeEncodeError 而崩 —— 与子进程同一类坑，父进程也要兜。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 
 def log(msg: str):
     line = f"[{datetime.now(TZ).strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
@@ -91,28 +100,33 @@ def run_script(name: str) -> bool:
         return False
     log(f"--- 开始 {name} ---")
     t0 = time.time()
+    # 子进程完整输出单独落盘：失败时只看最后几行会丢掉真正的异常栈
+    # （2026-10-10 实测：crawl-jysd 秒退，但 traceback 被 6 行截断，无法定位根因）
+    child_log = HERE / f"last-{name}.log"
     try:
         # -u（无缓冲）：否则子进程 stdout 重定向到文件时是块缓冲，写库阶段的 print
         #   会滞留在缓冲区，外部看到「日志冻结」而误判为卡死（2026-10-10 实际踩过）。
         # PYTHONIOENCODING=utf-8：子进程日志走管道时默认用 locale(GBK)，脚本里的
         #   ✓/⚠/✗ 会抛 UnicodeEncodeError 直接终止脚本（crawl-fjrclh.py 曾因此崩）。
         env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
-        p = subprocess.run([sys.executable, "-u", str(path)], cwd=str(HERE), env=env,
-                           capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=5400)
+        with io.open(child_log, "w", encoding="utf-8", errors="replace") as fh:
+            p = subprocess.run([sys.executable, "-u", str(path)], cwd=str(HERE), env=env,
+                               stdout=fh, stderr=subprocess.STDOUT, timeout=5400)
     except subprocess.TimeoutExpired:
-        log(f"!! {name} 超时（>90 分钟）")
+        log(f"!! {name} 超时（>90 分钟），完整输出: {child_log}")
         return False
     dur = round(time.time() - t0, 1)
-    tail = [l for l in (p.stdout or "").strip().splitlines() if l.strip()][-6:]
+    try:
+        out = child_log.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        out = ""
+    tail = [l for l in out.strip().splitlines() if l.strip()][-6:]
     for l in tail:
         log(f"    {l}")
     if p.returncode != 0:
-        log(f"!! {name} 退出码 {p.returncode}（{dur}s）")
-        for l in (p.stderr or "").strip().splitlines()[-5:]:
-            log(f"    STDERR {l}")
+        log(f"!! {name} 退出码 {p.returncode}（{dur}s）；完整输出见 {child_log}")
         return False
-    log(f"OK  {name} 完成（{dur}s）")
+    log(f"OK  {name} 完成（{dur}s）；完整输出见 {child_log}")
     return True
 
 

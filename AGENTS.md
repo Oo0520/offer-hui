@@ -86,8 +86,12 @@ npm start
 # 爬虫（本地手动跑一次调试；线上由定时任务每天 12:00 自动跑）
 # 仓库内版本为准（scripts/crawl/），本机执行副本在仓库外需保持同步：
 cd E:\01_AI_Workspace\AIMemory\DaoBao
+# 日常入口（串行跑 jysd → fjrclh → 刷新缓存，写 run-daily.log；退出码 0 = 全成功）
+offer-hui\apps\worker\.venv\Scripts\python.exe run-daily.py
+# 或单独跑：
 offer-hui\apps\worker\.venv\Scripts\python.exe offer-hui\scripts\crawl\crawl-jysd.py
 offer-hui\apps\worker\.venv\Scripts\python.exe offer-hui\scripts\crawl\crawl-fjrclh.py
+# 只跑一所学校（调试）：set OFFERHUI_SCHOOLS=fjut
 
 # git（本地备份，时间戳格式）
 git add -A
@@ -225,6 +229,15 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 12. **生产爬虫（`scripts/crawl/crawl-jysd.py` / `crawl-fjrclh.py`）与 `models.py` 的 hash 口径必须一致**：content_hash 用 SHA1 + `json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)`（十键 payload：title/company/city/industry/degree/salary[min,max]/salary_text/deadline/apply/tags，None 归一为 ""/[]/0，posted_at 不进 hash）。改任一侧的归一逻辑都会导致全量误判「变更」。另注意：① PostgREST 批量 upsert 用 `POST /jobs?on_conflict=source,external_id` + `Prefer: resolution=merge-duplicates`，`tags` 为 jsonb NOT NULL，Python 侧 None 必须兜底 `[]`，否则 400；② 脚本 SERVICE_KEY 从 `.env`/环境变量读，勿再加回纯硬编码；③ fjrclh 源站 WAF 拦 python 默认 UA，httpx 必须带浏览器 User-Agent；④ **fjut 详情页 HTML 解析前必须剥离 base64/渲染数据**：页面内联大量 base64（图片/统计像素/压缩 JS），其中随机出现「数字K」，且存在 <200 字符的短碎片，任何「全页搜数字K」式 salary 匹配都会命中随机值 → content_hash 抖动。jysd 页面**根本没有结构化薪资区**，fjut 源 salary_text 恒 None（2026-09-28 诊断实锤，七跑验证幂等 `变更:0, 跳过:348`）；诊断同类抖动的方法：一次性脚本抓单页，打印各正则命中与库里值对比，跨两次抓取看哪个字段漂移。
 13. **仓库内外脚本不同步是真实事故源（2026-10-07 实测）**：仓库外副本一度落后仓库两个版本（缺 company_type 修复、日期正则更严、`normalize.py` 硬编码 `../offer-hui/infra/classify` 路径、`crawl_alert.py` 只读同级 .env）。**改爬虫只改 `scripts/crawl/`，改完用 SHA256 对比并覆盖同步仓库外副本**；豆包定时任务跑的是仓库外副本。
 14. **数据质量红线（2026-10-07 实测 5808 条）**：`city` 出现 >8 字的脏值 403 条（占 6.9%），主要是 xmu/jmu 源把招聘标题/场地地址整段塞进 city（如"线下\n…\n中国农业发展银行2027年度校园招聘宣讲"），前端三级联动城市筛选会直接被撑爆。新增数据源**入库前必须过 `normalize_city`**，且 city 长度 >8 视为解析失败。
+15. **爬虫日志的编码与缓冲（2026-10-10 实测，静默失败的两种形态）**：
+    - **编码崩溃**：Windows 上stdout 被重定向到文件/管道时 Python 用 locale(GBK)，脚本里打印 `✓`/`⚠`/`✗` 会抛 `UnicodeEncodeError` 并**直接终止脚本**（`crawl-fjrclh.py` 曾因此只跑 1.5 秒就崩，且异常处理里的告警函数又因 `⚠` 二次崩溃 → 失败连告警都发不出）。现在 `crawl-jysd.py` / `crawl-fjrclh.py` / `crawl_alert.py` / `run-daily.py` 都在 import 后 `sys.stdout.reconfigure(errors="replace")` 兜底；`run-daily.py` 另外给子进程传 `PYTHONIOENCODING=utf-8`。
+    - **缓冲假象**：子进程 stdout 重定向到文件时是**块缓冲**，写库阶段的 `print` 会滞留在缓冲区 → 外部看到"日志几分钟不增长"而误判卡死（实测 37 分钟的全量跑里，其实一直在写库）。现统一用 `python -u`。**判活要用「数据库计数是否在变」，不要看 CPU**（写库阶段是 I/O 等待，CPU 几乎为 0）。
+    - 另：**不要在 `%TEMP%` 建与标准库同名的临时 `.py`**（如 `ast.py`）——脚本所在目录在 `sys.path` 最前，会遮蔽标准库并让 `playwright` 等依赖崩在无关处。
+16. **公司关联（company_id）的三条硬规则（2026-10-10 代码审查 + 全量实跑）**：
+    - **只对 `job`/`intern` 建公司**。活动类（`teachin`/`fair`）与 `announcement` 的"公司名"其实是活动名（实测 fair 8/8 全错、teachin 真假混杂），公告详情页根本没有 company 链接。故 `crawl-jysd.py` 用 `_COMPANY_LINK_TYPES = ("job","intern")` 限定；`crawl-fjrclh.py` 的公司名来自 API 的 `companyname`，不要用它的 `tags`（存的是用工类型「全职」）。
+    - **批量 upsert `companies` 必须批内去重**：同批出现重复 name 时 PostgREST 返回 `500 code=21000`（"duplicate constrained values"），会让整个公司关联静默失败（实测曾导致 fjrclh 关联 0 条）。
+    - **`company_id` 不进 `content_hash`**，所以"内容没变但公司没关联上"的行会被永久判为「跳过」、无法自愈。`crawl-fjrclh.py` 的 `fetch_existing_map` 因此对 `company_id IS NULL` 的行返回 `"<真实hash>__NEEDS_COMPANY__"`，`classify` 拆出真实 hash 比较、仅在「该行确实有公司名可关联」时强制重写（标记必须携带真实 hash，否则每轮都白重写——第一版就犯过此错，100 条公告行每轮"变更"）。
+    - **验收口径**：公司关联率**只看 `job` + `intern`**（基线 98.0%）。`announcement`/`teachin`/`fair`/`campus` 本就不该有 company_id，所以"缺公司总数"恒在 700+，拿它判断好坏会得出完全错误的结论。
 
 ## 6. 设计资产
 
