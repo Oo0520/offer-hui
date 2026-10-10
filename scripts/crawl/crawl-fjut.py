@@ -80,6 +80,9 @@ def _resolve_browser_kwargs() -> dict:
 
 _BROWSER_KW = _resolve_browser_kwargs()
 
+# 详情页 <title> 里的站点级文案（无效 id / 已下架页），不作为岗位标题
+_DETAIL_TITLE_NOISE = ("就业创业服务平台", "智慧就业", "View Teachin", "View Fair", "View Campus")
+
 def _thread_fetcher():
     if not hasattr(_tls, "fetcher"):
         _tls.fetcher = StealthyFetcher()
@@ -254,12 +257,27 @@ def parse_detail(section_key, fid, cfg):
     h = re.sub(r"[A-Za-z0-9+/=]{200,}", "", h)
 
     # 标题
-    title_m = re.search(r'class="details-title"[^>]*>(.*?)</', h)
-    title = title_m.group(1).strip() if title_m else ""
+    # 教训（2026-10-10 代码审查）：原实现写死 `class="details-title"`，而页面已改成
+    #   <div class="details-title clearfix"> … <span class="title" title="真实标题">
+    # 多出的 clearfix 让正则**永久失配**，且失败时只写空串、不报错 → 静默产出空标题卡片
+    # （实测 88% 的 fjut 行无标题）。修法：类名用 [^"]* 容错，并加 <title> 兜底 + 失败告警。
+    title = ""
+    tm = re.search(r'class="details-title[^"]*"[\s\S]*?<span[^>]*class="title"[^>]*>(.*?)</span>', h)
+    if tm:
+        title = re.sub(r"<[^>]+>", "", tm.group(1)).strip()
+    if not title:  # 兜底：<title> 标签（与包裹结构无关，页面里就是真实标题）
+        tm2 = re.search(r"<title>(.*?)</title>", h, re.DOTALL)
+        cand = re.sub(r"<[^>]+>", "", tm2.group(1)).strip() if tm2 else ""
+        if cand and not any(n in cand for n in _DETAIL_TITLE_NOISE):
+            title = cand
+    if not title:
+        print(f"  ! 详情页未解析出标题: {url}")
 
-    # 公司
-    company_m = re.search(r'class="unit-info"[^>]*>.*?<a[^>]*>(.*?)</a>', h, re.DOTALL)
-    company = company_m.group(1).strip() if company_m else None
+    # 公司（类名同样容错，避免再被 clearfix 这类后缀打挂）
+    company_m = re.search(r'class="unit-info[^"]*"[^>]*>.*?<a[^>]*>(.*?)</a>', h, re.DOTALL)
+    company = re.sub(r"<[^>]+>", "", company_m.group(1)).strip() if company_m else None
+    if company == "":
+        company = None
 
     # 时间
     time_m = re.search(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})', h)

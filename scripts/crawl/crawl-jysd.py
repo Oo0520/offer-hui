@@ -498,6 +498,15 @@ _COMPANY_IDS = {}
 _VENUE_RE = re.compile(r"教室|活动中心|多功能厅|报告厅|会议室|招聘大厅|宣讲厅|空中宣讲|线上|线下")
 
 
+# 只有这两类的公司名是**权威**的：详情页里有 <a href="/company/view/id/NNN">公司名</a>。
+# 活动类（teachin/fair）与公告类**不做公司关联** —— 教训（2026-10-10 代码审查）：
+#   build_item 对 event 类型把「标题」当公司名，而标题常是活动名
+#   （「厦门大学2026年秋季学期港澳台学生就业暨实习专场招聘会」「…专场宣讲会」），
+#   于是 upsert 出一堆不是公司的 companies 行并把岗位挂上去。
+#   实测：fair 8/8 全错、teachin 68 条里真假混杂；公告类详情页则根本没有公司链接。
+_COMPANY_LINK_TYPES = ("job", "intern")
+
+
 def resolve_company_ids(items: list, stats: dict):
     """把 item 里的公司名 upsert 进 companies 表，并回写 company_id。
 
@@ -506,16 +515,19 @@ def resolve_company_ids(items: list, stats: dict):
     导致这些源的卡片恒显示"官方发布"（jysd 三源 3454/3653 条缺公司）。
     companies 表有 name 唯一约束（on_conflict=name 实测可用），故 upsert 后取回 id。
 
+    适用范围：**只处理 _COMPANY_LINK_TYPES（job/intern）**，理由见上方常量注释。
     公司名来源优先级：
       1) parsed 的 company（卡片解析，或详情页回退补的）
       2) tags 最后一个元素 —— 历史数据里公司名就落在 tags
-         （jmu/xmu: [place, company]；fjut: [company]）。
-         **公告类不作为公司**：公告详情页没有 company 链接，本就没有公司概念。
+         （jmu/xmu: [place, company]；fjut: [company]）
     """
     names = []
     for it in items:
+        # 只对 job/intern 做公司关联（活动/公告的"公司"不是公司，见常量注释）
+        if it.get("job_type") not in _COMPANY_LINK_TYPES:
+            continue
         nm = (it.get("company") or "").strip()
-        if not nm and it.get("job_type") != "announcement":
+        if not nm:
             tags = [t for t in (it.get("tags") or []) if t]
             if tags:
                 cand = str(tags[-1]).strip()
@@ -543,6 +555,10 @@ def resolve_company_ids(items: list, stats: dict):
 
     hit = 0
     for it in items:
+        # 注意：这里不限制 job_type —— 只有当 item 的 company **恰好等于**一个已被
+        # job/intern 建出来的公司名时才关联。这对宣讲会是正确的（宣讲单位就是公司，
+        # 如卡片标题「中兴通讯股份有限公司」），而活动名（「…专场宣讲会」）不在 cache 里，
+        # 自然不会被关联。
         cid = _COMPANY_IDS.get((it.get("company") or "").strip())
         if cid and it.get("company_id") != cid:
             it["company_id"] = cid
