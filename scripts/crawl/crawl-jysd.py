@@ -458,6 +458,67 @@ def upsert_batch(items: list):
         method="POST", data=json.dumps(items).encode(),
         extra_headers={"Prefer": "resolution=merge-duplicates,return=minimal"})
 
+
+# 公司名 -> companies.id 缓存（跨学校、跨批复用，减少往返）
+_COMPANY_IDS = {}
+
+# 场馆/场地名**不是公司名**。教训（2026-10-10）：存量修复时把「学生活动中心117教室」
+# 「福州大学土木工程学院1楼多功能厅」这类场地名 upsert 成了公司并挂到岗位上，
+# 故对 tags 回退路径显式排除；卡片上 /company/view/id/ 解析出的公司名是权威的，不受此限。
+_VENUE_RE = re.compile(r"教室|活动中心|多功能厅|报告厅|会议室|招聘大厅|宣讲厅|空中宣讲|线上|线下")
+
+
+def resolve_company_ids(items: list, stats: dict):
+    """把 item 里的公司名 upsert 进 companies 表，并回写 company_id。
+
+    背景（2026-10-09 实测）：DB_COLS 白名单里只有 company_id（外键）、没有公司名列，
+    sanitize() 会把 build_item 解析出的 company 字符串丢掉，
+    导致这些源的卡片恒显示"官方发布"（jysd 三源 3454/3653 条缺公司）。
+    companies 表有 name 唯一约束（on_conflict=name 实测可用），故 upsert 后取回 id。
+
+    公司名来源优先级：
+      1) parsed 的 company（卡片解析，或详情页回退补的）
+      2) tags 最后一个元素 —— 历史数据里公司名就落在 tags
+         （jmu/xmu: [place, company]；fjut: [company]）。
+         **公告类不作为公司**：公告详情页没有 company 链接，本就没有公司概念。
+    """
+    names = []
+    for it in items:
+        nm = (it.get("company") or "").strip()
+        if not nm and it.get("job_type") != "announcement":
+            tags = [t for t in (it.get("tags") or []) if t]
+            if tags:
+                cand = str(tags[-1]).strip()
+                # 场地名不是公司（宣讲会的 place 常常是教室），排除后再用
+                if cand and not _VENUE_RE.search(cand):
+                    nm = cand
+                    it["company"] = nm
+        if nm and nm not in _COMPANY_IDS and nm not in names:
+            names.append(nm)
+
+    for i in range(0, len(names), 200):
+        batch = names[i:i + 200]
+        try:
+            body = _rest_req(
+                f"{BASE}/companies?on_conflict=name",
+                method="POST", data=json.dumps([{"name": n} for n in batch]).encode(),
+                extra_headers={"Prefer": "resolution=merge-duplicates,return=representation"},
+                retries=2)
+            for row in json.loads(body):
+                if row.get("name") and row.get("id"):
+                    _COMPANY_IDS[row["name"]] = row["id"]
+        except Exception as e:
+            print(f"  ! 公司 upsert 失败（{len(batch)} 个）: {str(e)[:100]}")
+            stats["company_fail"] = stats.get("company_fail", 0) + len(batch)
+
+    hit = 0
+    for it in items:
+        cid = _COMPANY_IDS.get((it.get("company") or "").strip())
+        if cid and it.get("company_id") != cid:
+            it["company_id"] = cid
+            hit += 1
+    stats["company_linked"] = stats.get("company_linked", 0) + hit
+
 def flush(pending: list, stats: dict):
     """写一批：5xx/429/网络错退避重试 2 次，4xx 直接降级逐条；失败不中断（次日 hash 比对自愈）"""
     if not pending:
@@ -508,7 +569,7 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
     source = school["source"]
     sections = build_sections(school)
     stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
-             "title_fallback": 0, "no_title": 0}
+             "title_fallback": 0, "no_title": 0, "company_linked": 0, "company_fail": 0}
     print(f"\n{'='*60}")
     print(f"=== {school['name']}（source={source}）===")
     print(f"{'='*60}", flush=True)
@@ -564,8 +625,12 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
                         continue
                 item = build_item(school, section_key, cfg, parsed)
                 eid = item["external_id"]
-                # 回退：列表卡片没解析出标题 → 用详情页补（顺带补公司名）
-                if not (item.get("title") or "").strip():
+                # 回退触发条件（两种都算解析失败）：
+                #   1) 标题为空 —— fjut 的卡片标题正则失配，实测 88% 的 fjut 行无标题
+                #   2) 标题就是纯数字外部 id —— xmu/jmu 有 478 条公告把 id 写进了 title，
+                #      真实标题落在 tags / 详情页（公告详情页 <title> 实测就是真实标题）
+                raw_title = (item.get("title") or "").strip()
+                if (not raw_title) or re.fullmatch(r"\d{3,}", raw_title):
                     dt, dc = fetch_detail_title(cfg["detail_url"].format(id=parsed["fid"]))
                     if dt:
                         item["title"] = dt
@@ -605,6 +670,9 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
         print("\n[3/3] 本次未抓到有效列表，跳过过期标记（防误标）")
 
     pending = []
+    # 先把公司名落库并回写 company_id（此前 company 被白名单丢弃 → 卡片恒显示"官方发布"）
+    if items:
+        resolve_company_ids(items, stats)
     for item in items:
         eid = item["external_id"]
         h = compute_hash(item)
@@ -625,11 +693,13 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
     print(f"\n--- {school['name']} 完成 ---")
     print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, "
           f"过期: {stats['expired']}, 失败: {stats['fail']}, "
-        f"详情页补标题: {stats.get('title_fallback', 0)}, 无标题跳过: {stats.get('no_title', 0)}", flush=True)
+        f"详情页补标题: {stats.get('title_fallback', 0)}, 无标题跳过: {stats.get('no_title', 0)}, "
+        f"公司关联: {stats.get('company_linked', 0)}", flush=True)
     if stats["fail"] > 0:
         alert_crawl_failed(SCRIPT_NAME, f"{school['name']} 有 {stats['fail']} 条失败", stats)
 
-    for k in ("new", "changed", "skipped", "fail", "title_fallback", "no_title"):
+    for k in ("new", "changed", "skipped", "fail", "title_fallback", "no_title",
+              "company_linked", "company_fail"):
         total_stats[k] += stats[k]
     total_stats["expired"] = total_stats.get("expired", 0) + stats["expired"]
     return stats
@@ -640,7 +710,7 @@ def main():
     print("=== jysd 通用多学校爬虫（纯列表解析版） ===")
     print(f"今天 {today.strftime('%Y-%m-%d')}，配置学校：{', '.join(s['name'] for s in SCHOOLS)}")
     total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
-             "title_fallback": 0, "no_title": 0}
+             "title_fallback": 0, "no_title": 0, "company_linked": 0, "company_fail": 0}
 
     try:
         fetcher = StealthyFetcher()  # 列表 fetcher 跨学校复用
@@ -651,7 +721,8 @@ def main():
         print(f"=== 全部完成（{len(SCHOOLS)} 所学校）===")
         print(f"总计 新增: {total['new']}, 变更: {total['changed']}, 跳过: {total['skipped']}, "
               f"过期: {total['expired']}, 失败: {total['fail']}, "
-      f"详情页补标题: {total.get('title_fallback', 0)}, 无标题跳过: {total.get('no_title', 0)}")
+      f"详情页补标题: {total.get('title_fallback', 0)}, 无标题跳过: {total.get('no_title', 0)}, "
+      f"公司关联: {total.get('company_linked', 0)}")
         if total["fail"] > 0:
             alert_crawl_failed(SCRIPT_NAME, f"总计 {total['fail']} 条失败", total)
     except Exception as e:
