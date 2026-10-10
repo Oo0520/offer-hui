@@ -12,26 +12,36 @@
 ```bash
 pip install -r requirements.txt
 ```
-（Python 3.10+；scrapling + httpx + curl_cffi/patchright/msgspec/browserforge——scrapling 0.4.x 的 StealthyFetcher 运行时依赖，0.4.15 未在包元数据声明，需显式安装）
+（Python 3.10+；scrapling + httpx + curl_cffi/patchright/playwright/protego/msgspec/browserforge——scrapling 0.4.x 的 StealthyFetcher 运行时依赖，0.4.15 未在包元数据声明，需显式安装）
 
-### chromium 浏览器（fjut 的 StealthyFetcher 必需）
-patchright 需 chromium 内核，首次安装：
+### 浏览器（StealthyFetcher 必需）
+**优先复用本机已装的 Chromium 内核浏览器（Edge / Chrome），无需下载 Chromium。**
+
+`crawl-jysd.py` 与 `crawl-fjut.py` 会自动按以下顺序探测并传 `executable_path` 给 `fetch()`：
+`Edge (Program Files x86)` → `Edge (Program Files)` → `Chrome` → `Chrome (x86)`；都没有才回退到 scrapling 自带 Chromium。
+
+也可用环境变量显式指定：
 ```bash
-export PLAYWRIGHT_BROWSERS_PATH=/home/user/.cache/ms-playwright   # 云电脑用户目录（无 sudo 环境必须指定，默认 /opt 只读）
-python3 -m patchright install chromium
+set OFFERHUI_BROWSER_EXE=D:\path\to\msedge.exe
 ```
-运行时**必须**带上同一个环境变量，否则 patchright 回落到系统默认只读路径报 `Executable doesn't exist`：
+
+> ⚠️ 注意：`SCRAPLING_EXECUTABLE_PATH` 这个环境变量**只被 scrapling 的 CLI / MCP 读取**，
+> 直接调用 `StealthyFetcher.fetch()` 不会生效，必须在代码里传 `executable_path`。
+
+只有在既没有 Edge 也没有 Chrome 的机器上，才需要下载自带 Chromium：
 ```bash
-export PLAYWRIGHT_BROWSERS_PATH=/home/user/.cache/ms-playwright
-python crawl-fjut.py
+python -m patchright install chromium
 ```
 
 ## 运行
 ```bash
-python crawl-fjut.py
-python crawl-fjrclh.py
+python crawl-jysd.py     # fjut + jmu + xmu 三校（已含 fjut）
+python crawl-fjrclh.py   # 福州大学
 ```
-两者独立增量，先跑 fjut 再跑 fjrclh 均可；数据直接 upsert 进 Supabase（jobs 表，on_conflict source+external_id）。
+两者独立增量；数据直接 upsert 进 Supabase（jobs 表，on_conflict source+external_id）。
+
+> ⚠️ **`crawl-fjut.py` 与 `crawl-jysd.py` 不要同时跑**：`crawl-jysd.py` 已包含 fjut
+> （`SCHOOLS` 中 `legacy_ids: True`，external_id 格式与 crawl-fjut.py 一致），同时跑会对 fjut 重复处理。
 
 ## 环境变量（必须，勿硬编码进 git）
 脚本会读取脚本同级 `.env`（KEY=VALUE）或系统环境变量：
