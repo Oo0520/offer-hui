@@ -5,6 +5,9 @@
       增量 upsert / 过期标记，写入 Supabase
 由来：由 crawl-fjut.py 通用化（2026-10-06）。jysd 平台高校站点结构一致，
       仅 host / domain 不同，新增学校只需在 SCHOOLS 加一行配置。
+      **2026-10-10：crawl-fjut.py 已退役删除，fjut 自此由本脚本独家写入**
+      （两者都写 source=fjut 但解析结果不同，content_hash 会互相覆盖）。
+"""
 关键优化（2026-10-06）：列表卡片已含公司/行业/规模/标题/薪资/地点/学历/日期，
       不再抓详情页（StealthyFetcher 每次启动浏览器，抓详情页 10s+/个；
       纯列表解析每页 20 条，整体提速 10 倍以上）。
@@ -758,13 +761,24 @@ def main():
     total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
              "title_fallback": 0, "no_title": 0, "company_linked": 0, "company_fail": 0}
 
+    # 可用 OFFERHUI_SCHOOLS=source1,source2 限定只跑部分学校（调试单校时用，平时留空跑全部）。
+    # 注意：crawl-fjut.py 已于 2026-10-10 退役删除 —— 它和本脚本都写 source=fjut，
+    # 但解析结果不同（标题正则失配 vs 正常），content_hash 互相覆盖。现在 fjut 只由本脚本写。
+    _only = [s.strip() for s in os.environ.get("OFFERHUI_SCHOOLS", "").split(",") if s.strip()]
+    schools = [s for s in SCHOOLS if s["source"] in _only] if _only else list(SCHOOLS)
+    if _only:
+        print(f"OFFERHUI_SCHOOLS={','.join(_only)} → 本次只跑：{', '.join(s['name'] for s in schools)}")
+    if not schools:
+        print(f"!! OFFERHUI_SCHOOLS={','.join(_only)} 没有匹配到任何已配置学校，退出")
+        return
+
     try:
         fetcher = StealthyFetcher()  # 列表 fetcher 跨学校复用
-        for school in SCHOOLS:
+        for school in schools:
             crawl_school(school, fetcher, total, today)
 
         print(f"\n{'='*60}")
-        print(f"=== 全部完成（{len(SCHOOLS)} 所学校）===")
+        print(f"=== 全部完成（{len(schools)} 所学校）===")
         print(f"总计 新增: {total['new']}, 变更: {total['changed']}, 跳过: {total['skipped']}, "
               f"过期: {total['expired']}, 失败: {total['fail']}, "
       f"详情页补标题: {total.get('title_fallback', 0)}, 无标题跳过: {total.get('no_title', 0)}, "

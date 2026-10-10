@@ -47,9 +47,9 @@ flowchart TB
 
     subgraph COLLECT["数据采集 / 聚合层 · Python 3.11（本地 Windows）"]
         PIPE["app/ingest.run_pipeline<br>BaseSource 统一 UA/限速/重试<br>内置源：fj99 · campus2027 · open_jobs"]
-        SCRIPTS["独立爬虫脚本（生产实际使用）<br>crawl-fjut.py：Scrapling StealthyFetcher 抓 5 板块<br>crawl-fjrclh.py：httpx API 增量<br>位于仓库外 E:/AIMemory/DaoBao/"]
+        SCRIPTS["独立爬虫脚本（生产实际使用）<br>crawl-jysd.py：Scrapling StealthyFetcher 列表解析，fjut/jmu/xmu 三校 5 板块<br>crawl-fjrclh.py：httpx API 增量<br>位于仓库外 E:/01_AI_Workspace/AIMemory/DaoBao/"]
         SCHED["scheduler.py（APScheduler 每日 02:00，代码内置备用）"]
-        DOUBAO["豆包定时任务（cron 12:00，生产调度，2026-09-28 已确认）"]
+        DOUBAO["本机定时任务（cron 12:00，生产调度，2026-09-28 已确认）"]
     end
 
     subgraph STORE["数据存储层 · Supabase（云端）"]
@@ -187,7 +187,7 @@ fastmcp ≥ 2.0（Streamable HTTP）+ psycopg + python-dotenv；复用 `apps/wor
 | 管道编排          | 串行遍历源 → 抓取 → upsert → 过期标记 → 监控 → 统计                                                                                       | `apps/worker/app/ingest.py`                                                                                               |
 | 调度器           | APScheduler 每日 02:00（Asia/Shanghai，misfire_grace_time 3600s）跑 pipeline + subprocess 调两个仓库外脚本                               | `apps/worker/scheduler.py`                                                                                                |
 | Worker API    | 手动触发/健康检查/查询                                                                                                               | `apps/worker/app/main.py`、`apps/worker/cli.py`                                                                            |
-| 独立爬虫（生产主力）    | fjut 5 板块（Scrapling 隐身抓取）、fjrclh（httpx API 增量）；**实际部署在仓库外 `E:\AIMemory\DaoBao\`，仓库内同名文件为副本**                               | `E:\AIMemory\DaoBao\crawl-fjut.py`（仓库外）、`apps/worker/crawl_fjut.py`（副本）                                                   |
+| 独立爬虫（生产主力）    | fjut/jmu/xmu 三校 5 板块（jysd 平台，Scrapling 列表解析）、fjrclh（httpx API 增量）；**权威版本在仓库 `scripts/crawl/`，本机执行副本在仓库外 `E:\01_AI_Workspace\AIMemory\DaoBao\`** | `scripts/crawl/crawl-jysd.py`、`scripts/crawl/crawl-fjrclh.py`（2026-10-10 起 `crawl-fjut.py` 已退役） |
 | Web 数据层       | PostgREST 分页全量拉取（每页 1000 循环）→ JobView 映射（来源中文名/徽标渐变/DDL 天数计算，北京时区）；filterJobs/sortJobsBy/dimOptions                        | `apps/web/lib/jobs.ts`                                                                                                    |
 | 浏览器端 Supabase | anon key 客户端，persistSession + autoRefreshToken                                                                             | `apps/web/lib/supabase.ts`                                                                                                |
 | 用户数据双写        | localStorage 先写 → 登录则 upsert user_jobs → 登录时补传本地增量 → onAuthStateChange 全量覆盖本地                                              | `apps/web/components/HomeClient.tsx` / `BoardClient.tsx` / `FavoritesClient.tsx`（逻辑约定见 AGENTS.md §4.3）                    |
@@ -207,7 +207,7 @@ fastmcp ≥ 2.0（Streamable HTTP）+ psycopg + python-dotenv；复用 `apps/wor
 
 两条并行链路：
 
-1. **生产链路（豆包定时任务，每日 12:00）**：依次执行仓库外 `crawl-fjut.py`（Scrapling StealthyFetcher，抓全职/实习/宣讲会/招聘会/招聘公告 5 板块，12+1+1+1+1 页）与 `crawl-fjrclh.py`（httpx 调 API 增量），通过 Supabase REST（service key）upsert 入库。
+1. **生产链路（本机定时任务，每日 12:00）**：依次执行仓库外 `crawl-jysd.py`（Scrapling StealthyFetcher 列表解析，fjut/jmu/xmu 三校，抓全职/实习/宣讲会/招聘会/招聘公告 5 板块）与 `crawl-fjrclh.py`（httpx 调 API 增量），通过 Supabase REST（service key）upsert 入库。（2026-10-10：原 `crawl-fjut.py` 因与 crawl-jysd.py 抢写 source=fjut 已退役删除。）
 2. **内置链路（scheduler.py 每日 02:00，或手动 `cli.py crawl` / `POST /crawl`）**：`run_pipeline()` 串行遍历 `get_sources()` 挂载的内置源，psycopg 直连入库。
 
 ### 5.2 清洗 · 归一化 · 去重
@@ -300,7 +300,7 @@ fastmcp ≥ 2.0（Streamable HTTP）+ psycopg + python-dotenv；复用 `apps/wor
 apps/worker（自底向上）：
   config.py ← models.py ← sources/base.py ← sources/{fj99,campus2027,open_jobs,...}
   storage.py ← ingest.py ← {main.py(FastAPI), cli.py, scheduler.py}
-  独立脚本 crawl_fjut/crawl_fjrclh 不依赖 app/ 包，直连 Supabase REST
+  独立脚本 crawl_jysd/crawl_fjrclh 不依赖 app/ 包，直连 Supabase REST
 
 apps/web：
   lib/jobs.ts ← {app/page.tsx, calendar/match/favorites/board page, api/v1/*, api/calendar.ics}
