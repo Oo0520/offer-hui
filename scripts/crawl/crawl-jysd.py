@@ -5,6 +5,8 @@
       增量 upsert / 过期标记，写入 Supabase
 由来：由 crawl-fjut.py 通用化（2026-10-06）。jysd 平台高校站点结构一致，
       仅 host / domain 不同，新增学校只需在 SCHOOLS 加一行配置。
+      **2026-10-10：crawl-fjut.py 已退役删除，fjut 自此由本脚本独家写入**
+      （两者都写 source=fjut 但解析结果不同，content_hash 会互相覆盖）。
 关键优化（2026-10-06）：列表卡片已含公司/行业/规模/标题/薪资/地点/学历/日期，
       不再抓详情页（StealthyFetcher 每次启动浏览器，抓详情页 10s+/个；
       纯列表解析每页 20 条，整体提速 10 倍以上）。
@@ -20,7 +22,8 @@ from scrapling import StealthyFetcher
 import re, os, json, time, hashlib, threading, urllib.request, urllib.error, urllib.parse, sys
 from datetime import datetime, timedelta, timezone
 try:
-    from normalize import normalize_city, normalize_industry, normalize_company_by_name, normalize_company_type
+    from normalize import (normalize_city, normalize_industry, normalize_company_by_name,
+                            normalize_company_type, normalize_province)
 except ImportError:
     def normalize_city(v):
         return (v or "").strip() or None
@@ -29,6 +32,8 @@ except ImportError:
     def normalize_company_by_name(v):
         return None
     def normalize_company_type(v):
+        return None
+    def normalize_province(v):
         return None
 
 # 邮件告警：未捕获异常 → 发邮件（crawl_alert.py，静默失败不影响主流程）
@@ -320,6 +325,71 @@ def parse_listcard(school, cfg, block):
         "place": place, "city": city, "degree": None,
     }
 
+DETAIL_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+             "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
+
+# ── 浏览器可执行文件：优先用本机已装的 Chromium 内核浏览器，避免再下载 ~150MB ──
+# 依据（2026-10-10 实读 site-packages）：
+#   - scrapling 的 fetch() 接受 executable_path（_types.py 的 PlaywrightSession，
+#     并在 _base.py 里把它传给浏览器启动参数）；
+#   - patchright 驱动在给了 executable_path 时直接使用该二进制，且未见
+#     "channel 与 executablePath 互斥" 的校验；
+#   - ⚠️ 环境变量 SCRAPLING_EXECUTABLE_PATH **只被 scrapling 的 CLI/MCP 读取**
+#     （cli.py / ai.py），直接调 StealthyFetcher.fetch() 不生效，必须显式传参。
+# 找不到本机浏览器时返回空 dict，自动回退到 scrapling 自带的 Chromium。
+_BROWSER_CANDIDATES = (
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+)
+
+
+def _resolve_browser_kwargs() -> dict:
+    exe = os.environ.get("OFFERHUI_BROWSER_EXE")
+    if not exe or not os.path.exists(exe):
+        exe = next((p for p in _BROWSER_CANDIDATES if os.path.exists(p)), None)
+    if exe:
+        print(f"  [browser] 使用本机浏览器: {exe}", flush=True)
+        return {"executable_path": exe}
+    print("  [browser] 未找到本机 Chromium 内核浏览器，回退到 scrapling 自带 Chromium", flush=True)
+    return {}
+
+
+_BROWSER_KW = _resolve_browser_kwargs()
+
+# 详情页 <title> 里的站点级文案（无效 id / 错误页），不作为岗位标题
+_DETAIL_TITLE_NOISE = ("就业创业服务平台", "智慧就业", "View Teachin", "View Fair", "View Campus")
+
+
+def fetch_detail_title(url):
+    """列表卡片没解析出标题时的回退：抓详情页的 <title> 与公司名。
+
+    依据（2026-10-09 实测）：
+      - jysd 的**列表页是 JS 渲染**的，静态 HTML 里没有任何卡片标记
+        （零个 /job/view/id/、零个 title=、零个 infoList），所以列表卡片解析失败时
+        无法从列表 HTML 补救；
+      - 但**详情页是服务端渲染**的，纯 HTTP 可取、无需登录，且 <title> 就是岗位标题，
+        公司名在 <a href="/company/view/id/NNN">公司名</a> 里。
+    故这里用普通 HTTP（不是 StealthyFetcher，单页约 1s），且只对缺标题的卡片触发。
+    """
+    try:
+        req = urllib.request.Request(
+            url, headers={"User-Agent": DETAIL_UA, "Accept-Language": "zh-CN,zh;q=0.9"})
+        with urllib.request.urlopen(req, timeout=25) as r:
+            body = r.read().decode("utf-8", "replace")
+    except Exception as e:
+        print(f"    ! 详情页回退失败 {url}: {str(e)[:80]}")
+        return None, None
+    tm = re.search(r"<title>(.*?)</title>", body, re.S)
+    title = re.sub(r"\s+", " ", _strip_tags(tm.group(1))).strip() if tm else None
+    if title and any(n in title for n in _DETAIL_TITLE_NOISE):
+        title = None
+    cm = re.search(r'<a href="/company/view/id/\d+">(.*?)</a>', body, re.S)
+    company = re.sub(r"\s+", " ", _strip_tags(cm.group(1))).strip() if cm else None
+    return (title or None), (company or None)
+
+
 def build_item(school, section_key, cfg, parsed):
     """解析结果 → DB item（含 external_id/job_type/时间字段/公司性质）"""
     fid = parsed["fid"]
@@ -340,6 +410,7 @@ def build_item(school, section_key, cfg, parsed):
         "company_type": company_type,
         "job_type": section_key,
         "city": parsed.get("city"),
+        "province": normalize_province(parsed.get("city")),
         "industry": parsed.get("industry"),
         "degree": parsed.get("degree"),
         "salary_min": parsed.get("sal_min"),
@@ -419,6 +490,83 @@ def upsert_batch(items: list):
         method="POST", data=json.dumps(items).encode(),
         extra_headers={"Prefer": "resolution=merge-duplicates,return=minimal"})
 
+
+# 公司名 -> companies.id 缓存（跨学校、跨批复用，减少往返）
+_COMPANY_IDS = {}
+
+# 场馆/场地名**不是公司名**。教训（2026-10-10）：存量修复时把「学生活动中心117教室」
+# 「福州大学土木工程学院1楼多功能厅」这类场地名 upsert 成了公司并挂到岗位上，
+# 故对 tags 回退路径显式排除；卡片上 /company/view/id/ 解析出的公司名是权威的，不受此限。
+_VENUE_RE = re.compile(r"教室|活动中心|多功能厅|报告厅|会议室|招聘大厅|宣讲厅|空中宣讲|线上|线下")
+
+
+# 只有这两类的公司名是**权威**的：详情页里有 <a href="/company/view/id/NNN">公司名</a>。
+# 活动类（teachin/fair）与公告类**不做公司关联** —— 教训（2026-10-10 代码审查）：
+#   build_item 对 event 类型把「标题」当公司名，而标题常是活动名
+#   （「厦门大学2026年秋季学期港澳台学生就业暨实习专场招聘会」「…专场宣讲会」），
+#   于是 upsert 出一堆不是公司的 companies 行并把岗位挂上去。
+#   实测：fair 8/8 全错、teachin 68 条里真假混杂；公告类详情页则根本没有公司链接。
+_COMPANY_LINK_TYPES = ("job", "intern")
+
+
+def resolve_company_ids(items: list, stats: dict):
+    """把 item 里的公司名 upsert 进 companies 表，并回写 company_id。
+
+    背景（2026-10-09 实测）：DB_COLS 白名单里只有 company_id（外键）、没有公司名列，
+    sanitize() 会把 build_item 解析出的 company 字符串丢掉，
+    导致这些源的卡片恒显示"官方发布"（jysd 三源 3454/3653 条缺公司）。
+    companies 表有 name 唯一约束（on_conflict=name 实测可用），故 upsert 后取回 id。
+
+    适用范围：**只处理 _COMPANY_LINK_TYPES（job/intern）**，理由见上方常量注释。
+    公司名来源优先级：
+      1) parsed 的 company（卡片解析，或详情页回退补的）
+      2) tags 最后一个元素 —— 历史数据里公司名就落在 tags
+         （jmu/xmu: [place, company]；fjut: [company]）
+    """
+    names = []
+    for it in items:
+        # 只对 job/intern 做公司关联（活动/公告的"公司"不是公司，见常量注释）
+        if it.get("job_type") not in _COMPANY_LINK_TYPES:
+            continue
+        nm = (it.get("company") or "").strip()
+        if not nm:
+            tags = [t for t in (it.get("tags") or []) if t]
+            if tags:
+                cand = str(tags[-1]).strip()
+                # 场地名不是公司（宣讲会的 place 常常是教室），排除后再用
+                if cand and not _VENUE_RE.search(cand):
+                    nm = cand
+                    it["company"] = nm
+        if nm and nm not in _COMPANY_IDS and nm not in names:
+            names.append(nm)
+
+    for i in range(0, len(names), 200):
+        batch = names[i:i + 200]
+        try:
+            body = _rest_req(
+                f"{BASE}/companies?on_conflict=name",
+                method="POST", data=json.dumps([{"name": n} for n in batch]).encode(),
+                extra_headers={"Prefer": "resolution=merge-duplicates,return=representation"},
+                retries=2)
+            for row in json.loads(body):
+                if row.get("name") and row.get("id"):
+                    _COMPANY_IDS[row["name"]] = row["id"]
+        except Exception as e:
+            print(f"  ! 公司 upsert 失败（{len(batch)} 个）: {str(e)[:100]}")
+            stats["company_fail"] = stats.get("company_fail", 0) + len(batch)
+
+    hit = 0
+    for it in items:
+        # 注意：这里不限制 job_type —— 只有当 item 的 company **恰好等于**一个已被
+        # job/intern 建出来的公司名时才关联。这对宣讲会是正确的（宣讲单位就是公司，
+        # 如卡片标题「中兴通讯股份有限公司」），而活动名（「…专场宣讲会」）不在 cache 里，
+        # 自然不会被关联。
+        cid = _COMPANY_IDS.get((it.get("company") or "").strip())
+        if cid and it.get("company_id") != cid:
+            it["company_id"] = cid
+            hit += 1
+    stats["company_linked"] = stats.get("company_linked", 0) + hit
+
 def flush(pending: list, stats: dict):
     """写一批：5xx/429/网络错退避重试 2 次，4xx 直接降级逐条；失败不中断（次日 hash 比对自愈）"""
     if not pending:
@@ -468,7 +616,8 @@ def mark_expired(source: str, valid_eids: set, existing_map: dict, stats: dict):
 def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
     source = school["source"]
     sections = build_sections(school)
-    stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0}
+    stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
+             "title_fallback": 0, "no_title": 0, "company_linked": 0, "company_fail": 0}
     print(f"\n{'='*60}")
     print(f"=== {school['name']}（source={source}）===")
     print(f"{'='*60}", flush=True)
@@ -493,7 +642,7 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
         for n in range(1, cfg["pages"] + 1):
             url = cfg["list_url"].format(n=n)
             print(f"  抓列表 p{n}: {url}")
-            page = fetcher.fetch(url, headless=True, network_idle=True)
+            page = fetcher.fetch(url, headless=True, network_idle=True, **_BROWSER_KW)
             h = page.body.decode("utf-8")
             # 按卡片风格切分
             if cfg["card"] == "jobcard":
@@ -524,6 +673,28 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
                         continue
                 item = build_item(school, section_key, cfg, parsed)
                 eid = item["external_id"]
+                # 回退触发条件（两种都算解析失败）：
+                #   1) 标题为空 —— fjut 的卡片标题正则失配，实测 88% 的 fjut 行无标题
+                #   2) 标题就是纯数字外部 id —— xmu/jmu 有 478 条公告把 id 写进了 title，
+                #      真实标题落在 tags / 详情页（公告详情页 <title> 实测就是真实标题）
+                raw_title = (item.get("title") or "").strip()
+                if (not raw_title) or re.fullmatch(r"\d{3,}", raw_title):
+                    dt, dc = fetch_detail_title(cfg["detail_url"].format(id=parsed["fid"]))
+                    if dt:
+                        item["title"] = dt
+                        stats["title_fallback"] = stats.get("title_fallback", 0) + 1
+                    if dc and not item.get("company"):
+                        item["company"] = dc
+                if not (item.get("title") or "").strip():
+                    # 仍无标题：**不写库**（避免产生"没有信息"的残卡），但保留在 valid_eids，
+                    # 以免把它判成过期而误藏掉可能是真岗位的记录。
+                    stats["no_title"] = stats.get("no_title", 0) + 1
+                    print(f"    ! 跳过无标题卡片 {eid}")
+                    if eid in seen_eid:
+                        continue
+                    seen_eid.add(eid)
+                    valid_eids.add(eid)
+                    continue
                 if eid in seen_eid:
                     continue
                 seen_eid.add(eid)
@@ -547,6 +718,9 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
         print("\n[3/3] 本次未抓到有效列表，跳过过期标记（防误标）")
 
     pending = []
+    # 先把公司名落库并回写 company_id（此前 company 被白名单丢弃 → 卡片恒显示"官方发布"）
+    if items:
+        resolve_company_ids(items, stats)
     for item in items:
         eid = item["external_id"]
         h = compute_hash(item)
@@ -566,11 +740,14 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
 
     print(f"\n--- {school['name']} 完成 ---")
     print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, "
-          f"过期: {stats['expired']}, 失败: {stats['fail']}", flush=True)
+          f"过期: {stats['expired']}, 失败: {stats['fail']}, "
+        f"详情页补标题: {stats.get('title_fallback', 0)}, 无标题跳过: {stats.get('no_title', 0)}, "
+        f"公司关联: {stats.get('company_linked', 0)}", flush=True)
     if stats["fail"] > 0:
         alert_crawl_failed(SCRIPT_NAME, f"{school['name']} 有 {stats['fail']} 条失败", stats)
 
-    for k in ("new", "changed", "skipped", "fail"):
+    for k in ("new", "changed", "skipped", "fail", "title_fallback", "no_title",
+              "company_linked", "company_fail"):
         total_stats[k] += stats[k]
     total_stats["expired"] = total_stats.get("expired", 0) + stats["expired"]
     return stats
@@ -580,17 +757,31 @@ def main():
     today = datetime.now(TZ)
     print("=== jysd 通用多学校爬虫（纯列表解析版） ===")
     print(f"今天 {today.strftime('%Y-%m-%d')}，配置学校：{', '.join(s['name'] for s in SCHOOLS)}")
-    total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0}
+    total = {"new": 0, "changed": 0, "skipped": 0, "fail": 0, "expired": 0,
+             "title_fallback": 0, "no_title": 0, "company_linked": 0, "company_fail": 0}
+
+    # 可用 OFFERHUI_SCHOOLS=source1,source2 限定只跑部分学校（调试单校时用，平时留空跑全部）。
+    # 注意：crawl-fjut.py 已于 2026-10-10 退役删除 —— 它和本脚本都写 source=fjut，
+    # 但解析结果不同（标题正则失配 vs 正常），content_hash 互相覆盖。现在 fjut 只由本脚本写。
+    _only = [s.strip() for s in os.environ.get("OFFERHUI_SCHOOLS", "").split(",") if s.strip()]
+    schools = [s for s in SCHOOLS if s["source"] in _only] if _only else list(SCHOOLS)
+    if _only:
+        print(f"OFFERHUI_SCHOOLS={','.join(_only)} → 本次只跑：{', '.join(s['name'] for s in schools)}")
+    if not schools:
+        print(f"!! OFFERHUI_SCHOOLS={','.join(_only)} 没有匹配到任何已配置学校，退出")
+        return
 
     try:
         fetcher = StealthyFetcher()  # 列表 fetcher 跨学校复用
-        for school in SCHOOLS:
+        for school in schools:
             crawl_school(school, fetcher, total, today)
 
         print(f"\n{'='*60}")
-        print(f"=== 全部完成（{len(SCHOOLS)} 所学校）===")
+        print(f"=== 全部完成（{len(schools)} 所学校）===")
         print(f"总计 新增: {total['new']}, 变更: {total['changed']}, 跳过: {total['skipped']}, "
-              f"过期: {total['expired']}, 失败: {total['fail']}")
+              f"过期: {total['expired']}, 失败: {total['fail']}, "
+      f"详情页补标题: {total.get('title_fallback', 0)}, 无标题跳过: {total.get('no_title', 0)}, "
+      f"公司关联: {total.get('company_linked', 0)}")
         if total["fail"] > 0:
             alert_crawl_failed(SCRIPT_NAME, f"总计 {total['fail']} 条失败", total)
     except Exception as e:

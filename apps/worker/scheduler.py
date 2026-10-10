@@ -2,8 +2,8 @@
 """定时任务调度器：每天定时抓取 → 入库 → 写监控表。
 
 ⚠️ 备用方案，不启用（2026-09-28 决策）：
-生产调度 = 豆包定时任务「Offer派每日数据抓取刷新」（cron 0 12 * * * Asia/Shanghai，
-跑在本地 Windows），调用仓库外脚本 E:\AIMemory\DaoBao\crawl-fjut.py / crawl-fjrclh.py。
+生产调度 = 本机定时任务「Offer派每日数据抓取刷新」（cron 0 12 * * * Asia/Shanghai，
+跑在本地 Windows），调用仓库外脚本 E:\01_AI_Workspace\AIMemory\DaoBao\crawl-jysd.py / crawl-fjrclh.py。
 本文件保留仅作参考/备用，勿作为生产入口启动。
 
 用法（备用）：
@@ -14,6 +14,7 @@
 import argparse
 import asyncio
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -48,13 +49,19 @@ def crawl_job():
 
 
 def fjut_crawl_job():
-    """fjut 福建理工增量采集（Scrapling，独立脚本）"""
-    script = Path(r"E:\AIMemory\DaoBao\crawl-fjut.py")
-    log.info("开始 fjut 增量采集 ...")
+    """fjut 福建理工增量采集（jysd 多校脚本，含 fjut/jmu/xmu）
+
+    注（2026-10-10）：原 E:\AIMemory\DaoBao\crawl-fjut.py 已退役删除
+    （它与 crawl-jysd.py 都写 source=fjut，解析结果不同导致 hash 互相覆盖）。
+    改用 crawl-jysd.py；只跑 fjut 时用环境变量 OFFERHUI_SCHOOLS=fjut 限定。
+    """
+    script = Path(r"E:\01_AI_Workspace\AIMemory\DaoBao\crawl-jysd.py")
+    log.info("开始 jysd 增量采集（fjut）...")
     try:
+        env = {**os.environ, "OFFERHUI_SCHOOLS": "fjut"}
         res = subprocess.run(
             [sys.executable, str(script)],
-            capture_output=True, text=True, timeout=1800, encoding="utf-8",
+            capture_output=True, text=True, timeout=1800, encoding="utf-8", env=env,
         )
         tail = (res.stdout or res.stderr or "").strip().splitlines()[-1] if (res.stdout or res.stderr) else ""
         log.info(f"fjut 增量采集完成：{tail}")

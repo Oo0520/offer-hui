@@ -1,5 +1,5 @@
 """crawl 邮件告警模块（2026-09-29 目标1/6）
-用途：爬虫失败时发邮件告警。被 crawl-fjut.py / crawl-fjrclh.py 共用。
+用途：爬虫失败时发邮件告警。被 crawl-jysd.py / crawl-fjrclh.py 共用。
 触发条件（满足任一）：
   - 脚本顶层异常（except 块调用）
   - stats["fail"] > 0

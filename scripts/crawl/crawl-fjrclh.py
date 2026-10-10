@@ -120,10 +120,52 @@ def upsert_batch(items: list):
     )
     urllib.request.urlopen(req, timeout=30)
 
+# 公司名 -> companies.id 缓存
+_COMPANY_IDS = {}
+
+
+def _upsert_companies(names: list):
+    """把公司名批量 upsert 进 companies，缓存 name->id。
+
+    背景（2026-10-09 实测）：DB_COLS 白名单里只有 company_id（外键）、没有公司名列，
+    sanitize() 把 parse_job/parse_fair 解析出的 company 丢弃 → 卡片恒显示"官方发布"。
+    注意：本源的 tags 存的是用工类型（如 ["全职"]），**不能**当作公司名来源。
+    """
+    todo = [n for n in names if n and n not in _COMPANY_IDS]
+    for i in range(0, len(todo), 200):
+        batch = todo[i:i + 200]
+        req = urllib.request.Request(
+            f"{BASE}/companies?on_conflict=name",
+            data=json.dumps([{"name": n} for n in batch]).encode(),
+            headers={
+                "apikey": KEY,
+                "Authorization": f"Bearer {KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates,return=representation",
+            },
+            method="POST",
+        )
+        body = json.loads(urllib.request.urlopen(req, timeout=30).read())
+        for row in body:
+            if row.get("name") and row.get("id"):
+                _COMPANY_IDS[row["name"]] = row["id"]
+
+
 def flush(pending: list, stats: dict):
     """写一批：5xx/429/网络错退避重试 2 次，4xx 直接降级逐条；失败不中断（次日 hash 比对自愈）"""
     if not pending:
         return
+    # 公司关联：先 upsert companies 再回写 company_id（此前 company 被白名单丢弃）
+    try:
+        _upsert_companies([(it.get("company") or "").strip() for it in pending])
+    except Exception as e:
+        print(f"  ! 公司 upsert 失败: {str(e)[:100]}")
+        stats["company_fail"] = stats.get("company_fail", 0) + 1
+    for it in pending:
+        cid = _COMPANY_IDS.get((it.get("company") or "").strip())
+        if cid and it.get("company_id") != cid:
+            it["company_id"] = cid
+            stats["company_linked"] = stats.get("company_linked", 0) + 1
     payload = [sanitize(it) for it in pending]
     for attempt in range(3):
         try:
@@ -298,7 +340,8 @@ def classify(item: dict | None, existing: dict, pending: list, stats: dict, expi
 # ========== 主流程 ==========
 def main():
     print("=== fjrclh 增量爬虫（upsert 版） ===")
-    stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0}
+    stats = {"new": 0, "changed": 0, "skipped": 0, "fail": 0,
+             "company_linked": 0, "company_fail": 0}
 
     try:
         # 1. 查已有 ID + hash
@@ -373,7 +416,9 @@ def main():
                 time.sleep(0.3)
 
         print(f"\n=== 完成 ===")
-        print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, 过期: {expired_count}, 失败: {stats['fail']}")
+        print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, 过期: {expired_count}, "
+              f"失败: {stats['fail']}, 公司关联: {stats.get('company_linked', 0)}, "
+              f"公司失败: {stats.get('company_fail', 0)}")
         if stats["fail"] > 0:
             alert_crawl_failed("crawl-fjrclh.py", f"有 {stats['fail']} 条失败", stats)
     except Exception as e:
