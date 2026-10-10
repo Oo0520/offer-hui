@@ -6,8 +6,18 @@ v3（2026-09-29）：city 归一化接入（normalize.normalize_city），标准
 v4（2026-09-30）：company_type 白名单修复 + 凭据改为 .env/环境变量（不再硬编码）
 注意：content_hash 口径必须与 apps/worker/app/models.py 的 compute_hash 一致
 """
-import re, os, json, time, hashlib, urllib.request, urllib.error, urllib.parse, httpx
+import re, os, json, time, hashlib, urllib.request, urllib.error, urllib.parse, sys, httpx
 from datetime import datetime, timezone
+
+# 输出编码兜底（2026-10-10 实测事故）：Windows 上 stdout 重定向到文件/管道时用 locale(GBK)，
+# 本文件里的 ✓ / ✗ / ⚠ 在 GBK 中不存在 → print 抛 UnicodeEncodeError 并直接终止脚本
+# （实测本脚本因此只跑 1.5 秒就崩；异常处理里的告警函数又因 ⚠ 二次崩溃）。
+# errors="replace" 让不可编码字符降级为 ?，永不因日志字符中断抓取。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
 try:
     from normalize import normalize_city, normalize_company_by_name
 except ImportError:
@@ -68,15 +78,22 @@ def _rest_get(url: str, retries: int = 1):
     raise last
 
 def fetch_existing_map(source: str) -> dict:
-    """拉 {external_id: content_hash} 全量映射（仅 published；offset 分页防 1000 截断）"""
+    """拉 {external_id: content_hash} 全量映射（仅 published；offset 分页防 1000 截断）
+
+    2026-10-10：**company_id 为 NULL 的行返回哨兵值**，而不是真实 hash。
+    原因：company_id 不进 content_hash，于是"内容没变但公司没关联上"的行会被
+    永久判为"跳过"、company_id 永远补不回来（实测因公司 upsert 报 500 导致 134 行
+    如此）。返回哨兵 → classify 视为"变更" → 下次抓取时重写并补上 company_id。
+    """
     existing = {}
     offset = 0
     while True:
-        url = (f"{BASE}/jobs?select=external_id,content_hash&source=eq.{source}"
+        url = (f"{BASE}/jobs?select=external_id,content_hash,company_id&source=eq.{source}"
                f"&status=eq.published&offset={offset}&limit=1000")
         rows = _rest_get(url)
         for r in rows:
-            existing[r["external_id"]] = r.get("content_hash")
+            h = r.get("content_hash")
+            existing[r["external_id"]] = h if r.get("company_id") else "__NEEDS_COMPANY__"
         if len(rows) < 1000:
             return existing
         offset += 1000
@@ -130,8 +147,19 @@ def _upsert_companies(names: list):
     背景（2026-10-09 实测）：DB_COLS 白名单里只有 company_id（外键）、没有公司名列，
     sanitize() 把 parse_job/parse_fair 解析出的 company 丢弃 → 卡片恒显示"官方发布"。
     注意：本源的 tags 存的是用工类型（如 ["全职"]），**不能**当作公司名来源。
+
+    ⚠️ 必须**批内去重**（2026-10-10 实测）：同一批里出现重复 name 时 PostgREST 返回
+       500 {"code":"21000","hint":"Ensure that no rows proposed for insertion within
+       the same command have duplicate constrained values."}——
+       公司名在一批岗位里重复很常见，曾导致本源公司关联全部失败（关联 0 条）。
+       另：单批失败不再中断后续批次。
     """
-    todo = [n for n in names if n and n not in _COMPANY_IDS]
+    todo, seen = [], set()
+    for n in names:
+        n = (n or "").strip()
+        if n and n not in _COMPANY_IDS and n not in seen:
+            seen.add(n)
+            todo.append(n)
     for i in range(0, len(todo), 200):
         batch = todo[i:i + 200]
         req = urllib.request.Request(
@@ -145,7 +173,11 @@ def _upsert_companies(names: list):
             },
             method="POST",
         )
-        body = json.loads(urllib.request.urlopen(req, timeout=30).read())
+        try:
+            body = json.loads(urllib.request.urlopen(req, timeout=30).read())
+        except Exception as e:
+            print(f"  ! 公司 upsert 失败（{len(batch)} 个，本批跳过）: {str(e)[:80]}")
+            continue
         for row in body:
             if row.get("name") and row.get("id"):
                 _COMPANY_IDS[row["name"]] = row["id"]

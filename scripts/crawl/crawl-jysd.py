@@ -20,6 +20,17 @@
 """
 from scrapling import StealthyFetcher
 import re, os, json, time, hashlib, threading, urllib.request, urllib.error, urllib.parse, sys
+
+# 输出编码兜底（2026-10-10 实测事故）：Windows 上 stdout 被重定向到文件/管道时，
+# Python 用系统 locale（GBK）编码，本文件里的 ✓ / ⚠ / ✗ 在 GBK 中不存在 →
+# print 抛 UnicodeEncodeError 并**直接终止脚本**（crawl-fjrclh.py 曾因此只跑 1.5 秒就崩，
+# 且异常处理里的告警函数又因 ⚠ 二次崩溃）。errors="replace" 让不可编码字符降级为 ?，
+# 永不因日志字符而中断抓取。配合运行时 PYTHONIOENCODING=utf-8 可做到无损。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
 from datetime import datetime, timedelta, timezone
 try:
     from normalize import (normalize_city, normalize_industry, normalize_company_by_name,
@@ -677,15 +688,26 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
                 #   1) 标题为空 —— fjut 的卡片标题正则失配，实测 88% 的 fjut 行无标题
                 #   2) 标题就是纯数字外部 id —— xmu/jmu 有 478 条公告把 id 写进了 title，
                 #      真实标题落在 tags / 详情页（公告详情页 <title> 实测就是真实标题）
+                # 2026-10-10 补：**回退结果也要过数字校验**——实测有 1 条公告详情页的
+                # <title> 同样是纯数字（jmu_campus_997002），原逻辑只校验卡片原标题，
+                # 于是数字标题被写进了库。
+                _num = re.compile(r"^\d{3,}$")
                 raw_title = (item.get("title") or "").strip()
-                if (not raw_title) or re.fullmatch(r"\d{3,}", raw_title):
-                    dt, dc = fetch_detail_title(cfg["detail_url"].format(id=parsed["fid"]))
-                    if dt:
-                        item["title"] = dt
-                        stats["title_fallback"] = stats.get("title_fallback", 0) + 1
-                    if dc and not item.get("company"):
-                        item["company"] = dc
-                if not (item.get("title") or "").strip():
+                if (not raw_title) or _num.match(raw_title):
+                    # 公告类的真实标题在 tags[0]（实测 14/15 与详情页一致），先用它，省一次请求
+                    if section_key == "announcement":
+                        _tags = [str(t).strip() for t in (item.get("tags") or []) if str(t).strip()]
+                        if _tags and not _num.match(_tags[0]):
+                            item["title"] = _tags[0]
+                            stats["title_fallback"] = stats.get("title_fallback", 0) + 1
+                    if not (item.get("title") or "").strip() or _num.match(item["title"].strip()):
+                        dt, dc = fetch_detail_title(cfg["detail_url"].format(id=parsed["fid"]))
+                        if dt and not _num.match(dt.strip()):
+                            item["title"] = dt
+                            stats["title_fallback"] = stats.get("title_fallback", 0) + 1
+                        if dc and not item.get("company"):
+                            item["company"] = dc
+                if not (item.get("title") or "").strip() or _num.match(item["title"].strip()):
                     # 仍无标题：**不写库**（避免产生"没有信息"的残卡），但保留在 valid_eids，
                     # 以免把它判成过期而误藏掉可能是真岗位的记录。
                     stats["no_title"] = stats.get("no_title", 0) + 1

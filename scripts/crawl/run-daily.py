@@ -17,6 +17,7 @@
 """
 import io
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -91,10 +92,12 @@ def run_script(name: str) -> bool:
     log(f"--- 开始 {name} ---")
     t0 = time.time()
     try:
-        # 用 -u（无缓冲）：否则子进程 stdout 重定向到文件时是块缓冲，
-        # 写库阶段的 print 会滞留在缓冲区，外部看到「日志冻结」而误判为卡死
-        # （2026-10-10 实际踩过：其实一直在写库，只是日志不落盘）。
-        p = subprocess.run([sys.executable, "-u", str(path)], cwd=str(HERE),
+        # -u（无缓冲）：否则子进程 stdout 重定向到文件时是块缓冲，写库阶段的 print
+        #   会滞留在缓冲区，外部看到「日志冻结」而误判为卡死（2026-10-10 实际踩过）。
+        # PYTHONIOENCODING=utf-8：子进程日志走管道时默认用 locale(GBK)，脚本里的
+        #   ✓/⚠/✗ 会抛 UnicodeEncodeError 直接终止脚本（crawl-fjrclh.py 曾因此崩）。
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+        p = subprocess.run([sys.executable, "-u", str(path)], cwd=str(HERE), env=env,
                            capture_output=True, text=True, encoding="utf-8",
                            errors="replace", timeout=5400)
     except subprocess.TimeoutExpired:

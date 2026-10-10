@@ -12,6 +12,14 @@ import os, smtplib, sys
 from email.mime.text import MIMEText
 from email.header import Header
 
+# 输出编码兜底：告警里的 ⚠ / ✉ 在 GBK 下不可编码，会让**告警本身**抛异常而发不出去
+# （2026-10-10 实测：爬虫崩溃 → 调告警 → 告警也崩，形成二次故障，失败无法上报）。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 # 读 .env（KEY=VALUE 每行，忽略 # 注释与空行）——多级查找：脚本同级 -> 仓库根 -> 仓库 apps/worker，再兜底环境变量
 def _load_env(paths):
     for p in paths:
