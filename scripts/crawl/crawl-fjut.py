@@ -55,6 +55,31 @@ BASE = "https://sqmgjxazzpcfjutzscyu.supabase.co/rest/v1"
 # 线程本地 fetcher：StealthyFetcher 非线程安全，每线程必须独立实例（2026-09-29 并发实测验证）
 _tls = threading.local()
 
+# ── 浏览器可执行文件：优先用本机已装的 Chromium 内核浏览器，避免再下载 ~150MB ──
+# 依据（2026-10-10 实读 site-packages）：scrapling 的 fetch() 接受 executable_path；
+# patchright 驱动在给了该参数时直接使用该二进制；⚠️ SCRAPLING_EXECUTABLE_PATH 环境变量
+# 只被 scrapling 的 CLI/MCP 读取，直接调 StealthyFetcher.fetch() 不生效，必须显式传参。
+_BROWSER_CANDIDATES = (
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+)
+
+
+def _resolve_browser_kwargs() -> dict:
+    exe = os.environ.get("OFFERHUI_BROWSER_EXE")
+    if not exe or not os.path.exists(exe):
+        exe = next((p for p in _BROWSER_CANDIDATES if os.path.exists(p)), None)
+    if exe:
+        print(f"  [browser] 使用本机浏览器: {exe}", flush=True)
+        return {"executable_path": exe}
+    print("  [browser] 未找到本机 Chromium 内核浏览器，回退到 scrapling 自带 Chromium", flush=True)
+    return {}
+
+
+_BROWSER_KW = _resolve_browser_kwargs()
+
 def _thread_fetcher():
     if not hasattr(_tls, "fetcher"):
         _tls.fetcher = StealthyFetcher()
@@ -211,7 +236,7 @@ def fetch_list_ids(fetcher, section_key, cfg):
     for n in range(1, cfg["pages"] + 1):
         url = cfg["list_url"].format(n=n)
         print(f"  抓列表: {url}")
-        page = fetcher.fetch(url, headless=True, network_idle=True)
+        page = fetcher.fetch(url, headless=True, network_idle=True, **_BROWSER_KW)
         html = page.body.decode("utf-8")
         found = re.findall(cfg["id_pattern"], html)
         ids.extend(found)
@@ -222,7 +247,7 @@ def parse_detail(section_key, fid, cfg):
     """解析详情页（每线程独立 fetcher，并发安全）"""
     fetcher = _thread_fetcher()
     url = cfg["detail_url"].format(id=fid)
-    page = fetcher.fetch(url, headless=True, network_idle=True)
+    page = fetcher.fetch(url, headless=True, network_idle=True, **_BROWSER_KW)
     h = page.body.decode("utf-8")
     # 关键：剥离内联 base64（图片/统计像素），否则其中的随机"数字K"会让 salary_text
     # 每次抓取都不同 → content_hash 全量抖动 → 增量分类失效（2026-09-28 诊断实锤）

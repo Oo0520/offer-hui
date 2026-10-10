@@ -326,6 +326,36 @@ def parse_listcard(school, cfg, block):
 DETAIL_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
              "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 
+# ── 浏览器可执行文件：优先用本机已装的 Chromium 内核浏览器，避免再下载 ~150MB ──
+# 依据（2026-10-10 实读 site-packages）：
+#   - scrapling 的 fetch() 接受 executable_path（_types.py 的 PlaywrightSession，
+#     并在 _base.py 里把它传给浏览器启动参数）；
+#   - patchright 驱动在给了 executable_path 时直接使用该二进制，且未见
+#     "channel 与 executablePath 互斥" 的校验；
+#   - ⚠️ 环境变量 SCRAPLING_EXECUTABLE_PATH **只被 scrapling 的 CLI/MCP 读取**
+#     （cli.py / ai.py），直接调 StealthyFetcher.fetch() 不生效，必须显式传参。
+# 找不到本机浏览器时返回空 dict，自动回退到 scrapling 自带的 Chromium。
+_BROWSER_CANDIDATES = (
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+)
+
+
+def _resolve_browser_kwargs() -> dict:
+    exe = os.environ.get("OFFERHUI_BROWSER_EXE")
+    if not exe or not os.path.exists(exe):
+        exe = next((p for p in _BROWSER_CANDIDATES if os.path.exists(p)), None)
+    if exe:
+        print(f"  [browser] 使用本机浏览器: {exe}", flush=True)
+        return {"executable_path": exe}
+    print("  [browser] 未找到本机 Chromium 内核浏览器，回退到 scrapling 自带 Chromium", flush=True)
+    return {}
+
+
+_BROWSER_KW = _resolve_browser_kwargs()
+
 # 详情页 <title> 里的站点级文案（无效 id / 错误页），不作为岗位标题
 _DETAIL_TITLE_NOISE = ("就业创业服务平台", "智慧就业", "View Teachin", "View Fair", "View Campus")
 
@@ -594,7 +624,7 @@ def crawl_school(school: dict, fetcher, total_stats: dict, today: datetime):
         for n in range(1, cfg["pages"] + 1):
             url = cfg["list_url"].format(n=n)
             print(f"  抓列表 p{n}: {url}")
-            page = fetcher.fetch(url, headless=True, network_idle=True)
+            page = fetcher.fetch(url, headless=True, network_idle=True, **_BROWSER_KW)
             h = page.body.decode("utf-8")
             # 按卡片风格切分
             if cfg["card"] == "jobcard":
