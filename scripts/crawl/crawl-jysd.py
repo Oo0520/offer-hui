@@ -806,10 +806,13 @@ def main():
       f"公司关联: {total.get('company_linked', 0)}")
         if total["fail"] > 0:
             alert_crawl_failed(SCRIPT_NAME, f"总计 {total['fail']} 条失败", total)
+        # 退出码纪律（2026-10-12）：原来 fail>0 只发告警、进程仍退 0，
+        # 于是 run-daily.py / 计划任务判不出失败。非零退出码才能让无人值守链路报错。
+        return 0 if total["fail"] == 0 else 1
     except Exception as e:
         import traceback
         alert_crawl_failed(SCRIPT_NAME, f"{e}\n{traceback.format_exc()}", total)
         raise
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

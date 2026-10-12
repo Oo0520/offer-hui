@@ -238,6 +238,11 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
     - **批量 upsert `companies` 必须批内去重**：同批出现重复 name 时 PostgREST 返回 `500 code=21000`（"duplicate constrained values"），会让整个公司关联静默失败（实测曾导致 fjrclh 关联 0 条）。
     - **`company_id` 不进 `content_hash`**，所以"内容没变但公司没关联上"的行会被永久判为「跳过」、无法自愈。`crawl-fjrclh.py` 的 `fetch_existing_map` 因此对 `company_id IS NULL` 的行返回 `"<真实hash>__NEEDS_COMPANY__"`，`classify` 拆出真实 hash 比较、仅在「该行确实有公司名可关联」时强制重写（标记必须携带真实 hash，否则每轮都白重写——第一版就犯过此错，100 条公告行每轮"变更"）。
     - **验收口径**：公司关联率**只看 `job` + `intern`**（基线 98.0%）。`announcement`/`teachin`/`fair`/`campus` 本就不该有 company_id，所以"缺公司总数"恒在 700+，拿它判断好坏会得出完全错误的结论。
+17. **代理环境变量会静默打死 httpx（2026-10-12 实测，随启动环境而变）**：
+    - 本机 User 级持久化了 `HTTP_PROXY` / `HTTPS_PROXY` = `http://127.0.0.1:7890`（FlClash）。一旦同一环境里还存在 `NO_PROXY=...,[::1]`，httpx 会把它解析成非法模式 `all://*[::1]`，于是**每个请求都抛** `InvalidURL: Invalid port: ':1]'`。
+    - 症状极具迷惑性：`crawl-fjrclh.py` 三个板块全空、打印 `共 0 条` + "抓取为空，跳过过期标记"（防误杀保护生效），却**报"失败 0 / 退出码 0"**——典型静默失败。而 Supabase 写库走 urllib（读 WinINET 注册表代理）不受影响，所以只有 httpx 这一路挂。
+    - 修法：`crawl-fjrclh.py` 的 httpx 调用一律 `trust_env=False`（该源是国内站点，直连即可，不读代理环境）。
+    - **退出码纪律（同一轮补上）**：`crawl-jysd.py` / `crawl-fjrclh.py` 原先 `fail > 0` 只发邮件告警、进程仍退 0 → `run-daily.py` 与计划任务判不出失败。现在两者都 `return 0 if fail == 0 else 1` + `sys.exit(main())`；`crawl-fjrclh.py` 另加「全部板块抓空即计失败并响亮打印」，杜绝"一条都没抓到却报成功"。
 
 ## 6. 设计资产
 

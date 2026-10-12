@@ -250,11 +250,17 @@ def mark_expired_batch(eids: list):
 def fetch_list_all(typedir: str, page_size: int = 100) -> list[dict]:
     """抓列表（API 只返回最新一批，不分页）"""
     try:
+        # trust_env=False（2026-10-12 实测事故）：本机 User 级持久化了 HTTP_PROXY/HTTPS_PROXY
+        # 指向 FlClash(127.0.0.1:7890)；若同时存在 NO_PROXY=...,[::1]，httpx 会把它解析成非法
+        # 模式 "all://*[::1]"，导致**每个请求都抛** InvalidURL: Invalid port: ':1]'，
+        # 三个板块全空、脚本却仍报"失败 0 / 退出码 0"（静默失败）。
+        # 该源是国内站点，直连即可，索性不读代理环境。
         resp = httpx.post(API, data={
             "typeid": "1",
             "typedir": typedir,
             "pageSize": str(page_size),
-        }, headers={"Referer": "http://fjrclh.fzu.edu.cn/", "User-Agent": UA}, timeout=20)
+        }, headers={"Referer": "http://fjrclh.fzu.edu.cn/", "User-Agent": UA},
+            timeout=20, trust_env=False)
         if resp.status_code != 200 or not resp.text.strip():
             return []
         data = resp.json()
@@ -454,16 +460,26 @@ def main():
             if i + BATCH_SIZE < len(pending):
                 time.sleep(0.3)
 
+        # 全板块抓空 = 源站/网络/代理异常（2026-10-12 实测：环境里的 NO_PROXY 含 [::1]，
+        # httpx 每个请求都抛 InvalidURL，三个板块全空，脚本却报"失败 0、退出码 0"）。
+        # 必须响亮：计入失败并让退出码非零，否则无人值守任务会把"一条都没抓到"当成成功。
+        boards_failed = [p for p, (ok, _) in board_results.items() if not ok]
+        if board_results and len(boards_failed) == len(board_results):
+            print(f"!! 全部 {len(boards_failed)} 个板块抓取失败（源站/网络/代理异常），本轮未取到任何数据")
+            stats["fail"] += 1
+
         print(f"\n=== 完成 ===")
         print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, 过期: {expired_count}, "
               f"失败: {stats['fail']}, 公司关联: {stats.get('company_linked', 0)}, "
               f"公司失败: {stats.get('company_fail', 0)}")
         if stats["fail"] > 0:
             alert_crawl_failed("crawl-fjrclh.py", f"有 {stats['fail']} 条失败", stats)
+        # 退出码纪律：原来 fail>0 也只发告警、进程仍退 0，导致 run-daily/计划任务判不出失败
+        return 0 if stats["fail"] == 0 else 1
     except Exception as e:
         import traceback
         alert_crawl_failed("crawl-fjrclh.py", f"{e}\n{traceback.format_exc()}", stats)
         raise
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
