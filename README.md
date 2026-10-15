@@ -44,7 +44,7 @@
 | Crawler / pipeline | Python · httpx · curl_cffi · Playwright · psycopg · APScheduler · FastAPI | `apps/worker/` |
 | Agent access | FastMCP (Streamable HTTP) | `apps/mcp/` |
 | Data cache | Next.js `unstable_cache` (60s ISR) | `apps/web/lib/jobs.ts` |
-| Package manager | pnpm workspace (`apps/*`) | root |
+| Package manager | npm (each subproject is independent; `apps/web` is the only Node package) | root |
 
 ---
 
@@ -73,13 +73,13 @@ offer-hui/
 
 ## Installation
 
-Prerequisites: Node.js 18+, pnpm, Python 3.10+ (TODO: confirm exact minimum).
+Prerequisites: Node.js 18+, Python 3.10+ (TODO: confirm exact minimum).
 
 ### Frontend
 
 ```bash
 cd apps/web
-npm install        # or: pnpm install
+npm install
 ```
 
 ### Crawler worker

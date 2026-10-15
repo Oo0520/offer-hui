@@ -1,10 +1,21 @@
 version: 2
+# 说明（2026-10-15 调整）：
+#   - 由 weekly 改为 monthly、每个生态开 PR 上限 5→2，并启用 groups 把同一生态的
+#     所有更新合并成**一个** PR —— 此前 4 个生态每周各自最多开 5 个 PR，实测积压了
+#     12 个 open PR，通知噪音很大。
+#   - 只保留 apps/web（npm）与 /（github-actions）之外的 pip 生态；仓库根的 pnpm
+#     workspace 已移除（本机无 pnpm、CI 与 Vercel 都在 apps/web 用 npm，
+#     且 apps/worker、apps/mcp 都没有 package.json，根 pnpm 脚本本就跑不通）。
 updates:
   - package-ecosystem: npm
     directory: /apps/web
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      web-npm:
+        patterns:
+          - "*"
     labels:
       - dependencies
     commit-message:
@@ -13,8 +24,12 @@ updates:
   - package-ecosystem: pip
     directory: /apps/worker
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      worker-pip:
+        patterns:
+          - "*"
     labels:
       - dependencies
     commit-message:
@@ -23,8 +38,12 @@ updates:
   - package-ecosystem: pip
     directory: /apps/mcp
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      mcp-pip:
+        patterns:
+          - "*"
     labels:
       - dependencies
     commit-message:
@@ -33,7 +52,12 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns:
+          - "*"
     labels:
       - dependencies
     commit-message:

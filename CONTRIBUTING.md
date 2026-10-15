@@ -24,7 +24,7 @@
 | 数据库 / 认证 | Supabase Postgres（pgvector、RLS） | 云端 |
 | 爬虫 / 数据管道 | Python · httpx · curl_cffi · Playwright · psycopg · APScheduler · FastAPI | `apps/worker/` |
 | Agent 接入 | FastMCP（Streamable HTTP） | `apps/mcp/` |
-| 包管理 | pnpm workspace（`apps/*`） | 根目录 |
+| 包管理 | npm（子项目各自独立；`apps/web` 是唯一的 Node 包） | 根目录 |
 
 完整说明见 [README.zh-CN.md](./README.zh-CN.md)。
 
@@ -40,7 +40,7 @@
 
 ## 开发环境
 
-前置：Node.js 18+、pnpm、Python 3.10+。
+前置：Node.js 18+、Python 3.10+。
 
 ```bash
 # 前端依赖
