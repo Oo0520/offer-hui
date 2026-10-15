@@ -244,6 +244,22 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
     - 修法：`crawl-fjrclh.py` 的 httpx 调用一律 `trust_env=False`（该源是国内站点，直连即可，不读代理环境）。
     - **退出码纪律（同一轮补上）**：`crawl-jysd.py` / `crawl-fjrclh.py` 原先 `fail > 0` 只发邮件告警、进程仍退 0 → `run-daily.py` 与计划任务判不出失败。现在两者都 `return 0 if fail == 0 else 1` + `sys.exit(main())`；`crawl-fjrclh.py` 另加「全部板块抓空即计失败并响亮打印」，杜绝"一条都没抓到却报成功"。
 
+18. **不要把手算的"相对今天"的值烤进静态页（2026-10-15 事故，用户报"昨天已截止却显示今日截止"）**：
+    - 现象：首页「今日截止」区块把 **8 条 10-14 已到期**的岗位显示成"今天截止"，而当天真正到期的 17 条反而不在区块里。
+    - 双重根因：
+      1. **触发**：当天 12:00 的定时任务没跑（`run-daily.log` 最后一条是前一天 12:22），缓存没被刷新。实测响应头 `Date: 2026-10-14 04:23Z` / `Age: 107950`（陈旧 29.99 小时）。
+      2. **设计缺陷**：`deadlineDays`（以及首页 hero 的 `due30`、日历页的 `now`/`todayStr`）是**服务端在页面生成那一刻算好、随 force-static 页面的 payload 发出去**的；5 个静态页（`/ /calendar /match /favorites /board`）只有 `force-static`、**没有 revalidate**，仅当爬虫调 `/api/revalidate` 时才重生成。**漏跑一次，页面就会自信地显示错值**——比不显示更糟。
+    - 修法：**把"相对今天"的展示值全部搬到浏览器现算**（`lib/useFreshDeadlines.ts`）——服务端只提供稳定的「截止日期」，天数由 `bjDayDiff(今天, 截止日)` 在客户端算，跨北京 0 点自动重算。首页 hero 的 `due30` 同样改为客户端派生；日历页的 `todayStr`/`ym`/`sel` 也改为挂载后按当天纠正。
+      - 纯函数集中在 `lib/jobs.ts`：`bjDateOf` / `bjDateStr` / `bjDayDiff` / `bjDaysUntil` / `msToNextBjMidnight`（服务端 SSR 兜底与客户端现算**共用同一份实现**）。
+      - **水合一致性**：首帧沿用服务端值（SSR HTML 与首次客户端渲染一致），挂载后（`useEffect`）再切到现算值，避免 React 水合不匹配。
+      - 顺带修掉一个潜在错一天：`deadline_at.slice(0,10)` 取的是 **UTC 日期**，对 `16:00Z` 这类跨北京午夜的截止会错一天；改为 `bjDateOf()`。
+      - `HomeStats.due30` 已移除（服务端算的会冻住），改由 `HomeClient` 从修正后的列表派生。
+    - **验收（故障注入，两层信号缺一不可）**：临时让服务端把"今天"钉在事故当天 → 原始 HTML 的「今日截止」变成 **28**（复现事故），而**水合后的 DOM 必须是 17**（客户端纠正）；撤掉注入后两者一致为 17。
+    - **验收的两个坑（都踩过）**：
+      - **换构建必须重启 `next start`**：旧进程 serve 重建后的 `.next` 会让 HTML 引用的 JS chunk 与构建对不上，页面**永远不水合**（实测等 90 秒也没接管），于是读到的一直是服务端 HTML、误判"修复无效"。本机 `Get-NetTCPConnection -LocalPort 3000` **看不到该监听**，杀进程要按命令行匹配：`Get-CimInstance Win32_Process -Filter "Name='node.exe'" | ? { $_.CommandLine -match 'next' }`。
+      - **判"水合完成"要有可观测依据**：向搜索框填入关键词，看 `.job-card` 数量是否变化；变了才说明 React 已接管。仅靠"等 X 秒"不可靠（本机水合其实只要 0.6-0.7 秒，但错配时永远等不到）。
+    - 另注：`npm run build` 打印的 5 条 `Failed to set Next.js data cache for unstable_cache ... items over 2MB can not be cached` 是**已知非致命**（payload 3.03MB > 2MB 上限），退出码仍为 0。
+
 ## 6. 设计资产
 
 | 项 | 值 |

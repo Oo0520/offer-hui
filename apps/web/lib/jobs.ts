@@ -131,26 +131,58 @@ export function fmtSalary(j: JobRow): string {
   return "";
 }
 
-// 北京时区今天 0 点的时间戳
-export function bjDayStart(now = new Date()): number {
-  const ms = now.getTime() + 8 * 3600 * 1000;
-  const d = new Date(ms);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - 8 * 3600 * 1000;
+// ── 北京时区的截止日期口径（唯一实现：服务端首屏与浏览器现算共用）─────────────
+// 事故背景（2026-10-15）：deadlineDays 原先是「页面生成那一刻」算好、随 force-static
+// 页面的 payload 发给浏览器的。这 5 个静态页不设 revalidate，只在爬虫调
+// /api/revalidate 时重生成；当天定时任务漏跑（run-daily.log 最后一条是 10-14 12:22），
+// 页面就陈旧了 30 小时，把 10-14 已到期的 8 条继续显示成「今天截止」。
+// 结论：天数是相对**访问者当天**的展示值，必须在浏览器现算；
+//       而截止的「日期」是稳定事实，可以随 payload 传（传北京日期，不是 UTC 切片）。
+// 完整修复：lib/useFreshDeadlines.ts（挂载后按当天重算，并在跨北京 0 点时自动再算）。
+
+/** ISO 时间戳 → 北京时区的日期串 YYYY-MM-DD（null/非法值 → null） */
+export function bjDateOf(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  return new Date(t + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+/** 指定时刻（默认现在）的北京日期串 YYYY-MM-DD */
+export function bjDateStr(now = new Date()): string {
+  return new Date(now.getTime() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+/** 两个北京日期串相差的整天数（toDate 晚于 fromDate 时为正） */
+export function bjDayDiff(fromDate: string, toDate: string): number {
+  const [y1, m1, d1] = fromDate.split("-").map(Number);
+  const [y2, m2, d2] = toDate.split("-").map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+}
+
+/** 距北京今日的天数：0=今天截止，正=未到期，负=已过期，null=无截止 */
+export function bjDaysUntil(iso: string | null | undefined, now = new Date()): number | null {
+  const d = bjDateOf(iso);
+  return d ? bjDayDiff(bjDateStr(now), d) : null;
+}
+
+/** 距下一个北京 0 点还有多少毫秒（供客户端跨零点自动重算） */
+export function msToNextBjMidnight(now = new Date()): number {
+  const t = now.getTime();
+  const bj = new Date(t + 8 * 3600 * 1000);
+  const nextUtcMidnight = Date.UTC(bj.getUTCFullYear(), bj.getUTCMonth(), bj.getUTCDate() + 1);
+  return nextUtcMidnight - (t + 8 * 3600 * 1000);
 }
 
 export function toView(r: JobRow): JobView {
   const company = r.companies?.name || "官方发布";
   const jobType = (r.job_type === "intern" ? "实习" : r.job_type === "fair" ? "招聘会" : r.job_type === "teachin" ? "宣讲会" : r.job_type === "announcement" ? "招聘公告" : "校招") as JobView["jobType"];
-  const dl = r.deadline_at ? r.deadline_at.slice(0, 10) : null;
-  let days: number | null = null;
-  if (dl) {
-    const t = new Date(dl + "T00:00:00+08:00").getTime();
-    // 基准必须是**北京今日 0 点**，不能是 Date.now()：
-    // 两者都是北京 0 点，差值恰为整天数，Math.round 无歧义。
-    // 用 Date.now() 会随一天中的时刻漂移——中午 12 点后「今天截止」会被算成 -1（判定为已截止），
-    // 「今天截止」档里显示的其实是明天到期的岗位（2026-10-09 22:01 实测：13 vs 真实 11）。
-    days = Math.round((t - bjDayStart()) / 86400000);
-  }
+  // 截止「日期」取北京时区（原来是 slice(0,10) 取 UTC 日期，跨北京午夜的截止会错一天）。
+  // 「距今天数」此处只算**首屏 SSR 的兜底值**；浏览器挂载后按访问者当天重算
+  // （见 lib/useFreshDeadlines.ts）。静态页会被缓存甚至陈旧（2026-10-15 事故），
+  // 相对天数不能定死在服务端。
+  const dl = bjDateOf(r.deadline_at);
+  const days = bjDaysUntil(r.deadline_at);
   const industry = r.industry || "未分类";
   return {
     id: r.id,

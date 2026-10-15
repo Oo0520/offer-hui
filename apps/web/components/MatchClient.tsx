@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { JobView } from "@/lib/jobs";
+import { useFreshDeadlines } from "@/lib/useFreshDeadlines";
 
 type MatchResult = {
   job: JobView;
@@ -51,7 +52,9 @@ function score(job: JobView): { score: number; reasons: string[] } {
   return { score: Math.min(s, 100), reasons };
 }
 
-export default function MatchClient({ jobs }: { jobs: JobView[] }) {
+export default function MatchClient({ jobs: jobsProp }: { jobs: JobView[] }) {
+  // 截止天数按访问者当天现算（"距截止 N 天"提示与排序都读它）
+  const jobs = useFreshDeadlines(jobsProp);
   const [fileName, setFileName] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "running" | "done">("idle");
   const [results, setResults] = useState<MatchResult[]>([]);

@@ -22,12 +22,14 @@ import {
   COHORT_ANY,
 } from "@/lib/taxonomy";
 import { parseQuery, mergeParsed } from "@/lib/queryParser";
+import { useFreshDeadlines } from "@/lib/useFreshDeadlines";
 
 
 export type HomeStats = {
   total: number;
   companies: number;
-  due30: number;
+  // 注意：30 天内截止数（原 due30）**不放这里**——它依赖"今天"，由服务端算会被
+  // force-static 页面缓存冻住（2026-10-15 事故）。改在组件内按访问者当天现算。
 };
 
 // 面板维度：「招聘类型」不在此列——它由顶部 chip 单选承担（两者相互独立，不共用 state）。
@@ -117,12 +119,22 @@ function matchDim(j: JobView, k: Dim, sel: string[]): boolean {
 }
 
 export default function HomeClient({
-  jobs,
+  jobs: jobsProp,
   stats,
 }: {
   jobs: JobView[];
   stats: HomeStats;
 }) {
+  // 截止天数按**访问者当天**现算：静态页里那份是"页面生成那一刻"算的，会陈旧
+  // （2026-10-15 事故：页面冻在 10-14，8 条已到期岗位被标成「今天截止」）
+  const jobs = useFreshDeadlines(jobsProp);
+  // 30 天内截止数同样按当天现算（原来由 page.tsx 在服务端算，会冻在页面生成那天）
+  const due30 = useMemo(
+    () =>
+      jobs.filter((j) => j.deadlineDays !== null && j.deadlineDays >= 0 && j.deadlineDays <= 30)
+        .length,
+    [jobs]
+  );
   const [q, setQ] = useState("");
   const [filters, setFilters] = useState<FState>({
     city: [],
@@ -620,7 +632,7 @@ export default function HomeClient({
             <span>招聘企业</span>
           </div>
           <div className="st glass">
-            <b>{stats.due30}</b>
+            <b>{due30}</b>
             <span>30天内截止</span>
           </div>
         </div>

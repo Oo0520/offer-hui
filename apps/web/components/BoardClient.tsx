@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { JobView } from "@/lib/jobs";
+import { useFreshDeadlines } from "@/lib/useFreshDeadlines";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { INDUSTRY_LIST } from "@/lib/industryList";
@@ -206,7 +207,9 @@ const emptyForm = {
   degree: "不限",
 };
 
-export default function BoardClient({ jobs }: { jobs: JobView[] }) {
+export default function BoardClient({ jobs: jobsProp }: { jobs: JobView[] }) {
+  // 截止天数按访问者当天现算（看板卡片上的截止提示读它）
+  const jobs = useFreshDeadlines(jobsProp);
   const router = useRouter();
   const [stages, setStages] = useState<Record<string, string>>({});
   const [customJobs, setCustomJobs] = useState<CustomJob[]>([]);
