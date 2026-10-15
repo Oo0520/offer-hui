@@ -6,8 +6,18 @@ v3（2026-09-29）：city 归一化接入（normalize.normalize_city），标准
 v4（2026-09-30）：company_type 白名单修复 + 凭据改为 .env/环境变量（不再硬编码）
 注意：content_hash 口径必须与 apps/worker/app/models.py 的 compute_hash 一致
 """
-import re, os, json, time, hashlib, urllib.request, urllib.error, urllib.parse, httpx
+import re, os, json, time, hashlib, urllib.request, urllib.error, urllib.parse, sys, httpx
 from datetime import datetime, timezone
+
+# 输出编码兜底（2026-10-10 实测事故）：Windows 上 stdout 重定向到文件/管道时用 locale(GBK)，
+# 本文件里的 ✓ / ✗ / ⚠ 在 GBK 中不存在 → print 抛 UnicodeEncodeError 并直接终止脚本
+# （实测本脚本因此只跑 1.5 秒就崩；异常处理里的告警函数又因 ⚠ 二次崩溃）。
+# errors="replace" 让不可编码字符降级为 ?，永不因日志字符中断抓取。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except (AttributeError, ValueError):
+        pass
 try:
     from normalize import normalize_city, normalize_company_by_name
 except ImportError:
@@ -68,15 +78,23 @@ def _rest_get(url: str, retries: int = 1):
     raise last
 
 def fetch_existing_map(source: str) -> dict:
-    """拉 {external_id: content_hash} 全量映射（仅 published；offset 分页防 1000 截断）"""
+    """拉 {external_id: content_hash} 全量映射（仅 published；offset 分页防 1000 截断）
+
+    2026-10-10：**company_id 为 NULL 的行，hash 后面缀标记** `__NEEDS_COMPANY__`。
+    原因：company_id 不进 content_hash，于是"内容没变但公司没关联上"的行会被永久判为
+    "跳过"、company_id 永远补不回来（实测因公司 upsert 报 500 导致 134 行如此）。
+    注意标记必须**携带真实 hash**：只存哨兵字符串会让比较永远失配、每轮都白重写
+    （第一版就犯了这个错：公告类 100 行每轮都"变更"）。
+    """
     existing = {}
     offset = 0
     while True:
-        url = (f"{BASE}/jobs?select=external_id,content_hash&source=eq.{source}"
+        url = (f"{BASE}/jobs?select=external_id,content_hash,company_id&source=eq.{source}"
                f"&status=eq.published&offset={offset}&limit=1000")
         rows = _rest_get(url)
         for r in rows:
-            existing[r["external_id"]] = r.get("content_hash")
+            h = r.get("content_hash") or ""
+            existing[r["external_id"]] = h if r.get("company_id") else h + "__NEEDS_COMPANY__"
         if len(rows) < 1000:
             return existing
         offset += 1000
@@ -130,8 +148,19 @@ def _upsert_companies(names: list):
     背景（2026-10-09 实测）：DB_COLS 白名单里只有 company_id（外键）、没有公司名列，
     sanitize() 把 parse_job/parse_fair 解析出的 company 丢弃 → 卡片恒显示"官方发布"。
     注意：本源的 tags 存的是用工类型（如 ["全职"]），**不能**当作公司名来源。
+
+    ⚠️ 必须**批内去重**（2026-10-10 实测）：同一批里出现重复 name 时 PostgREST 返回
+       500 {"code":"21000","hint":"Ensure that no rows proposed for insertion within
+       the same command have duplicate constrained values."}——
+       公司名在一批岗位里重复很常见，曾导致本源公司关联全部失败（关联 0 条）。
+       另：单批失败不再中断后续批次。
     """
-    todo = [n for n in names if n and n not in _COMPANY_IDS]
+    todo, seen = [], set()
+    for n in names:
+        n = (n or "").strip()
+        if n and n not in _COMPANY_IDS and n not in seen:
+            seen.add(n)
+            todo.append(n)
     for i in range(0, len(todo), 200):
         batch = todo[i:i + 200]
         req = urllib.request.Request(
@@ -145,7 +174,11 @@ def _upsert_companies(names: list):
             },
             method="POST",
         )
-        body = json.loads(urllib.request.urlopen(req, timeout=30).read())
+        try:
+            body = json.loads(urllib.request.urlopen(req, timeout=30).read())
+        except Exception as e:
+            print(f"  ! 公司 upsert 失败（{len(batch)} 个，本批跳过）: {str(e)[:80]}")
+            continue
         for row in body:
             if row.get("name") and row.get("id"):
                 _COMPANY_IDS[row["name"]] = row["id"]
@@ -217,11 +250,17 @@ def mark_expired_batch(eids: list):
 def fetch_list_all(typedir: str, page_size: int = 100) -> list[dict]:
     """抓列表（API 只返回最新一批，不分页）"""
     try:
+        # trust_env=False（2026-10-12 实测事故）：本机 User 级持久化了 HTTP_PROXY/HTTPS_PROXY
+        # 指向 FlClash(127.0.0.1:7890)；若同时存在 NO_PROXY=...,[::1]，httpx 会把它解析成非法
+        # 模式 "all://*[::1]"，导致**每个请求都抛** InvalidURL: Invalid port: ':1]'，
+        # 三个板块全空、脚本却仍报"失败 0 / 退出码 0"（静默失败）。
+        # 该源是国内站点，直连即可，索性不读代理环境。
         resp = httpx.post(API, data={
             "typeid": "1",
             "typedir": typedir,
             "pageSize": str(page_size),
-        }, headers={"Referer": "http://fjrclh.fzu.edu.cn/", "User-Agent": UA}, timeout=20)
+        }, headers={"Referer": "http://fjrclh.fzu.edu.cn/", "User-Agent": UA},
+            timeout=20, trust_env=False)
         if resp.status_code != 200 or not resp.text.strip():
             return []
         data = resp.json()
@@ -325,7 +364,13 @@ def classify(item: dict | None, existing: dict, pending: list, stats: dict, expi
         return  # 沿用现状：本次列表中已过期的行不写入，不在列表才标过期
     eid = item["external_id"]
     h = compute_hash(item)
-    if eid in existing and existing[eid] == h:
+    # existing[eid] 可能是 "<真实hash>__NEEDS_COMPANY__"：拆出真实 hash 比较；
+    # 只有「本行确实有公司名可关联」时才强制重写，否则公告类会被每轮白重写
+    # （2026-10-10 实测：100 条公告行每轮"变更"而公司关联恒为 0）。
+    prev = existing.get(eid) or ""
+    prev_hash = prev.replace("__NEEDS_COMPANY__", "")
+    needs_company = prev.endswith("__NEEDS_COMPANY__") and bool((item.get("company") or "").strip())
+    if eid in existing and prev_hash == h and not needs_company:
         stats["skipped"] += 1
         return
     item["content_hash"] = h
@@ -415,16 +460,26 @@ def main():
             if i + BATCH_SIZE < len(pending):
                 time.sleep(0.3)
 
+        # 全板块抓空 = 源站/网络/代理异常（2026-10-12 实测：环境里的 NO_PROXY 含 [::1]，
+        # httpx 每个请求都抛 InvalidURL，三个板块全空，脚本却报"失败 0、退出码 0"）。
+        # 必须响亮：计入失败并让退出码非零，否则无人值守任务会把"一条都没抓到"当成成功。
+        boards_failed = [p for p, (ok, _) in board_results.items() if not ok]
+        if board_results and len(boards_failed) == len(board_results):
+            print(f"!! 全部 {len(boards_failed)} 个板块抓取失败（源站/网络/代理异常），本轮未取到任何数据")
+            stats["fail"] += 1
+
         print(f"\n=== 完成 ===")
         print(f"新增: {stats['new']}, 变更: {stats['changed']}, 跳过: {stats['skipped']}, 过期: {expired_count}, "
               f"失败: {stats['fail']}, 公司关联: {stats.get('company_linked', 0)}, "
               f"公司失败: {stats.get('company_fail', 0)}")
         if stats["fail"] > 0:
             alert_crawl_failed("crawl-fjrclh.py", f"有 {stats['fail']} 条失败", stats)
+        # 退出码纪律：原来 fail>0 也只发告警、进程仍退 0，导致 run-daily/计划任务判不出失败
+        return 0 if stats["fail"] == 0 else 1
     except Exception as e:
         import traceback
         alert_crawl_failed("crawl-fjrclh.py", f"{e}\n{traceback.format_exc()}", stats)
         raise
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

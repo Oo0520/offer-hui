@@ -86,8 +86,12 @@ npm start
 # 爬虫（本地手动跑一次调试；线上由定时任务每天 12:00 自动跑）
 # 仓库内版本为准（scripts/crawl/），本机执行副本在仓库外需保持同步：
 cd E:\01_AI_Workspace\AIMemory\DaoBao
+# 日常入口（串行跑 jysd → fjrclh → 刷新缓存，写 run-daily.log；退出码 0 = 全成功）
+offer-hui\apps\worker\.venv\Scripts\python.exe run-daily.py
+# 或单独跑：
 offer-hui\apps\worker\.venv\Scripts\python.exe offer-hui\scripts\crawl\crawl-jysd.py
 offer-hui\apps\worker\.venv\Scripts\python.exe offer-hui\scripts\crawl\crawl-fjrclh.py
+# 只跑一所学校（调试）：set OFFERHUI_SCHOOLS=fjut
 
 # git（本地备份，时间戳格式）
 git add -A
@@ -225,6 +229,36 @@ git commit -m "[2026-09-24 21:30] feat: 描述"
 12. **生产爬虫（`scripts/crawl/crawl-jysd.py` / `crawl-fjrclh.py`）与 `models.py` 的 hash 口径必须一致**：content_hash 用 SHA1 + `json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)`（十键 payload：title/company/city/industry/degree/salary[min,max]/salary_text/deadline/apply/tags，None 归一为 ""/[]/0，posted_at 不进 hash）。改任一侧的归一逻辑都会导致全量误判「变更」。另注意：① PostgREST 批量 upsert 用 `POST /jobs?on_conflict=source,external_id` + `Prefer: resolution=merge-duplicates`，`tags` 为 jsonb NOT NULL，Python 侧 None 必须兜底 `[]`，否则 400；② 脚本 SERVICE_KEY 从 `.env`/环境变量读，勿再加回纯硬编码；③ fjrclh 源站 WAF 拦 python 默认 UA，httpx 必须带浏览器 User-Agent；④ **fjut 详情页 HTML 解析前必须剥离 base64/渲染数据**：页面内联大量 base64（图片/统计像素/压缩 JS），其中随机出现「数字K」，且存在 <200 字符的短碎片，任何「全页搜数字K」式 salary 匹配都会命中随机值 → content_hash 抖动。jysd 页面**根本没有结构化薪资区**，fjut 源 salary_text 恒 None（2026-09-28 诊断实锤，七跑验证幂等 `变更:0, 跳过:348`）；诊断同类抖动的方法：一次性脚本抓单页，打印各正则命中与库里值对比，跨两次抓取看哪个字段漂移。
 13. **仓库内外脚本不同步是真实事故源（2026-10-07 实测）**：仓库外副本一度落后仓库两个版本（缺 company_type 修复、日期正则更严、`normalize.py` 硬编码 `../offer-hui/infra/classify` 路径、`crawl_alert.py` 只读同级 .env）。**改爬虫只改 `scripts/crawl/`，改完用 SHA256 对比并覆盖同步仓库外副本**；豆包定时任务跑的是仓库外副本。
 14. **数据质量红线（2026-10-07 实测 5808 条）**：`city` 出现 >8 字的脏值 403 条（占 6.9%），主要是 xmu/jmu 源把招聘标题/场地地址整段塞进 city（如"线下\n…\n中国农业发展银行2027年度校园招聘宣讲"），前端三级联动城市筛选会直接被撑爆。新增数据源**入库前必须过 `normalize_city`**，且 city 长度 >8 视为解析失败。
+15. **爬虫日志的编码与缓冲（2026-10-10 实测，静默失败的两种形态）**：
+    - **编码崩溃**：Windows 上stdout 被重定向到文件/管道时 Python 用 locale(GBK)，脚本里打印 `✓`/`⚠`/`✗` 会抛 `UnicodeEncodeError` 并**直接终止脚本**（`crawl-fjrclh.py` 曾因此只跑 1.5 秒就崩，且异常处理里的告警函数又因 `⚠` 二次崩溃 → 失败连告警都发不出）。现在 `crawl-jysd.py` / `crawl-fjrclh.py` / `crawl_alert.py` / `run-daily.py` 都在 import 后 `sys.stdout.reconfigure(errors="replace")` 兜底；`run-daily.py` 另外给子进程传 `PYTHONIOENCODING=utf-8`。
+    - **缓冲假象**：子进程 stdout 重定向到文件时是**块缓冲**，写库阶段的 `print` 会滞留在缓冲区 → 外部看到"日志几分钟不增长"而误判卡死（实测 37 分钟的全量跑里，其实一直在写库）。现统一用 `python -u`。**判活要用「数据库计数是否在变」，不要看 CPU**（写库阶段是 I/O 等待，CPU 几乎为 0）。
+    - 另：**不要在 `%TEMP%` 建与标准库同名的临时 `.py`**（如 `ast.py`）——脚本所在目录在 `sys.path` 最前，会遮蔽标准库并让 `playwright` 等依赖崩在无关处。
+16. **公司关联（company_id）的三条硬规则（2026-10-10 代码审查 + 全量实跑）**：
+    - **只对 `job`/`intern` 建公司**。活动类（`teachin`/`fair`）与 `announcement` 的"公司名"其实是活动名（实测 fair 8/8 全错、teachin 真假混杂），公告详情页根本没有 company 链接。故 `crawl-jysd.py` 用 `_COMPANY_LINK_TYPES = ("job","intern")` 限定；`crawl-fjrclh.py` 的公司名来自 API 的 `companyname`，不要用它的 `tags`（存的是用工类型「全职」）。
+    - **批量 upsert `companies` 必须批内去重**：同批出现重复 name 时 PostgREST 返回 `500 code=21000`（"duplicate constrained values"），会让整个公司关联静默失败（实测曾导致 fjrclh 关联 0 条）。
+    - **`company_id` 不进 `content_hash`**，所以"内容没变但公司没关联上"的行会被永久判为「跳过」、无法自愈。`crawl-fjrclh.py` 的 `fetch_existing_map` 因此对 `company_id IS NULL` 的行返回 `"<真实hash>__NEEDS_COMPANY__"`，`classify` 拆出真实 hash 比较、仅在「该行确实有公司名可关联」时强制重写（标记必须携带真实 hash，否则每轮都白重写——第一版就犯过此错，100 条公告行每轮"变更"）。
+    - **验收口径**：公司关联率**只看 `job` + `intern`**（基线 98.0%）。`announcement`/`teachin`/`fair`/`campus` 本就不该有 company_id，所以"缺公司总数"恒在 700+，拿它判断好坏会得出完全错误的结论。
+17. **代理环境变量会静默打死 httpx（2026-10-12 实测，随启动环境而变）**：
+    - 本机 User 级持久化了 `HTTP_PROXY` / `HTTPS_PROXY` = `http://127.0.0.1:7890`（FlClash）。一旦同一环境里还存在 `NO_PROXY=...,[::1]`，httpx 会把它解析成非法模式 `all://*[::1]`，于是**每个请求都抛** `InvalidURL: Invalid port: ':1]'`。
+    - 症状极具迷惑性：`crawl-fjrclh.py` 三个板块全空、打印 `共 0 条` + "抓取为空，跳过过期标记"（防误杀保护生效），却**报"失败 0 / 退出码 0"**——典型静默失败。而 Supabase 写库走 urllib（读 WinINET 注册表代理）不受影响，所以只有 httpx 这一路挂。
+    - 修法：`crawl-fjrclh.py` 的 httpx 调用一律 `trust_env=False`（该源是国内站点，直连即可，不读代理环境）。
+    - **退出码纪律（同一轮补上）**：`crawl-jysd.py` / `crawl-fjrclh.py` 原先 `fail > 0` 只发邮件告警、进程仍退 0 → `run-daily.py` 与计划任务判不出失败。现在两者都 `return 0 if fail == 0 else 1` + `sys.exit(main())`；`crawl-fjrclh.py` 另加「全部板块抓空即计失败并响亮打印」，杜绝"一条都没抓到却报成功"。
+
+18. **不要把手算的"相对今天"的值烤进静态页（2026-10-15 事故，用户报"昨天已截止却显示今日截止"）**：
+    - 现象：首页「今日截止」区块把 **8 条 10-14 已到期**的岗位显示成"今天截止"，而当天真正到期的 17 条反而不在区块里。
+    - 双重根因：
+      1. **触发**：当天 12:00 的定时任务没跑（`run-daily.log` 最后一条是前一天 12:22），缓存没被刷新。实测响应头 `Date: 2026-10-14 04:23Z` / `Age: 107950`（陈旧 29.99 小时）。
+      2. **设计缺陷**：`deadlineDays`（以及首页 hero 的 `due30`、日历页的 `now`/`todayStr`）是**服务端在页面生成那一刻算好、随 force-static 页面的 payload 发出去**的；5 个静态页（`/ /calendar /match /favorites /board`）只有 `force-static`、**没有 revalidate**，仅当爬虫调 `/api/revalidate` 时才重生成。**漏跑一次，页面就会自信地显示错值**——比不显示更糟。
+    - 修法：**把"相对今天"的展示值全部搬到浏览器现算**（`lib/useFreshDeadlines.ts`）——服务端只提供稳定的「截止日期」，天数由 `bjDayDiff(今天, 截止日)` 在客户端算，跨北京 0 点自动重算。首页 hero 的 `due30` 同样改为客户端派生；日历页的 `todayStr`/`ym`/`sel` 也改为挂载后按当天纠正。
+      - 纯函数集中在 `lib/jobs.ts`：`bjDateOf` / `bjDateStr` / `bjDayDiff` / `bjDaysUntil` / `msToNextBjMidnight`（服务端 SSR 兜底与客户端现算**共用同一份实现**）。
+      - **水合一致性**：首帧沿用服务端值（SSR HTML 与首次客户端渲染一致），挂载后（`useEffect`）再切到现算值，避免 React 水合不匹配。
+      - 顺带修掉一个潜在错一天：`deadline_at.slice(0,10)` 取的是 **UTC 日期**，对 `16:00Z` 这类跨北京午夜的截止会错一天；改为 `bjDateOf()`。
+      - `HomeStats.due30` 已移除（服务端算的会冻住），改由 `HomeClient` 从修正后的列表派生。
+    - **验收（故障注入，两层信号缺一不可）**：临时让服务端把"今天"钉在事故当天 → 原始 HTML 的「今日截止」变成 **28**（复现事故），而**水合后的 DOM 必须是 17**（客户端纠正）；撤掉注入后两者一致为 17。
+    - **验收的两个坑（都踩过）**：
+      - **换构建必须重启 `next start`**：旧进程 serve 重建后的 `.next` 会让 HTML 引用的 JS chunk 与构建对不上，页面**永远不水合**（实测等 90 秒也没接管），于是读到的一直是服务端 HTML、误判"修复无效"。本机 `Get-NetTCPConnection -LocalPort 3000` **看不到该监听**，杀进程要按命令行匹配：`Get-CimInstance Win32_Process -Filter "Name='node.exe'" | ? { $_.CommandLine -match 'next' }`。
+      - **判"水合完成"要有可观测依据**：向搜索框填入关键词，看 `.job-card` 数量是否变化；变了才说明 React 已接管。仅靠"等 X 秒"不可靠（本机水合其实只要 0.6-0.7 秒，但错配时永远等不到）。
+    - 另注：`npm run build` 打印的 5 条 `Failed to set Next.js data cache for unstable_cache ... items over 2MB can not be cached` 是**已知非致命**（payload 3.03MB > 2MB 上限），退出码仍为 0。
 
 ## 6. 设计资产
 

@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { JobView } from "@/lib/jobs";
+import { useFreshDeadlines } from "@/lib/useFreshDeadlines";
 import JobCard from "./JobCard";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-export default function FavoritesClient({ jobs }: { jobs: JobView[] }) {
+export default function FavoritesClient({ jobs: jobsProp }: { jobs: JobView[] }) {
+  // 截止天数按访问者当天现算（"7 天内截止"同理，见 lib/useFreshDeadlines.ts）
+  const jobs = useFreshDeadlines(jobsProp);
   const [favs, setFavs] = useState<Set<string>>(new Set());
   const [boards, setBoards] = useState<Record<string, string>>({});
 

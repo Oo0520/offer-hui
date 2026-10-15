@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JobView } from "@/lib/jobs";
-import { dimOptions, cityOptions, industryOptions, companyTypeOptions } from "@/lib/jobs";
+import { bjDateStr, dimOptions, cityOptions, industryOptions, companyTypeOptions } from "@/lib/jobs";
+import { useFreshDeadlines } from "@/lib/useFreshDeadlines";
 import CityFilterPanel from "./CityFilterPanel";
 import { supabase } from "@/lib/supabase";
 
@@ -20,11 +21,29 @@ type PersonalFilters = {
 
 const JOB_TYPES = ["校招", "实习", "招聘会", "宣讲会", "招聘公告"];
 
-export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
+export default function CalendarClient({ jobs: jobsProp }: { jobs: JobView[] }) {
+  // 截止天数按访问者当天现算：静态页里那份是"页面生成那一刻"算的，会陈旧
+  // （2026-10-15 事故：页面冻在前一天，"30 天内截止"计数与截止日显示全线偏移）
+  const jobs = useFreshDeadlines(jobsProp);
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  // 服务端渲染时 now = 页面生成那天 —— 该值只作首帧兜底，挂载后按访问者当天纠正
+  // （与截止天数同一根因：静态页会把"今天"冻住。2026-10-15 事故）
+  const serverToday = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const [todayStr, setTodayStr] = useState(serverToday);
   const [ym, setYm] = useState({ y: now.getFullYear(), m: now.getMonth() });
-  const [sel, setSel] = useState<string | null>(todayStr);
+  const [sel, setSel] = useState<string | null>(serverToday);
+  const navRef = useRef(false); // 用户是否翻过月：翻过就不再自动纠正月份/选中日
+  useEffect(() => {
+    const t = bjDateStr();
+    const [ty, tm] = t.split("-").map(Number);
+    setTodayStr(t);
+    if (!navRef.current) {
+      setYm({ y: ty, m: tm - 1 });
+      // 仅在"没选过 / 选的还是服务端那个旧今天"时纠正，避免覆盖用户选择
+      setSel((prev) => (prev === null || prev === serverToday ? t : prev));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [showSub, setShowSub] = useState(false);
   // 订阅 URL 直接用 https：iOS/安卓日历均原生支持，避免 webcal/webcals 协议兼容问题
   const subUrl =
@@ -214,12 +233,18 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
   const selLabel = sel ? sel.slice(5) : "";
 
   function prev() {
+    navRef.current = true; // 用户主动翻月：不要再被"纠正到今天所在月"覆盖
     setYm(({ y: yy, m: mm }) => (mm === 0 ? { y: yy - 1, m: 11 } : { y: yy, m: mm - 1 }));
     setSel(null);
   }
   function next() {
+    navRef.current = true;
     setYm(({ y: yy, m: mm }) => (mm === 11 ? { y: yy + 1, m: 0 } : { y: yy, m: mm + 1 }));
     setSel(null);
+  }
+  function pickDay(k: string) {
+    navRef.current = true; // 用户明确选了某天
+    setSel(k);
   }
 
   // ICS：未来 30 天内截止
@@ -429,7 +454,7 @@ export default function CalendarClient({ jobs }: { jobs: JobView[] }) {
                     (sel === `${y}-${pad(m + 1)}-${pad(c.d)}` ? " sel" : "") +
                     (c.isToday ? " today" : "")
                   }
-                  onClick={() => setSel(`${y}-${pad(m + 1)}-${pad(c.d)}`)}
+                  onClick={() => pickDay(`${y}-${pad(m + 1)}-${pad(c.d)}`)}
                 >
                   {c.d}
                   {c.jobs.length > 0 && <span className="ct">{c.jobs.length} 岗</span>}
