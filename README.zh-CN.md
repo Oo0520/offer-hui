@@ -44,7 +44,7 @@
 | 爬虫 / 数据管道 | Python · httpx · curl_cffi · Playwright · psycopg · APScheduler · FastAPI | `apps/worker/` |
 | Agent 接入 | FastMCP（Streamable HTTP） | `apps/mcp/` |
 | 数据缓存 | Next.js `unstable_cache`（60s ISR） | `apps/web/lib/jobs.ts` |
-| 包管理 | pnpm workspace（`apps/*`） | 根目录 |
+| 包管理 | npm（子项目各自独立；`apps/web` 是唯一的 Node 包） | 根目录 |
 
 ---
 
@@ -73,13 +73,13 @@ offer-hui/
 
 ## 安装
 
-前置：Node.js 18+、pnpm、Python 3.10+（TODO：确认最低版本）。
+前置：Node.js 18+、Python 3.10+（TODO：确认最低版本）。
 
 ### 前端
 
 ```bash
 cd apps/web
-npm install        # 或 pnpm install
+npm install
 ```
 
 ### 爬虫 worker
